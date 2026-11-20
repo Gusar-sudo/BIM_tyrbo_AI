@@ -1,0 +1,24 @@
+{
+  "model": "М2/М3 — BIMLIB_ВитражиДвери_ВнутренниеПерегородкиИДвериВитражные_ФристайлТехнолоджи + test_M2M3_seals",
+  "date": "2026-11-20",
+  "revit": "2026.4",
+  "fingerprints": {"library": "e35151c42db95a44", "test": "22a29faca9a3d111"},
+  "verdict": "ready",
+  "verdict_note": "критических FAIL нет; все FAIL 14.11 закрыты; М1 и двери вне объёма",
+  "fetch": {"warnings": 0, "in_place": 0, "imported_cad": 0, "design_options": 1, "views_without_template_lib": 5, "views_off_sheets_lib": 3, "file_mb_lib": 218.8},
+  "fst": {
+    "F1.1-1.2": "PASS", "F1.3": "PASS", "F1.4": "PASS", "F1.5": "PASS (только М1 пусто, вне объёма)", "F1.6": "PASS",
+    "F2.1": "PASS", "F2.2": "PASS (98 ссылок FS.C-29/09 только в альбоме)", "F2.3": "PASS",
+    "F3.2": "PASS", "F3.3": "PASS (замер 14.11, геометрия стекла не менялась)", "F3.5": "PASS", "F3.6": "INFO 12 (библиотека)",
+    "F5.2": "PASS 30/30 библиотека и тест", "F5.3": "PASS", "F5.4": "PASS (тест)",
+    "F6.3": "PASS"
+  },
+  "test_vs_library": {"mullion_types": 458, "panel_types": 72, "wall_types": 47, "diffs": 0},
+  "glass": {"library": {"sheets": 310, "m2": 541.93}, "test": {"sheets": 190, "m2": 413.70}},
+  "gkl_test": {"pieces": 10, "m2": 21.86, "over_sheet_m2": 7.82, "insulation_m2": 10.59, "sheets_2500": 5, "sheets_3000": 2, "waste_pct": 31.0},
+  "before_release": ["очистка + сохранить как (219 МБ)", "4 пустых типа витражей в архив", "дубли ADSK из шаблона", "FS.C-29/09 в каталог", "виды без шаблона", "цены — нет прайса", "М1 и двери"],
+  "manual": [
+    {"id": "gkl_walls", "what": "Стены «Глухое заполнение ГКЛ»: на плане и разрезе ГКЛ с утеплителем, импосты глухие, без стеклянного паза", "view": "тест, стены Y = −60 м"},
+    {"id": "gkl_cut_map", "what": "Карта раскроя ГКЛ читается и совпадает с ведомостью", "view": "spec\\2026-11-20\\test\\gkl_map.png"}
+  ]
+}

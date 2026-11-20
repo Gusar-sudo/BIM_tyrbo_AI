@@ -7,3 +7,4 @@
 - [Скрипты только из skills](scripts-from-skills-only.md) — batches = аргументы/результаты; старые .py в архиве 13.11; плагин = копия skills
 - [Инструменты проектировщика — на финал](designer-tooling-deferred.md) — все скрипты (узлы, заход у столбов) пойдут в плагин Revit; делать перед выпуском bimlib
 - [Зазор стекла 3 мм](glass-gap-3mm.md) — торец стекла до дна паза 3 мм во всех М2/М3 со всех сторон; у столбов — от точки изменения паза
+- [Сохранять в git](git-save-everything.md) — skills, память, документы _bim → Desktop\git_bim (github Gusar-sudo/BIM_tyrbo_AI), коммит + push; rvt не класть
