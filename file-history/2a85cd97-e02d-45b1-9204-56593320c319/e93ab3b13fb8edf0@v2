@@ -1,0 +1,44 @@
+# -*- coding: utf-8 -*-
+# Только чтение: состав цс-типов стен (импосты по ролям), профили импостов и есть ли в их вложенной графике
+# заливка «FT_Уплотнитель_стекла»; разница параметров типов панелей 8/10 мм и «стойка широкая».
+import json
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+out = {"walls": [], "panel_diff": {}, "profiles": {}}
+for w in FilteredElementCollector(doc).OfClass(WallType):
+    if u"Цельностекл" not in w.Name or u"М1" in w.Name:
+        continue
+    r = {"name": w.Name, "params": {}}
+    for p in w.Parameters:
+        if p.StorageType == StorageType.ElementId:
+            e = doc.GetElement(p.AsElementId())
+            if e is not None and (isinstance(e, MullionType) or isinstance(e, FamilySymbol)):
+                r["params"][p.Definition.Name + u"|" + str(p.Definition.BuiltInParameter)[-12:]] = Element.Name.GetValue(e)
+    out["walls"].append(r)
+# профили импостов, используемых цс-стенами
+used = set(v for r in out["walls"] for v in r["params"].values())
+for m in FilteredElementCollector(doc).OfClass(MullionType):
+    n = Element.Name.GetValue(m)
+    if n not in used:
+        continue
+    pe = doc.GetElement(m.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId())
+    out["profiles"][n] = pe.Family.Name if pe is not None and hasattr(pe, "Family") else None
+# панели: параметры типов
+want = [u"Двуслойная цельностеклянная панель 62 мм", u"Двуслойная цельностеклянная панель 62 мм (стекло 8 мм)", u"Двуслойная цельностеклянная панель 62 мм (стекло 10 мм)", u"Двуслойная цельностеклянная панель 62 мм (стойка широкая)", u"Двуслойная цельностеклянная панель 72 мм", u"Двуслойная цельностеклянная панель 72 мм (стекло 10 мм)"]
+ps = {}
+for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels):
+    if s.Name in want and u"Двухслойная" in s.Family.Name:
+        d = {}
+        for p in s.Parameters:
+            if p.StorageType == StorageType.Double:
+                d[p.Definition.Name] = round(p.AsDouble() * FT, 2) if p.Definition.GetDataType() == SpecTypeId.Length else round(p.AsDouble(), 4)
+            elif p.StorageType == StorageType.Integer:
+                d[p.Definition.Name] = p.AsInteger()
+            elif p.StorageType == StorageType.String:
+                d[p.Definition.Name] = p.AsString()
+        ps[s.Name] = d
+base = ps.get(want[0], {})
+for k, d in ps.items():
+    out["panel_diff"][k] = dict((n, v) for n, v in d.items() if base.get(n) != v)
+__output__ = {"status": "completed_unverified", "summary": u"стен цс %d (только чтение)" % len(out["walls"]), "r": out}

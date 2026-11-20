@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+# Локально: новые ширины по сторонам типов импостов М2/М3 по правилу «уплотнитель в паз».
+# Паз (центр нарисованного уплотнителя) у всех профилей = грань профиля − 3.5 мм; центр уплотнителя U5 панели = кромка стекла + 7.37;
+# кромка стекла = ширина − Выступ (14). => W_new = грань + 3.13 (= паз + 6.63). Меняются только стороны со стеклом.
+import json, re
+D = r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C"
+W = json.load(open(D + r"\mullion_widths.json", encoding="utf-8"))
+S = json.load(open(D + r"\silhouettes_all.json", encoding="utf-8"))
+DELTA = 3.13
+SKIP = u"Необлиц|Отдельносто|Стойка_|Столб_|СтойкаНеобл|ЦельностеклянныйЦ|Цельностекл"
+SP = json.load(open(D + r"\seal_positions_orig.json", encoding="utf-8-sig"))
+SP = dict((k, v if isinstance(v, list) else [v]) for k, v in SP.items())
+out, table, skipped = [], [], []
+for t in sorted(W, key=lambda r: r["name"]):
+    pr = t["profile"]
+    if not (t["name"].startswith(u"М2") or t["name"].startswith(u"М3")) or re.search(SKIP, pr) or re.search(u"FSC08_УгловойСтолб|FSC05_Столб", pr):
+        continue
+    xs = [p[0] for c in S[pr]["curves"] for p in c["p"]]
+    face1, face2 = max(xs), -min(xs)
+    w1, w2 = t["w1"], t["w2"]
+    if u"Центральный" in pr or u"ТОбраз" in pr:
+        sides = (1, 2)
+    elif u"Угловой" in pr:
+        sides = (1, 2) if abs(w1 - w2) < 0.05 else ((1,) if w1 > w2 else (2,))
+    elif u"Левый" in pr:
+        sides = (2,)
+    elif u"Правый" in pr:
+        sides = (1,)
+    else:
+        sides = (1, 2)
+    flag = ""
+    if (1 in sides and abs(w1 - face1) > 0.1) or (2 in sides and abs(w2 - face2) > 0.1):
+        skipped.append(u"%-75s w %.2f/%.2f, грань %.2f/%.2f" % (t["name"], w1, w2, face1, face2))
+        continue
+
+    def neww(face):
+        # паз по нарисованному уплотнителю, если он был; иначе грань − 3.5
+        c = [s for s in SP.get(pr, []) if abs(s - (face - 3.5)) <= 1.5]
+        if c:
+            s = min(c, key=lambda s: abs(s - (face - 3.5)))
+            return round(s + 6.63, 2), u"паз"
+        return round(face + DELTA, 2), u"грань"
+    n1, src1 = neww(face1) if 1 in sides else (w1, u"")
+    n2, src2 = neww(face2) if 2 in sides else (w2, u"")
+    flag = u"  [%s]" % u",".join(x for x in (src1, src2) if x)
+    out.append({"id": t["id"], "name": t["name"], "w1": n1, "w2": n2})
+    table.append(u"%-75s %6.2f→%6.2f  %6.2f→%6.2f%s" % (t["name"], w1, n1, w2, n2, flag))
+json.dump(out, open(D + r"\new_widths.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+open(D + r"\new_widths.txt", "w", encoding="utf-8").write(u"\n".join(table))
+print(len(out))
+print(u"ПРОПУЩЕНЫ (ширина не равна грани):\n" + u"\n".join(skipped))

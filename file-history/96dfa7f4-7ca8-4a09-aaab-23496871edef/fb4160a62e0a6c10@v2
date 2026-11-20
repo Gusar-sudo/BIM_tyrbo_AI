@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+# Партия C, шаг B/C: загрузить семейство профиля из .rfa в проект с заменой, замерить импосты.
+# Аргументы: rfa, family_name, mullion_ids (список), commit (false = пробный прогон с откатом)
+import json, clr
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def bbox(eid):
+    e = doc.GetElement(ElementId(int(eid)))
+    if e is None:
+        return None
+    b = e.get_BoundingBox(None)
+    if b is None:
+        return None
+    return {"id": int(eid), "type": e.Name,
+            "dx": round((b.Max.X - b.Min.X) * FT, 2), "dy": round((b.Max.Y - b.Min.Y) * FT, 2), "dz": round((b.Max.Z - b.Min.Z) * FT, 2)}
+
+
+def family_lines(name):
+    for f in FilteredElementCollector(doc).OfClass(Family):
+        if f.Name == name:
+            return f
+    return None
+
+
+res = {"status": "failed", "commit": commit, "rfa": args["rfa"]}
+res["before"] = [bbox(i) for i in args["mullion_ids"]]
+res["warnings_before"] = len(doc.GetWarnings())
+t = Transaction(doc, u"М2 партия C: профиль " + args["family_name"])
+t.Start()
+try:
+    ref = clr.Reference[Family]()
+    ok = doc.LoadFamily(args["rfa"], LoadOpt(), ref)
+    res["load_returned"] = bool(ok)
+    doc.Regenerate()
+    res["after"] = [bbox(i) for i in args["mullion_ids"]]
+    res["warnings_after"] = len(doc.GetWarnings())
+    res["new_warnings"] = [w.GetDescriptionText() for w in doc.GetWarnings()][:10]
+    f = family_lines(args["family_name"])
+    res["family_found"] = f is not None
+    if commit:
+        t.Commit()
+        res["transaction"] = "Committed"
+        res["status"] = "completed_unverified"
+        res["summary"] = u"Семейство профиля загружено в проект с заменой."
+    else:
+        t.RollBack()
+        res["transaction"] = "RolledBack (пробный прогон)"
+        res["status"] = "completed_unverified"
+        res["summary"] = u"Пробный прогон: загружено, замерено и откатано; проект не изменён."
+except Exception as ex:
+    if t.HasStarted() and not t.HasEnded():
+        t.RollBack()
+    res["error"] = str(ex)
+    res["transaction"] = "RolledBack (ошибка)"
+res["check_after_end"] = [bbox(i) for i in args["mullion_ids"]]
+__output__ = res

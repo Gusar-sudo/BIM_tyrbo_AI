@@ -1,0 +1,29 @@
+# -*- coding: utf-8 -*-
+# Только чтение: параметры семейств профилей импостов (FamilyManager) и встроенные параметры семейства.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+out = {}
+for n in args["families"]:
+    if n not in fams:
+        out[n] = "нет"; continue
+    fd = doc.EditFamily(fams[n])
+    try:
+        fm = fd.FamilyManager; r = {"params": {}, "owner_params": {}, "refplanes": []}
+        for p in fm.Parameters:
+            v = fm.CurrentType.AsDouble(p) if p.StorageType == StorageType.Double else (fm.CurrentType.AsInteger(p) if p.StorageType == StorageType.Integer else fm.CurrentType.AsString(p))
+            if p.StorageType == StorageType.Double and v is not None:
+                v = round(v * FT, 2)
+            r["params"][p.Definition.Name] = [v, str(p.Definition.BuiltInParameter)]
+        for p in fd.OwnerFamily.Parameters:
+            if p.StorageType != StorageType.ElementId:
+                r["owner_params"][p.Definition.Name] = p.AsValueString() or p.AsString()
+        for rp in FilteredElementCollector(fd).OfClass(ReferencePlane):
+            r["refplanes"].append([rp.Name, round(rp.BubbleEnd.X * FT, 2), round(rp.BubbleEnd.Y * FT, 2), round(rp.FreeEnd.X * FT, 2), round(rp.FreeEnd.Y * FT, 2)])
+        out[n] = r
+    finally:
+        fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"прочитано %d семейств (только чтение)" % len(out), "r": out}

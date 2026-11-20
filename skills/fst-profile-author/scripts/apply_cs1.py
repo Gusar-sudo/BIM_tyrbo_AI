@@ -1,0 +1,246 @@
+# -*- coding: utf-8 -*-
+# Однослойная цельностеклянная М2/М3 (по образцу пилота М2 FSC21 12.11 и двухслойной цс), стекло 8 и 10 мм.
+# 1) загрузка rfa из rfa_dir (края «БоковойОднослойныйЦельностеклянный…», панель однослойная с боковым уплотнителем);
+# 2) типы импостов: края «… с однослойным цельностеклянным остеклением л/п [(стекло 10 мм)]» — копия типа края однослойного,
+#    профиль → новый; межстекольный «… FS.C-156 однослойный [(стекло 10 мм)]» — копия двухслойного FS.C-156, профиль однослойный;
+# 3) панели «Однослойная цельностеклянная панель …» — копия однослойной стеклянной той же системы: Выступ сбоку 0,
+#    FT_Стекло_Добавка 0 (настоящий зазор FS.C-156), боковой уплотнитель выкл (его рисует профиль края);
+# 4) типы стен — копия двухслойной цс той же системы и толщины: панель, края, FS.C-156, низ/верх однослойные;
+# 5) проверка на временных стенах: стык 4 мм, толщина стекла, стекло спец./геометрия; затем замер зазоров 3 мм
+#    (measure_glass_gaps.py) и показ узлов (strip_views.py) — их скрипты запускаются внутри той же группы.
+# dry_run=true — всё откатывается. Аргументы: args_file (см. batches\cs1\args_apply_cs1.json).
+import json, io, os, re, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if args.get("args_file"):
+    a2 = json.loads(io.open(args["args_file"], encoding="utf-8-sig").read()); a2.update(dict((k, v) for k, v in args.items() if k != "args_file")); args = a2
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+DRY = bool(args.get("dry_run", True))
+S10 = u" (стекло 10 мм)"
+res = {"dry_run": DRY, "loaded": 0, "mullion_types": [], "panels": [], "walls": [], "check": [], "gaps": None, "views": [], "problems": []}
+_T = Transaction
+OPEN = []
+
+
+def Transaction(d, n):
+    x = _T(d, n); OPEN.append(x); return x
+
+
+class LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True; return True
+
+    def OnSharedFamilyFound(self, s, a, src, b):
+        src.Value = FamilySource.Family; b.Value = True; return True
+
+
+nm = lambda e: Element.Name.GetValue(e)
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+def glass_solids(pn):
+    out = []
+    def walk(g):
+        for o in g:
+            if isinstance(o, Solid) and o.Volume > 1e-9 and o.Faces.Size:
+                m = doc.GetElement(o.Faces.get_Item(0).MaterialElementId)
+                if m is not None and u"Стекло" in m.Name:
+                    out.append(o)
+            elif isinstance(o, GeometryInstance):
+                walk(o.GetInstanceGeometry())
+    ge = pn.get_Geometry(opt)
+    if ge:
+        walk(ge)
+    return out
+
+
+def run_script(path, a):
+    ns = {"__revit__": __revit__, "HORIZUN_ARGS_JSON": json.dumps(a), "__name__": "__main__"}
+    exec(compile(io.open(path, encoding="utf-8").read(), path, "exec"), ns)
+    return ns.get("__output__")
+
+
+def setp(e, n, v):
+    q = e.LookupParameter(n)
+    if q is None or q.IsReadOnly:
+        return False
+    if q.StorageType == StorageType.Double:
+        return q.Set(float(v) / FT)
+    return q.Set(v)
+
+
+tg = TransactionGroup(doc, u"FT: однослойная цельностеклянная"); tg.Start()
+try:
+    t = Transaction(doc, u"FT: цс1 — загрузка"); t.Start()
+    for f in sorted(os.listdir(args["rfa_dir"])):
+        if f.lower().endswith(".rfa") and not re.search(r"\.\d{4}\.rfa$", f.lower()):
+            if doc.LoadFamily(os.path.join(args["rfa_dir"], f), LO(), clr.Reference[Family]()):
+                res["loaded"] += 1
+            else:
+                res["problems"].append([u"не загружено", f])
+    t.Commit()
+    fams = dict((fa.Name, fa) for fa in FilteredElementCollector(doc).OfClass(Family))
+    sym = lambda fn: list(fams[fn].GetFamilySymbolIds())[0]
+    mts = dict((nm(m), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+    pans = dict((s.Name, s) for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels) if s.Family.Name == args["panel_family"])
+    wts = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+    t = Transaction(doc, u"FT: цс1 — типы"); t.Start()
+
+    def mtype(base, new, prof=None, params=None):
+        m = mts.get(new) or mts[base].Duplicate(new); mts[new] = m
+        if prof:
+            m.get_Parameter(BuiltInParameter.MULLION_PROFILE).Set(sym(prof))
+        for k, v in (params or {}).items():
+            setp(m, k, v)
+        res["mullion_types"].append([new, prof])
+        return m
+    # межстекольные однослойные
+    joint = {}
+    for s_, d in args["fsc156"].items():
+        for th in ("8", "10"):
+            base = d["base_" + th]; new = u"%s межстекольный профиль FS.C-156 однослойный%s" % (s_, S10 if th == "10" else u"")
+            joint[(s_, th)] = mtype(base, new, d["profile_" + th])
+    new_walls = []
+    for sy in args["systems"]:
+        for th in ("8", "10"):
+            # края
+            ed = {}
+            for lr in (u"левый", u"правый"):
+                e = sy["edges"][lr]
+                new = e["base_type"].replace(u"с однослойным остеклением", u"с однослойным цельностеклянным остеклением") + (S10 if th == "10" else u"")
+                ed[lr] = mtype(e["base_type"], new, e["profile_" + th])
+            # панель
+            pb = sy["panel_base_" + th]; pnn = sy["panel_new_" + th]
+            ps = pans.get(pnn) or pans[pb].Duplicate(pnn); pans[pnn] = ps
+            for k, v in ((u"Выступ сбоку", 0.0), (u"FT_Стекло_Добавка", 0.0)):
+                setp(ps, k, v)
+            q = ps.LookupParameter(u"FT_Уплотнитель_Бок_Показать")
+            if q is None:
+                res["problems"].append([u"в панели нет FT_Уплотнитель_Бок_Показать", pnn])
+            else:
+                q.Set(0)
+            res["panels"].append(pnn)
+            # стена
+            w2 = wts[sy["wall2_" + th]]; wn = sy["wall_new_" + th]
+            w1 = wts.get(wn) or w2.Duplicate(wn); wts[wn] = w1
+            w1.get_Parameter(BuiltInParameter.AUTO_PANEL_WALL).Set(ps.Id)
+            w1.get_Parameter(BuiltInParameter.AUTO_MULLION_BORDER1_VERT).Set(ed[u"правый"].Id)
+            w1.get_Parameter(BuiltInParameter.AUTO_MULLION_BORDER2_VERT).Set(ed[u"левый"].Id)
+            w1.get_Parameter(BuiltInParameter.AUTO_MULLION_INTERIOR_VERT).Set(joint[(sy["sys"], th)].Id)
+            w1.get_Parameter(BuiltInParameter.AUTO_MULLION_BORDER1_HORIZ).Set(mts[sy["floor_type"]].Id)
+            w1.get_Parameter(BuiltInParameter.AUTO_MULLION_BORDER2_HORIZ).Set(mts[sy["ceil_type"]].Id)
+            res["walls"].append({"wall": wn, "panel": pnn, "edges": [nm(ed[u"правый"]), nm(ed[u"левый"])], "joint": nm(joint[(sy["sys"], th)]),
+                                 "floor": sy["floor_type"], "ceil": sy["ceil_type"]})
+            new_walls.append((w1, int(th), sy))
+    t.Commit()
+    # проверка на временных стенах: стык, толщина, спецификация
+    lvl = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+    t = Transaction(doc, u"FT: цс1 — проверка (откат)"); t.Start()
+    ox, oy = args.get("probe_origin_mm", [60000, -140000]); ox /= FT; oy /= FT
+    NP = int(args.get("n_panels", 4))   # цепочка стёкол: NP панелей, NP−1 стыков FS.C-156 (замечание пользователя 14.11)
+    for i, (w1, th, sy) in enumerate(new_walls):
+        y = oy - i * 3000 / FT
+        L = float(args.get("panel_mm", 900)) * NP / FT
+        P0 = XYZ(ox, y, lvl.Elevation)
+        w = Wall.Create(doc, Line.CreateBound(P0, XYZ(ox + L, y, lvl.Elevation)), w1.Id, lvl.Id, 2700 / FT, 0, False, False)
+        doc.Regenerate()
+        for k_ in range(1, NP):
+            w.CurtainGrid.AddGridLine(False, XYZ(ox + L * k_ / NP, y, lvl.Elevation + 1), False)
+        doc.Regenerate()
+        mul = [doc.GetElement(i_) for i_ in w.CurtainGrid.GetMullionIds()]
+        names = sorted(set(nm(doc.GetElement(m.GetTypeId())) for m in mul))
+        mids = [m for m in mul if u"межстекол" in nm(doc.GetElement(m.GetTypeId()))]
+        row = {"wall": w1.Name, "mullion_types": names, "joints": len(mids)}
+        pieces = []
+        for pid in w.CurtainGrid.GetPanelIds():
+            pn = doc.GetElement(pid)
+            for s in glass_solids(pn):
+                b2 = s.GetBoundingBox(); a = b2.Transform.OfPoint(b2.Min); c = b2.Transform.OfPoint(b2.Max)
+                pieces.append((round(((a.Y + c.Y) / 2 - y) * FT, 1), min(a.X, c.X), max(a.X, c.X), pn, round(abs(a.Y - c.Y) * FT, 1)))
+        gaps = []; spec = []
+        for m in sorted(mids, key=lambda m_: m_.get_BoundingBox(None).Min.X):
+            bb = m.get_BoundingBox(None); mc = (bb.Min.X + bb.Max.X) / 2
+            Lp = [p for p in pieces if p[2] <= mc + 1e-3]; Rp = [p for p in pieces if p[1] >= mc - 1e-3]
+            if Lp and Rp:
+                l = max(Lp, key=lambda p: p[2]); r = min(Rp, key=lambda p: p[1])
+                gaps.append([round((mc - y * 0 - ox) * FT), round((r[1] - l[2]) * FT, 2), l[4], round(l[0] - r[0], 1)])
+        for p in pieces:
+            q = p[3].LookupParameter(u"FT_Стекло_Ширина")
+            spec.append([round(q.AsDouble() * FT, 1) if q else None, round((p[2] - p[1]) * FT, 1)])
+        row.update(gaps_at_joints=gaps, spec_vs_geo=spec, n_pieces=len(pieces), glass_y=sorted(set(p[0] for p in pieces)))
+        # сторона стекла: главный фасад = ВНУТРЕННЯЯ сторона стены (против w.Orientation, правило 30.10);
+        # сравнение с обычной однослойной стеной той же системы (проверена 30.10)
+        def side_of_glass(ww, yy):
+            ps_ = []
+            for pid in ww.CurtainGrid.GetPanelIds():
+                for s in glass_solids(doc.GetElement(pid)):
+                    b2 = s.GetBoundingBox(); a = b2.Transform.OfPoint(b2.Min); c = b2.Transform.OfPoint(b2.Max)
+                    ps_.append(((a.Y + c.Y) / 2 - yy) * FT)
+            if not ps_:
+                return None
+            off = sum(ps_) / len(ps_); o_ = ww.Orientation.Multiply(-1.0 if ww.Flipped else 1.0)   # у витража Orientation не меняется после Flip
+            return round(off * o_.Y, 1)   # > 0 — стекло на стороне стрелок разворота = главный фасад (решение 14.11)
+        row["glass_to_exterior_mm"] = side_of_glass(w, y)
+        reg = sy.get("wall_regular_1sl")
+        if reg and reg in wts:
+            y2 = y - 1500 / FT
+            wr_ = Wall.Create(doc, Line.CreateBound(XYZ(ox, y2, lvl.Elevation), XYZ(ox + 1600 / FT, y2, lvl.Elevation)), wts[reg].Id, lvl.Id, 2700 / FT, 0, False, False)
+            doc.Regenerate()
+            row["regular_glass_to_exterior_mm"] = side_of_glass(wr_, y2)
+            if row["glass_to_exterior_mm"] is None or row["regular_glass_to_exterior_mm"] is None or (row["glass_to_exterior_mm"] > 0) != (row["regular_glass_to_exterior_mm"] > 0):
+                res["problems"].append([u"сторона стекла не как у обычной однослойной", w1.Name, row["glass_to_exterior_mm"], row.get("regular_glass_to_exterior_mm")])
+        # главный фасад = сторона стрелок разворота (подтверждено пользователем 14.11): стекло должно быть на + стороне
+        if row["glass_to_exterior_mm"] is not None and row["glass_to_exterior_mm"] <= 0:
+            res["problems"].append([u"стекло не со стороны главного фасада (стрелок разворота)", w1.Name, row["glass_to_exterior_mm"]])
+        bad = (len(mids) != NP - 1 or len(gaps) != NP - 1 or len(pieces) != NP or len(set(p[0] for p in pieces)) != 1
+               or any(abs(g[1] - 4.0) > 0.2 or abs(g[2] - th) > 0.2 or abs(g[3]) > 0.1 for g in gaps)
+               or any(s_[0] is None or not (0 <= s_[1] - s_[0] < 1.0) for s_ in spec))
+        if bad:
+            res["problems"].append(row)
+        res["check"].append(row)
+    t.RollBack()
+    # замер зазоров 3 мм (свой скрипт, своя группа с откатом)
+    if args.get("gaps_script"):
+        try:
+            o = run_script(args["gaps_script"], {"walls": [w1.Name for w1, th, sy in new_walls], "origin_mm": args.get("gaps_origin_mm", [60000, -200000]), "length_mm": 1600})
+            res["gaps"] = o
+        except Exception:
+            import traceback
+            res["problems"].append([u"замер зазоров", traceback.format_exc()[-400:]])
+    # показ узлов (strip_views.py) по каждой системе, стекло 8 мм
+    if args.get("views_script"):
+        for j, (w1, th, sy) in enumerate(new_walls):
+            if th not in args.get("views_glass", [8]):
+                continue
+            wr = [r for r in res["walls"] if r["wall"] == w1.Name][0]
+            va = {"wall_type": w1.Name, "length_mm": 1600, "panel": wr["panel"], "end_left": wr["edges"][0], "end_right": wr["edges"][1],
+                  "mid": wr["joint"], "end_bottom": wr["floor"], "end_top": wr["ceil"], "panel_family": args["panel_family"],
+                  "material_cut_rgb": args.get("material_cut_rgb", {}), "out_dir": os.path.join(args["views_dir"], u"%s_%s_%d" % (sy["sys"], sy["code"], th)),
+                  "px": args.get("px", 2000), "node_half_mm": 70, "origin_mm": [20000 + j * 5000, 360000]}
+            try:
+                o = run_script(args["views_script"], va)
+                res["views"].append([w1.Name, (o or {}).get("summary") if isinstance(o, dict) else str(o)[:200]])
+            except Exception:
+                import traceback
+                res["problems"].append([u"показ", w1.Name, traceback.format_exc()[-400:]])
+    res["warnings"] = len(doc.GetWarnings())
+    if DRY:
+        tg.RollBack()
+    else:
+        tg.Assimilate()
+except Exception:
+    import traceback
+    res["error"] = traceback.format_exc()[-900:]
+    for x in reversed(OPEN):
+        if x.HasStarted() and not x.HasEnded():
+            x.RollBack()
+    if tg.HasStarted() and not tg.HasEnded():
+        tg.RollBack()
+if args.get("out_json"):
+    io.open(args["out_json"], "w", encoding="utf-8").write(json.dumps(res, ensure_ascii=False, indent=1))
+st = "failed" if res.get("error") else ("partial" if res["problems"] else "completed_unverified")
+gs = res["gaps"].get("summary") if isinstance(res.get("gaps"), dict) else None
+__output__ = {"status": st, "summary": (u"ПРОБА (откат): " if DRY else u"ПРИМЕНЕНО: ") + u"загружено %d, импостов %d, панелей %d, стен %d, проверено %d, проблем %d; зазоры: %s; показов %d" % (
+    res["loaded"], len(res["mullion_types"]), len(res["panels"]), len(res["walls"]), len(res["check"]), len(res["problems"]), gs, len(res["views"])),
+    "problems": res["problems"][:12], "error": res.get("error")}

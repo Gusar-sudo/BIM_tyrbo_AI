@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+# Чтение: параметры и формулы семейств панелей (EditFamily, закрыть без сохранения) + значения FT_Стекло_* у нескольких экземпляров.
+# Аргументы: families [имена семейств], sample (сколько экземпляров). Модель не меняется.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+out = {}
+for fn in args["families"]:
+    fam = fams.get(fn)
+    if fam is None:
+        out[fn] = "нет"
+        continue
+    fd = doc.EditFamily(fam)
+    try:
+        fm = fd.FamilyManager
+        ps = []
+        for p in fm.Parameters:
+            ps.append({"name": p.Definition.Name, "inst": p.IsInstance, "formula": p.Formula,
+                       "shared": p.IsShared, "rep": p.IsReporting})
+        ps.sort(key=lambda r: r["name"])
+        types = {}
+        for ft in fm.Types:
+            vals = {}
+            for p in fm.Parameters:
+                n = p.Definition.Name
+                if p.StorageType == StorageType.Double and (u"Стекл" in n or u"Выступ" in n or u"Ширина" in n or u"Высота" in n or u"Толщ" in n or u"Смещ" in n):
+                    v = ft.AsDouble(p)
+                    vals[n] = round(v * FT, 2) if v is not None else None
+            types[ft.Name] = vals
+        out[fn] = {"params": ps, "types": types}
+    finally:
+        fd.Close(False)
+# экземпляры
+samp = []
+for pn in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    st = doc.GetElement(pn.GetTypeId())
+    if st is None or not hasattr(st, "FamilyName") or st.FamilyName not in args["families"]:
+        continue
+    r = {"id": int(pn.Id.Value), "type": st.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()[:50]}
+    for nm in (u"FT_Стекло_Ширина", u"FT_Стекло_Высота", u"Ширина", u"Высота"):
+        p = pn.LookupParameter(nm)
+        r[nm] = round(p.AsDouble() * FT, 2) if p and p.StorageType == StorageType.Double else None
+    w = pn.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH); h = pn.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_HEIGHT)
+    r["panel_w"] = round(w.AsDouble() * FT, 2) if w else None
+    r["panel_h"] = round(h.AsDouble() * FT, 2) if h else None
+    samp.append(r)
+    if len(samp) >= int(args.get("sample", 8)):
+        break
+__output__ = {"status": "completed_unverified", "summary": u"семейств %d, экземпляров %d" % (len(out), len(samp)), "families": out, "instances": samp}

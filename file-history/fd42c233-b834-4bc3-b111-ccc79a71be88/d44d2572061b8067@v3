@@ -1,0 +1,21 @@
+"""Картинка «было / станет» для профиля импоста. py -P -E compare_png.py new.json old_loops.json out.png title"""
+import json, sys
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+new = json.load(open(sys.argv[1], encoding="utf-8-sig"))["loops"]
+old = json.load(open(sys.argv[2], encoding="utf-8-sig"))["loops"]
+fig, axs = plt.subplots(1, 2, figsize=(9, 8), sharey=True)
+src = sys.argv[5] if len(sys.argv) > 5 else "DWG"
+for ax, loops, title, col in ((axs[0], old, "Было (в модели)", "0.3"), (axs[1], new, f"Станет (по {src})", "tab:blue")):
+    for i, l in enumerate(loops):
+        xs = [p[0] for p in l] + [l[0][0]]; ys = [p[1] for p in l] + [l[0][1]]
+        ax.fill(xs, ys, color=col if i == 0 else "white", alpha=0.35 if i == 0 else 1, zorder=1 if i == 0 else 2)
+        ax.plot(xs, ys, color="k", lw=0.8, zorder=5)
+    ax.set_aspect("equal"); ax.grid(lw=0.2); ax.set_title(title, fontsize=10)
+    ax.axhline(0, lw=0.3, color="r"); ax.axvline(0, lw=0.3, color="r")
+    ax.set_xlabel("мм вдоль витража")
+axs[0].set_ylabel("мм поперёк (толщина)")
+fig.suptitle(sys.argv[4], fontsize=11)
+fig.savefig(sys.argv[3], dpi=160, bbox_inches="tight")
+print(sys.argv[3])

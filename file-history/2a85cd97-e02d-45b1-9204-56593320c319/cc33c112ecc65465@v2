@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+# Только чтение: вложенная графика профиля — пересечения линий y=const (в координатах профиля), габарит, заливки.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+out = {}
+for n in args["families"]:
+    pd = doc.EditFamily(fams[n])
+    try:
+        fi = list(FilteredElementCollector(pd).OfClass(FamilyInstance))[0]; tr = fi.GetTotalTransform()
+        nd = pd.EditFamily(fi.Symbol.Family)
+        try:
+            segs = []; groups = 0
+            for c in FilteredElementCollector(nd).OfClass(CurveElement):
+                g = c.GeometryCurve
+                if g is None:
+                    continue
+                if c.GroupId != ElementId.InvalidElementId:
+                    groups += 1
+                ps = [tr.OfPoint(q) for q in g.Tessellate()]
+                ps = [(p.X * FT, p.Y * FT) for p in ps]
+                segs += [(ps[i], ps[i + 1]) for i in range(len(ps) - 1)]
+            xs = [p[0] for s in segs for p in s]; ys = [p[1] for s in segs for p in s]
+            r = {"nested": fi.Symbol.Family.Name, "lines": len(segs), "in_groups": groups, "bbox": [round(min(xs), 2), round(max(xs), 2), round(min(ys), 2), round(max(ys), 2)], "cuts": {},
+                 "regions": len(list(FilteredElementCollector(nd).OfClass(FilledRegion))), "transform": [round(tr.Origin.X * FT, 2), round(tr.BasisX.X, 2), round(tr.BasisX.Y, 2)]}
+            for y in args["ys"]:
+                hits = []
+                for (a, b) in segs:
+                    if (a[1] - y) * (b[1] - y) < 0 and abs(b[1] - a[1]) > 1e-9:
+                        t = (y - a[1]) / (b[1] - a[1]); hits.append(round(a[0] + t * (b[0] - a[0]), 2))
+                r["cuts"][str(y)] = sorted(set(hits))
+            out[n] = r
+        finally:
+            nd.Close(False)
+    finally:
+        pd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"только чтение", "r": out}

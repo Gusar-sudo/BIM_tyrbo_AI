@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+# Чтение: все параметры типа панели ГКЛ и формулы семейства (открыть семейство без сохранения)
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+s = doc.GetElement(ElementId(7651683))
+tp = {}
+for q in s.Parameters:
+    try:
+        v = q.AsValueString() if q.StorageType in (StorageType.Double, StorageType.Integer) else (q.AsString() if q.StorageType == StorageType.String else q.AsElementId().Value)
+    except Exception:
+        v = "?"
+    tp[q.Definition.Name] = v
+fam = s.Family
+fdoc = doc.EditFamily(fam)
+fm = fdoc.FamilyManager
+forms = {}
+for p in fm.Parameters:
+    n = p.Definition.Name
+    if p.Formula and (u"Стекло" in n or u"ГКЛ" in n or u"Утепл" in n or u"Толщ" in n or u"Ширин" in n or u"Высот" in n or n.startswith("ADSK")):
+        forms[n] = p.Formula
+solids = []
+for f in FilteredElementCollector(fdoc).OfClass(GenericForm):
+    solids.append({"name": f.Name, "subcat": f.Subcategory.Name if f.Subcategory else None, "id": f.Id.Value})
+fdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"тип %s; формул %d; тел %d" % (s.Name, len(forms), len(solids)),
+              "type_params": tp, "formulas": forms, "solids": solids}

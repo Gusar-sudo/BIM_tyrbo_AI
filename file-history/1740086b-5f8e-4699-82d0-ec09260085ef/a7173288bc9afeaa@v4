@@ -1,0 +1,12 @@
+<section id="cover" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:80px 128px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<img src="/_blob/4ddd3e44bc4d7d12a5d8674095017ffa" alt="" style="position:absolute;left:0px;top:0px;width:360px;height:1080px;object-fit:cover;opacity:0.9">
+<img src="/_blob/c826e6669c822ffa120b628a94fe4e16" alt="" style="position:absolute;right:0px;top:0px;width:360px;height:1080px;object-fit:cover;opacity:0.9">
+<div style="width:1160px;display:flex;flex-direction:column;align-items:center;gap:28px">
+<img src="/_blob/e5830ca5669b9e98c43b8c4435dbf99c" alt="Логотип Aroma psychology by Beleninova" style="width:220px;height:220px;object-fit:contain">
+<p style="font-size:40px;font-weight:800;text-align:center;color:#2B2B2E">Елена Беленинова</p>
+<h1 style="font-size:88px;font-weight:800;line-height:1.1;text-align:center;color:#2B2B2E">Психология творческих людей</h1>
+<p style="font-size:48px;font-weight:700;line-height:1.25;text-align:center;color:#2E7884">EMDR: вернуть вдохновение и защититься от выгорания</p>
+<p style="font-size:36px;font-weight:800;text-align:center;color:#FFFDF9;background:#B9531F;padding:16px 40px;border-radius:48px">РДДА · Екатеринбург · стенд 15–16</p>
+</div>
+<aside>0:00–1:30. Выход, пауза 2–3 секунды, улыбка. «Добрый день! Меня зовут Елена Беленинова. Я психолог, EMDR-терапевт и ароматерапевт. Вокруг нас сотни оттенков, фактур и трендов. А я хочу поговорить о том, чего не видно ни на одном стенде: о состоянии, в котором вы создаёте свои проекты. За 15 минут расскажу, почему вдохновение пропадает не тогда, когда закончились идеи, покажу одну простую технику, а в конце приглашу на наш стенд 15–16».</aside>
+</section>

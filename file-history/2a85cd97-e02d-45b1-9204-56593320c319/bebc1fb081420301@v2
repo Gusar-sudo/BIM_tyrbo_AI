@@ -1,0 +1,298 @@
+# -*- coding: utf-8 -*-
+# Вертикальные сечения секций «как в альбоме» + 3D узлов. Перегородка H (3000) с ригелем на высоте transom_mm (2100).
+# Лист A3 на секцию: рисунок альбома | разрез по стеклу 1:20 на всю высоту | узлы 1:2 (потолок / ригель / пол) |
+# 3D тех же узлов у средней стойки (с подрезкой), тонированные с рёбрами. PDF + PNG. ВСЁ откатывается.
+# Аргументы: args_file -> {items:[{key,title,album_png,wall_type,length_mm,height_mm,transom_mm,grid_mm,
+#   panel_below,panel_above,transom_type(необяз.)}], out_dir, pdf_name, origin_mm}
+import json, os, math
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+ptypes = dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s)
+              for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels))
+vft_sec = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.Section][0]
+vft_3d = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.ThreeDimensional][0]
+ttype = FilteredElementCollector(doc).OfClass(TextNoteType).FirstElementId()
+ftype = [t for t in FilteredElementCollector(doc).OfClass(FloorType) if not t.IsFoundationSlab][0]
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_GenericAnnotation, BuiltInCategory.OST_CLines,
+        BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers,
+        BuiltInCategory.OST_SectionHeads, BuiltInCategory.OST_CalloutHeads, BuiltInCategory.OST_ReferenceViewer,
+        BuiltInCategory.OST_SectionBox]
+_solid = [f for f in FilteredElementCollector(doc).OfClass(FillPatternElement) if f.GetFillPattern().IsSolidFill]
+existing = set(v.Name for v in FilteredElementCollector(doc).OfClass(View))
+D = float(args.get("detail_half_mm", 60)); DS = int(args.get("detail_scale", 2))
+
+
+def uname(n):
+    k = n; i = 2
+    while k in existing:
+        k = u"%s (%d)" % (n, i); i += 1
+    existing.add(k)
+    return k
+
+
+def tidy(v, ctx, surface=True):
+    for bic in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(bic), True)
+        except Exception:
+            pass
+    if _solid:
+        ogs = OverrideGraphicSettings()
+        ogs.SetCutForegroundPatternId(_solid[0].Id); ogs.SetCutForegroundPatternColor(Color(200, 200, 200))
+        if surface:
+            ogs.SetSurfaceForegroundPatternId(_solid[0].Id); ogs.SetSurfaceForegroundPatternColor(Color(225, 225, 225))
+        for i in ctx:
+            v.SetElementOverrides(i, ogs)
+
+
+def section(name, origin, bx, by, bz, xmin, xmax, ymin, ymax, zfar, znear, scale, ctx):
+    tr = Transform.Identity
+    tr.Origin = origin; tr.BasisX = bx; tr.BasisY = by; tr.BasisZ = bz
+    box = BoundingBoxXYZ(); box.Transform = tr
+    box.Min = XYZ(MM(xmin), MM(ymin), MM(zfar)); box.Max = XYZ(MM(xmax), MM(ymax), MM(znear))
+    v = ViewSection.CreateSection(doc, vft_sec.Id, box)
+    v.Scale = scale; v.DetailLevel = ViewDetailLevel.Fine
+    if scale <= 5:
+        p = v.get_Parameter(BuiltInParameter.SECTION_COARSER_SCALE_PULLDOWN_METRIC)
+        if p and not p.IsReadOnly:
+            p.Set(5)
+    v.Name = uname(name)
+    tidy(v, ctx)
+    return v
+
+
+def view3d(name, c, half, scale, ctx):
+    v = View3D.CreateIsometric(doc, vft_3d.Id)
+    v.Name = uname(name)
+    bb = BoundingBoxXYZ()
+    bb.Min = XYZ(c.X - MM(half[0]), c.Y - MM(half[1]), c.Z - MM(half[2]))
+    bb.Max = XYZ(c.X + MM(half[0]), c.Y + MM(half[1]), c.Z + MM(half[2]))
+    v.IsSectionBoxActive = True
+    v.SetSectionBox(bb)
+    f = XYZ(1, 1.4, -0.9).Normalize()                       # взгляд спереди-слева-сверху (со стороны -Y)
+    up = (XYZ.BasisZ - f * XYZ.BasisZ.DotProduct(f)).Normalize()
+    v.SetOrientation(ViewOrientation3D(c - f * MM(3000), up, f))
+    v.DetailLevel = ViewDetailLevel.Fine
+    v.DisplayStyle = DisplayStyle.ShadingWithEdges
+    # область кадрирования = проекция подрезки (8 углов) в координатах вида, с запасом 5%
+    try:
+        cb = v.CropBox; inv = cb.Transform.Inverse
+        us, vs_ = [], []
+        for x_ in (bb.Min.X, bb.Max.X):
+            for y_ in (bb.Min.Y, bb.Max.Y):
+                for z_ in (bb.Min.Z, bb.Max.Z):
+                    q = inv.OfPoint(XYZ(x_, y_, z_)); us.append(q.X); vs_.append(q.Y)
+        mu = (max(us) - min(us)) * 0.05; mv_ = (max(vs_) - min(vs_)) * 0.05
+        cb.Min = XYZ(min(us) - mu, min(vs_) - mv_, cb.Min.Z); cb.Max = XYZ(max(us) + mu, max(vs_) + mv_, cb.Max.Z)
+        v.CropBox = cb; v.CropBoxActive = True; v.CropBoxVisible = False
+    except Exception:
+        pass
+    try:
+        v.Scale = scale
+    except Exception:
+        pass
+    tidy(v, ctx, surface=False)
+    return v
+
+
+res = {"sheets": []}
+sheet_ids = List[ElementId]()
+tg = TransactionGroup(doc, u"FT: вертикальные узлы и 3D (откат)"); tg.Start()
+try:
+    ox, oy = [float(x) for x in args.get("origin_mm", [60000, 480000])]
+    for k, it in enumerate(args["items"]):
+        r = {"key": it["key"]}
+        t = Transaction(doc, u"секция"); t.Start()
+        try:
+            Lm = float(it.get("length_mm", 2000)); Hm = float(it.get("height_mm", 3000)); Tm = float(it.get("transom_mm", 2100))
+            P0 = XYZ(MM(ox), MM(oy + 4000 * k), level.Elevation)
+            d = XYZ.BasisX; n = XYZ.BasisY
+            w = Wall.Create(doc, Line.CreateBound(P0, P0 + d * MM(Lm)), wtypes[it["wall_type"]].Id, level.Id, MM(Hm), 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(w, 0); WallUtils.DisallowWallJoinAtEnd(w, 1)
+            doc.Regenerate()
+            for g in it.get("grid_mm", [Lm / 2]):
+                w.CurtainGrid.AddGridLine(False, P0 + d * MM(g) + XYZ(0, 0, 1), False)
+            gl = w.CurtainGrid.AddGridLine(True, P0 + d * MM(Lm / 4) + XYZ(0, 0, MM(Tm)), False)
+            doc.Regenerate()
+            # ригель (внутренний горизонтальный)
+            hz = []
+            for mid in w.CurtainGrid.GetMullionIds():
+                m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+                if bb is None or (bb.Max.Z - bb.Min.Z) > (bb.Max.X - bb.Min.X):
+                    continue
+                zc = ((bb.Min.Z + bb.Max.Z) / 2 - level.Elevation) * FT
+                if abs(zc - Tm) < 100:
+                    if it.get("transom_type"):
+                        m.Pinned = False; m.ChangeTypeId(mtypes[it["transom_type"]].Id)
+                    hz.append(m)
+            if it.get("vertical_type"):
+                for mid in w.CurtainGrid.GetMullionIds():
+                    m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+                    if bb and (bb.Max.Z - bb.Min.Z) > (bb.Max.X - bb.Min.X):
+                        xc = ((bb.Min.X + bb.Max.X) / 2 - P0.X) * FT
+                        if 50 < xc < Lm - 50:
+                            m.Pinned = False; m.ChangeTypeId(mtypes[it["vertical_type"]].Id)
+            doc.Regenerate()
+            r["transom"] = sorted(set(m.Name for m in hz))
+            # панели ниже/выше ригеля
+            for pid in w.CurtainGrid.GetPanelIds():
+                p = doc.GetElement(pid); bb = p.get_BoundingBox(None)
+                if bb is None:
+                    continue
+                below = ((bb.Min.Z + bb.Max.Z) / 2 - level.Elevation) * FT < Tm
+                nm = it.get("panel_below" if below else "panel_above")
+                if nm:
+                    s_ = ptypes[nm]
+                    if not s_.IsActive:
+                        s_.Activate()
+                    p.Pinned = False
+                    if p.GetTypeId() != s_.Id:
+                        p.ChangeTypeId(s_.Id)
+            doc.Regenerate()
+            # пол и потолок
+            slab = ftype.get_Parameter(BuiltInParameter.FLOOR_ATTR_DEFAULT_THICKNESS_PARAM).AsDouble()
+            ctx = []
+            for zoff in (0.0, MM(Hm) + slab):
+                a = P0 - d * MM(300) - n * MM(300); b = P0 + d * MM(Lm + 300) + n * MM(300)
+                pts = [XYZ(a.X, a.Y, level.Elevation), XYZ(b.X, a.Y, level.Elevation), XYZ(b.X, b.Y, level.Elevation), XYZ(a.X, b.Y, level.Elevation)]
+                loop = CurveLoop()
+                for i in range(4):
+                    loop.Append(Line.CreateBound(pts[i], pts[(i + 1) % 4]))
+                ll = List[CurveLoop](); ll.Add(loop)
+                fl = Floor.Create(doc, ll, ftype.Id, level.Id)
+                fl.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(zoff)
+                ctx.append(fl.Id)
+            doc.Regenerate()
+            hor = {}
+            for mid in w.CurtainGrid.GetMullionIds():
+                m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+                if bb and (bb.Max.Z - bb.Min.Z) < (bb.Max.X - bb.Min.X):
+                    zc = ((bb.Min.Z + bb.Max.Z) / 2 - level.Elevation) * FT
+                    hor[u"потолок" if zc > Tm + 100 else (u"ригель" if zc > 100 else u"пол")] = m.Name
+            r["horizontal"] = hor
+            r["panels"] = sorted(set(doc.GetElement(i).Name for i in w.CurtainGrid.GetPanelIds()))
+            xg = Lm / 4.0                     # середина левого пролёта (по стеклу)
+            xs = Lm / 2.0                     # средняя стойка
+            gx = P0 + d * MM(xg); cs = P0 + d * MM(xs)
+            z0 = level.Elevation; zT = z0 + MM(Tm); zH = z0 + MM(Hm)
+            nx = n.CrossProduct(XYZ.BasisZ)
+            full = section(u"%s разрез по стеклу" % it["key"], XYZ(gx.X, gx.Y, z0 + MM(Hm / 2)), n, XYZ.BasisZ, nx,
+                           -150, 150, -Hm / 2 - 200, Hm / 2 + 200, -400, 0, 20, ctx)
+            det = []
+            for lab, zz in ((u"потолок", zH), (u"ригель %d" % Tm, zT), (u"пол", z0)):
+                det.append((lab, section(u"%s узел %s" % (it["key"], lab), XYZ(gx.X, gx.Y, zz), n, XYZ.BasisZ, nx,
+                                         -D, D, -D, D, -400, 0, DS, ctx)))
+            v3 = []
+            for lab, zz in ((u"потолок", zH), (u"ригель", zT), (u"пол", z0)):
+                v3.append((lab, view3d(u"%s 3D %s" % (it["key"], lab), XYZ(cs.X, cs.Y, zz), (160, 90, 140), 5, ctx)))
+            doc.Regenerate()
+            # 3D -> отдельные PNG (экспорт вне транзакции), затем картинками на лист
+            t.Commit()
+            d3 = os.path.join(OUT, u"_3d");
+            if not os.path.isdir(d3):
+                os.makedirs(d3)
+            png3 = []
+            for lab, v in v3:
+                e3 = ImageExportOptions(); e3.ExportRange = ExportRange.SetOfViews
+                ids3 = List[ElementId](); ids3.Add(v.Id); e3.SetViewsAndSheets(ids3)
+                e3.ZoomType = ZoomFitType.FitToPage; e3.PixelSize = 1400
+                e3.ImageResolution = ImageResolution.DPI_300; e3.ShadowViewsFileType = ImageFileType.PNG; e3.HLRandWFViewsFileType = ImageFileType.PNG
+                base = os.path.join(d3, u"%s_%s" % (it["key"], lab))
+                e3.FilePath = base
+                doc.ExportImage(e3)
+                cand = [os.path.join(d3, f_) for f_ in os.listdir(d3) if f_.startswith(os.path.basename(base)) and f_.lower().endswith(u".png")]
+                png3.append((lab, max(cand, key=os.path.getmtime) if cand else None))
+            t = Transaction(doc, u"лист"); t.Start()
+            # лист
+            sh = ViewSheet.Create(doc, ElementId.InvalidElementId)
+            nm = u"%s %s" % (it["key"], it.get("title", u""))
+            for ch in u':{}[]|;<>?`~\\':
+                nm = nm.replace(ch, u" ")
+            sh.Name = nm[:60]; sh.SheetNumber = u"ВУ-" + it["key"]
+            TextNote.Create(doc, sh.Id, XYZ(MM(5), MM(294), 0),
+                            u"%s  %s.  Перегородка %d×%d, ригель на %d мм. Тип стены: %s.\nПотолок: %s.  Ригель: %s.  Пол: %s.  Панели: %s.  Модель не менялась (откат)." % (
+                                it["key"], it.get("title", u""), Lm, Hm, Tm, it["wall_type"], hor.get(u"потолок", u"-"),
+                                hor.get(u"ригель", u"-"), hor.get(u"пол", u"-"), u", ".join(r["panels"])), ttype)
+            if it.get("album_png") and os.path.isfile(it["album_png"]):
+                ity = ImageType.Create(doc, ImageTypeOptions(it["album_png"], False, ImageTypeSource.Import))
+                im = ImageInstance.Create(doc, sh, ity.Id, ImagePlacementOptions(XYZ(MM(5), MM(275), 0), BoxPlacement.TopLeft))
+                im.Width = MM(float(it.get("album_w_mm", 135)))
+                doc.Regenerate()
+                bb = im.get_BoundingBox(sh)
+                if bb:
+                    if bb.Max.Y - bb.Min.Y > MM(255):
+                        im.Height = MM(255); doc.Regenerate(); bb = im.get_BoundingBox(sh)
+                    ElementTransformUtils.MoveElement(doc, im.Id, XYZ(MM(5) - bb.Min.X, MM(272) - bb.Max.Y, 0))
+                TextNote.Create(doc, sh.Id, XYZ(MM(5), MM(278), 0), u"Альбом: " + it.get("album_caption", u""), ttype)
+            vps = [Viewport.Create(doc, sh.Id, full.Id, XYZ(MM(160), MM(140), 0))]
+            TextNote.Create(doc, sh.Id, XYZ(MM(145), MM(278), 0), u"Модель: разрез по стеклу 1:20", ttype)
+            cell = 2.0 * D / DS
+            for j, (lab, v) in enumerate(det):
+                cy = MM(238 - j * 88)
+                vps.append(Viewport.Create(doc, sh.Id, v.Id, XYZ(MM(215), cy, 0)))
+                TextNote.Create(doc, sh.Id, XYZ(MM(215 - cell / 2), cy + MM(cell / 2 + 8), 0), u"Узел: %s, 1:%d" % (lab, DS), ttype)
+            for j, (lab, pth) in enumerate(png3):
+                ytop = 280 - j * 88
+                TextNote.Create(doc, sh.Id, XYZ(MM(265), MM(ytop), 0), u"3D у средней стойки: %s" % lab, ttype)
+                if not pth:
+                    continue
+                it3 = ImageType.Create(doc, ImageTypeOptions(pth, False, ImageTypeSource.Import))
+                im3 = ImageInstance.Create(doc, sh, it3.Id, ImagePlacementOptions(XYZ(MM(265), MM(ytop - 4), 0), BoxPlacement.TopLeft))
+                im3.Height = MM(78)
+                doc.Regenerate()
+                b3 = im3.get_BoundingBox(sh)
+                if b3 and b3.Max.X - b3.Min.X > MM(150):
+                    im3.Width = MM(150); doc.Regenerate(); b3 = im3.get_BoundingBox(sh)
+                if b3:
+                    ElementTransformUtils.MoveElement(doc, im3.Id, XYZ(MM(265) - b3.Min.X, MM(ytop - 4) - b3.Max.Y, 0))
+            vpt = doc.GetElement(vps[0].GetTypeId()).Duplicate(uname(u"FT без названия"))
+            prm = vpt.get_Parameter(BuiltInParameter.VIEWPORT_ATTR_SHOW_LABEL)
+            if prm:
+                prm.Set(0)
+            for vp in vps:
+                try:
+                    vp.ChangeTypeId(vpt.Id)
+                except Exception:
+                    pass
+            t.Commit()
+            sheet_ids.Add(sh.Id)
+            e = ImageExportOptions(); e.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(sh.Id); e.SetViewsAndSheets(ids)
+            e.ZoomType = ZoomFitType.FitToPage; e.PixelSize = int(args.get("px", 4200))
+            e.ImageResolution = ImageResolution.DPI_300; e.HLRandWFViewsFileType = ImageFileType.PNG; e.ShadowViewsFileType = ImageFileType.PNG
+            e.FilePath = os.path.join(OUT, u"sheet_" + it["key"])
+            doc.ExportImage(e)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)[:300]
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        res["sheets"].append(r)
+    if sheet_ids.Count:
+        o = PDFExportOptions()
+        o.FileName = args.get("pdf_name", u"вертикальные_узлы")
+        o.Combine = True; o.PaperFormat = ExportPaperFormat.ISO_A3; o.PaperOrientation = PageOrientationType.Landscape
+        o.ZoomType = ZoomType.FitToPage; o.HideCropBoundaries = True; o.HideScopeBoxes = True; o.HideReferencePlane = True
+        res["pdf_ok"] = bool(doc.Export(OUT, sheet_ids, o))
+        res["pdf"] = os.path.join(OUT, o.FileName + u".pdf")
+    res["warnings"] = len(doc.GetWarnings())
+finally:
+    tg.RollBack()
+bad = [s["key"] for s in res["sheets"] if "error" in s]
+res["status"] = "completed_unverified" if not bad else "partial"
+res["summary"] = u"листов %d, ошибок %d, PDF %s; всё откатано" % (sheet_ids.Count, len(bad), res.get("pdf_ok"))
+__output__ = res

@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+# Загрузить семейство двухслойной панели с жалюзи в активный проект (замена, значения типов проекта сохраняются).
+# Проверка: число экземпляров и типов до/после, FT_Жалюзи у всех панелей = 0, наличие параметров, предупреждения.
+# Аргументы: rfa, family
+import json, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+
+
+class _LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, a, b, src, c):
+        src.Value = FamilySource.Family; c.Value = False
+        return True
+
+
+def state():
+    fam = [f for f in FilteredElementCollector(doc).OfClass(Family) if f.Name == args["family"]][0]
+    sids = list(fam.GetFamilySymbolIds())
+    inst = [p for p in FilteredElementCollector(doc).OfClass(FamilyInstance) if p.Symbol.Id in sids]
+    on = sum(1 for p in inst if p.LookupParameter(u"FT_Жалюзи") and p.LookupParameter(u"FT_Жалюзи").AsInteger() == 1)
+    has = all(p.LookupParameter(n) is not None for p in inst[:1] for n in (u"FT_Жалюзи", u"FT_Жалюзи_Видимость", u"FT_Жалюзи_Ламелей", u"FT_Жалюзи_Площадь"))
+    return {"types": len(sids), "instances": len(inst), "blinds_on": on, "params_present": has if inst else None,
+            "warnings": len(doc.GetWarnings())}
+
+
+res = {"before": state()}
+t = Transaction(doc, u"FT: жалюзи в двухслойной панели"); t.Start()
+ok = doc.LoadFamily(args["rfa"], _LO(), clr.Reference[Family]())
+st = t.Commit()
+res["loaded"] = ok; res["commit"] = str(st)
+res["after"] = state()
+b, a = res["before"], res["after"]
+good = ok and str(st) == "Committed" and a["types"] == b["types"] and a["instances"] == b["instances"] and a["blinds_on"] == 0 and a["params_present"] and a["warnings"] <= b["warnings"]
+__output__ = {"status": "self_reported_verified" if good else "partial", "summary": u"до %s; после %s" % (b, a), "result": res}

@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+# Чтение: замкнутые контуры во вложенном семействе профиля (координаты профиля, мм) + заливки. Модель не меняется.
+# Аргументы: profiles [имена семейств профилей]
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+
+
+def key(p):
+    return (round(p.X * FT, 2), round(p.Y * FT, 2))
+
+
+out = {}
+for pn in args["profiles"]:
+    pdoc = doc.EditFamily(fams[pn])
+    r = {"own_curves": FilteredElementCollector(pdoc).OfClass(CurveElement).GetElementCount(), "nested": []}
+    try:
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            T = fi.GetTotalTransform()
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                curves = []
+                for ce in FilteredElementCollector(nd).OfClass(CurveElement):
+                    c = ce.GeometryCurve
+                    if c.IsBound:
+                        curves.append((ce.Id.Value, key(T.OfPoint(c.GetEndPoint(0))), key(T.OfPoint(c.GetEndPoint(1))), [T.OfPoint(q) for q in c.Tessellate()]))
+                parent = {}
+
+                def find(a):
+                    while parent.setdefault(a, a) != a:
+                        parent[a] = parent[parent[a]]; a = parent[a]
+                    return a
+                for _, a, b, _ in curves:
+                    ra, rb = find(a), find(b)
+                    if ra != rb:
+                        parent[ra] = rb
+                groups = {}
+                for cid, a, b, pts in curves:
+                    groups.setdefault(find(a), []).append((cid, pts))
+                loops = []
+                for g in groups.values():
+                    xs = [p.X * FT for _, ps in g for p in ps]; ys = [p.Y * FT for _, ps in g for p in ps]
+                    loops.append([round(min(xs), 1), round(max(xs), 1), round(min(ys), 1), round(max(ys), 1), len(g)])
+                loops.sort()
+                fills = []
+                for fr in FilteredElementCollector(nd).OfClass(FilledRegion):
+                    pts = [T.OfPoint(p) for lp in fr.GetBoundaries() for c in lp for p in c.Tessellate()]
+                    fills.append([round(min(p.X for p in pts) * FT, 1), round(max(p.X for p in pts) * FT, 1), round(min(p.Y for p in pts) * FT, 1), round(max(p.Y for p in pts) * FT, 1)])
+                r["nested"].append({"family": fi.Symbol.Family.Name, "loops": loops, "fills": fills, "curves": len(curves)})
+            finally:
+                nd.Close(False)
+    finally:
+        pdoc.Close(False)
+    out[pn.replace(u"BIMLIB_Профиль_", u"")] = r
+__output__ = {"status": "completed_unverified", "summary": u"профилей %d" % len(out), "profiles": out}

@@ -1,0 +1,148 @@
+"""Сверка DWG (тексты из dxf_extract) и PDF той же документации (тексты из extract_docs).
+
+Для каждого листа DWG находится наиболее похожая страница PDF (по словосочетаниям), считается сходство
+и выводятся строки с числами, которые есть только в DWG или только в PDF (размеры, артикулы, количества).
+Только локально. Запуск:
+  py -P -E dwg_pdf_compare.py <имя.texts.txt> <pdf.txt из _bim\\extract> <отчёт.md>
+Итог: «одинаковые» (среднее сходство ≥ 0.8 и нет числовых расхождений) / «есть расхождения» / «разные документы».
+"""
+import re
+import sys
+from pathlib import Path
+
+
+def blocks(text, marker):
+    parts, cur, name = {}, [], None
+    for line in text.splitlines():
+        m = re.match(marker, line)
+        if m:
+            if name is not None:
+                parts[name] = "\n".join(cur)
+            name, cur = m.group(1).strip(), []
+        else:
+            cur.append(line)
+    if name is not None:
+        parts[name] = "\n".join(cur)
+    return parts
+
+
+def norm(s):
+    return re.sub(r"\s+", " ", s.replace(",", ".").lower()).strip()
+
+
+def shingles(t, k=3):
+    w = re.findall(r"[\w.]+", norm(t))
+    return {" ".join(w[i:i + k]) for i in range(max(len(w) - k + 1, 0))}
+
+
+def nums(t):
+    return {norm(l) for l in t.splitlines() if re.search(r"\d", l) and len(l.strip()) > 2}
+
+
+def jacc(a, b):
+    return len(a & b) / len(a | b) if a | b else 0.0
+
+
+CODE_RE = re.compile(r"FS\.[A-ZА-ЯM]+\d?-[\wА-Яа-я]+|ФСТ-\d+|FSC\s?\d+К?", re.I)
+NUM_RE = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)?(?:\s?(?:мм|mm|кг|м))?")
+
+
+def whole(dwg_text, pdf_text, report, dwg_txt, pdf_txt):
+    """Сверка целиком: когда листы DWG нарисованы рамками в одном пространстве модели."""
+    from collections import Counter
+    def words(t):  # слова с битыми символами конвертера («??») не участвуют
+        return [w for w in re.findall(r"[\w.,-]+|\?+", norm(t)) if "?" not in w]
+    def sh(t, k=3):
+        w = words(t); return {" ".join(w[i:i + k]) for i in range(max(len(w) - k + 1, 0))}
+    def codes(t):
+        return Counter(c.upper().replace(" ", "").replace("М", "M") for c in CODE_RE.findall(t))
+    def numbers(t):
+        return Counter(re.sub(r"\s", "", n.replace(",", ".")) for n in NUM_RE.findall(t))
+    sim = jacc(sh(dwg_text), sh(pdf_text))
+    cd, cp = codes(dwg_text), codes(pdf_text)
+    nd, np_ = numbers(dwg_text), numbers(pdf_text)
+    # размеры DWG — отдельные объекты (dims.csv рядом с texts.txt): их значения тоже «числа чертежа»
+    dims_csv = Path(dwg_txt).with_name(Path(dwg_txt).name.replace(".texts.txt", ".dims.csv"))
+    if dims_csv.exists():
+        import csv as _csv
+        with open(dims_csv, encoding="utf-8-sig") as fh:
+            for r in _csv.DictReader(fh, delimiter=";"):
+                v = (r.get("text") or "").strip()
+                if v and v != "<>":
+                    nd.update(numbers(v))
+                elif r.get("shown") or r.get("measured_mm"):
+                    x = float(r.get("shown") or r["measured_mm"])  # то, что подписано на чертеже
+                    nd[f"{x:.1f}".rstrip("0").rstrip(".")] += 1
+    only_cd, only_cp = sorted(set(cd) - set(cp)), sorted(set(cp) - set(cd))
+    only_nd = sorted((n for n in nd if n not in np_ and re.search(r"мм|mm|кг|\d{2,}", n)), key=lambda x: -nd[x])[:40]
+    only_np = sorted((n for n in np_ if n not in nd and re.search(r"мм|mm|кг|\d{2,}", n)), key=lambda x: -np_[x])[:40]
+    # текст PDF часто неполон (шрифты чертежей теряются, числа склеиваются), поэтому вывод — по артикулам;
+    # каждый артикул «только в одном» подтвердить по картинке страницы (render_pdf.py) до окончательного решения
+    common = len(set(cd) & set(cp))
+    diff_codes = len(only_cd) + len(only_cp)
+    if not cd and not cp:
+        verdict = "артикулов нет ни в одном — сверять по картинкам и размерам"
+    elif cd and not only_cd and only_cp:
+        verdict = f"все {len(cd)} артикулов DWG есть во втором документе (DWG — его часть, например узлы ↔ альбом)"
+    elif common and diff_codes <= max(3, 0.1 * common):
+        verdict = f"вероятно одинаковые — подтвердить по картинке {diff_codes} артикул(а) из списков ниже"
+    elif common and diff_codes <= 0.5 * common:
+        verdict = "есть расхождения — проверить по картинкам"
+    else:
+        verdict = "разные документы (или текст одного из них не извлёкся — проверить картинки)"
+    md = ["# Сверка DWG ↔ PDF (целиком)", "", f"- DWG: `{dwg_txt}`", f"- PDF: `{pdf_txt}`",
+          f"- сходство текста (словосочетания, без битых слов): {sim:.0%}",
+          f"- артикулов: DWG {len(cd)}, PDF {len(cp)}; только в DWG: {len(only_cd)}, только в PDF: {len(only_cp)}",
+          f"- **вывод: {verdict}**", "",
+          "## Артикулы только в DWG", ", ".join(only_cd) or "—", "", "## Артикулы только в PDF", ", ".join(only_cp) or "—", "",
+          "## Числа/размеры только в DWG (до 40, по частоте)", ", ".join(f"{n}×{nd[n]}" for n in only_nd) or "—", "",
+          "## Числа/размеры только в PDF (до 40, по частоте)", ", ".join(f"{n}×{np_[n]}" for n in only_np) or "—"]
+    Path(report).write_text("\n".join(md), encoding="utf-8")
+    print(f"вывод: {verdict}; сходство {sim:.0%}; артикулы только DWG {len(only_cd)} / только PDF {len(only_cp)}; отчёт: {report}")
+
+
+def main(dwg_txt, pdf_txt, report):
+    d = blocks(Path(dwg_txt).read_text(encoding="utf-8"), r"^=== лист: (.*) ===$")
+    p = blocks(Path(pdf_txt).read_text(encoding="utf-8"), r"^=== стр\. (\d+) ===$")
+    # второй документ без страниц (DOCX-альбом) — сверка целиком
+    if not p:
+        return whole("\n".join(d.values()), Path(pdf_txt).read_text(encoding="utf-8"), report, dwg_txt, pdf_txt)
+    # листы DWG нарисованы рамками в модели (мало «листов» при многостраничном PDF) — сверка целиком
+    if len([k for k, v in d.items() if v.strip()]) <= 3 and len(p) > 5:
+        return whole("\n".join(d.values()), "\n".join(p.values()), report, dwg_txt, pdf_txt)
+    psh = {k: shingles(v) for k, v in p.items()}
+    rows, sims, numeric_diffs = [], [], 0
+    used = set()
+    for sheet, txt in d.items():
+        sh = shingles(txt)
+        if not sh:
+            continue
+        best = max(psh, key=lambda k: jacc(sh, psh[k])) if psh else None
+        sim = jacc(sh, psh[best]) if best else 0.0
+        only_d = sorted(nums(txt) - nums(p.get(best, ""))) if best else []
+        only_p = sorted(nums(p.get(best, "")) - nums(txt)) if best else []
+        sims.append(sim); used.add(best)
+        if only_d or only_p:
+            numeric_diffs += 1
+        rows.append((sheet, best, sim, only_d[:10], only_p[:10]))
+    avg = sum(sims) / len(sims) if sims else 0.0
+    unmatched_pdf = sorted(set(p) - used, key=lambda x: int(x) if x.isdigit() else 0)
+    verdict = ("одинаковые" if avg >= 0.8 and numeric_diffs == 0 else
+               "есть расхождения" if avg >= 0.5 else "разные документы")
+    md = [f"# Сверка DWG ↔ PDF", "", f"- DWG: `{dwg_txt}`", f"- PDF: `{pdf_txt}`",
+          f"- листов DWG с текстом: {len(rows)}; страниц PDF: {len(p)}; без пары в DWG: {len(unmatched_pdf)}",
+          f"- среднее сходство: {avg:.0%}; листов с числовыми расхождениями: {numeric_diffs}",
+          f"- **вывод: {verdict}**", "", "| Лист DWG | Стр. PDF | Сходство | Только в DWG | Только в PDF |", "|---|---|---|---|---|"]
+    for sheet, best, sim, od, op in rows:
+        md.append(f"| {sheet} | {best} | {sim:.0%} | {'; '.join(od) or '—'} | {'; '.join(op) or '—'} |")
+    if unmatched_pdf:
+        md += ["", "Страницы PDF без пары в DWG: " + ", ".join(unmatched_pdf[:50])]
+    Path(report).write_text("\n".join(md), encoding="utf-8")
+    print(f"вывод: {verdict}; сходство {avg:.0%}; расхождений по числам: {numeric_diffs}; отчёт: {report}")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        sys.exit("usage: dwg_pdf_compare.py dwg.texts.txt pdf.txt report.md")
+    sys.stdout.reconfigure(encoding="utf-8")
+    main(*sys.argv[1:])

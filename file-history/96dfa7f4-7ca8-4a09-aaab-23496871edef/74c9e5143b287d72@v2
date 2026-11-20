@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+# Партия C, шаг A (пакет): для каждого задания — копия семейства профиля с контуром из JSON -> отдельный .rfa. Модель НЕ меняется.
+# Аргументы: jobs: [{symbol_id, json, out_rfa}]
+import json
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+results = []
+for job in args["jobs"]:
+    r = {"symbol_id": job["symbol_id"], "ok": False}
+    try:
+        with open(job["json"], encoding="utf-8-sig") as f:
+            loops = json.load(f)["loops"]
+        sym = doc.GetElement(ElementId(int(job["symbol_id"])))
+        r["family"] = sym.Family.Name
+        fdoc = doc.EditFamily(sym.Family)
+        try:
+            view = [v for v in FilteredElementCollector(fdoc).OfClass(ViewPlan) if v.Name == u"Опорный уровень"][0]
+            old = [e.Id for e in FilteredElementCollector(fdoc).OfClass(CurveElement) if e.GetType().Name == "DetailLine"]
+            t = Transaction(fdoc, u"FT: контур профиля из DWG")
+            t.Start()
+            for i in old:
+                fdoc.Delete(i)
+            n = 0
+            for loop in loops:
+                for k in range(len(loop)):
+                    a, b = loop[k], loop[(k + 1) % len(loop)]
+                    fdoc.FamilyCreate.NewDetailCurve(view, Line.CreateBound(XYZ(a[0] / FT, a[1] / FT, 0), XYZ(b[0] / FT, b[1] / FT, 0)))
+                    n += 1
+            t.Commit()
+            xs, ys, cnt = [], [], 0
+            for e in FilteredElementCollector(fdoc).OfClass(CurveElement):
+                if e.GetType().Name != "DetailLine":
+                    continue
+                cnt += 1
+                c = e.GeometryCurve
+                for p in (c.GetEndPoint(0), c.GetEndPoint(1)):
+                    xs.append(p.X * FT); ys.append(p.Y * FT)
+            opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+            fdoc.SaveAs(job["out_rfa"], opts)
+            r.update({"old_lines": len(old), "created": n, "read_back": cnt,
+                      "bbox_mm": [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)], "ok": True})
+        finally:
+            fdoc.Close(False)
+    except Exception as ex:
+        r["error"] = str(ex)
+    results.append(r)
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Файлов семейств создано: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

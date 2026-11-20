@@ -1,0 +1,9 @@
+<section id="hands" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center">
+<img src="/_blob/c826e6669c822ffa120b628a94fe4e16" alt="" style="position:absolute;right:0px;top:0px;width:320px;height:1080px;object-fit:cover;opacity:0.85">
+<div style="width:1320px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:40px;font-weight:800;color:#2E7884;text-transform:uppercase;letter-spacing:3px">Вопрос залу</p>
+<h2 style="font-size:104px;font-weight:800;line-height:1.08;color:#2B2B2E">Поднимите руку: у кого уже «замылился» глаз?</h2>
+<p style="font-size:48px;font-weight:600;line-height:1.3;color:#3F3B36">Бывает усталость, которую не снимает даже отпуск.</p>
+</div>
+<aside>Ждём руки, улыбаемся. «Спасибо. Это нормально, это обычная усталость: зрительный шум, перегрузка. Она проходит за вечер. Но бывает усталость другого рода. Её не снимают ни выходные, ни отпуск. О ней я и хочу поговорить».</aside>
+</section>

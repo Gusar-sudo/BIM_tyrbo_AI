@@ -1,0 +1,36 @@
+# -*- coding: utf-8 -*-
+# Только чтение: линии семейств профилей (по id типоразмера), типы импостов, которые их используют. Без сохранения.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+users = {}
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    if p:
+        users.setdefault(int(p.AsElementId().Value), []).append({"type_id": int(mt.Id.Value), "type": mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()})
+out = {"status": "completed_unverified", "summary": "read-only", "profiles": []}
+for sid in args["symbol_ids"]:
+    sym = doc.GetElement(ElementId(int(sid)))
+    fdoc = doc.EditFamily(sym.Family)
+    try:
+        segs = []
+        for ce in FilteredElementCollector(fdoc).OfClass(CurveElement):
+            if ce.GetType().Name != "DetailLine":
+                continue
+            c = ce.GeometryCurve
+            segs.append([round(c.GetEndPoint(0).X * FT, 3), round(c.GetEndPoint(0).Y * FT, 3),
+                         round(c.GetEndPoint(1).X * FT, 3), round(c.GetEndPoint(1).Y * FT, 3), c.GetType().Name[:3]])
+        xs = [s[0] for s in segs] + [s[2] for s in segs]; ys = [s[1] for s in segs] + [s[3] for s in segs]
+        out["profiles"].append({"symbol_id": int(sid), "family": sym.Family.Name, "lines": len(segs),
+                                "bbox_mm": [min(xs), min(ys), max(xs), max(ys)], "segs": segs,
+                                "used_by": users.get(int(sid), [])})
+    finally:
+        fdoc.Close(False)
+if args.get("save_json"):
+    with open(args["save_json"], "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False)
+    out = {"status": out["status"], "summary": "read-only; saved", "saved_json": args["save_json"],
+           "profiles": [{k: p[k] for k in ("symbol_id", "family", "lines", "bbox_mm")} for p in out["profiles"]]}
+__output__ = out

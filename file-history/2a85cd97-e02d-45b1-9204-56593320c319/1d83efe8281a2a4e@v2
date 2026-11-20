@@ -1,0 +1,13 @@
+# -*- coding: utf-8 -*-
+# Закрыть без сохранения открытые в памяти документы семейств (остаток упавшего скрипта)
+from Autodesk.Revit.DB import *
+app = __revit__.Application
+closed = []; failed = []
+for d in list(app.Documents):
+    if d.IsFamilyDocument:
+        t = d.Title
+        try:
+            d.Close(False); closed.append(t)
+        except Exception as e:
+            failed.append([t, str(e)[:120]])
+__output__ = {"status": "completed_unverified", "summary": u"закрыто %d, не закрыто %d" % (len(closed), len(failed)), "closed": closed, "failed": failed}

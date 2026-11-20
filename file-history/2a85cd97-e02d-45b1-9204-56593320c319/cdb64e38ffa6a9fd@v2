@@ -1,0 +1,35 @@
+param([string]$spec)
+# Вырезки схем из страниц техтетради + сводные листы для проверки. spec — файл строк "стр|ключ|x0|y0|x1|y1"
+Add-Type -AssemblyName System.Drawing
+$d = (Resolve-Path (Join-Path $PSScriptRoot "..\..\review\tetrad_pages")).Path
+$o = (Resolve-Path (Join-Path $PSScriptRoot "..\..\review\tetrad_crops")).Path
+$names = @()
+foreach ($line in Get-Content $spec -Encoding utf8) {
+    if (-not $line.Trim()) { continue }
+    $p = $line.Split('|'); $pg = $p[0]; $name = $p[1]
+    $x0 = [int]$p[2]; $y0 = [int]$p[3]; $x1 = [int]$p[4]; $y1 = [int]$p[5]
+    $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First 1
+    $im = [System.Drawing.Image]::FromFile($f.FullName)
+    $w = $x1 - $x0; $h = $y1 - $y0
+    $b = New-Object System.Drawing.Bitmap $w, $h
+    $g = [System.Drawing.Graphics]::FromImage($b); $g.Clear([System.Drawing.Color]::White)
+    $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w, $h), (New-Object System.Drawing.Rectangle $x0, $y0, $w, $h), [System.Drawing.GraphicsUnit]::Pixel)
+    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
+    $names += $name
+}
+for ($s = 0; $s -lt $names.Count; $s += 6) {
+    $bmp = New-Object System.Drawing.Bitmap 1800, 1650
+    $g = [System.Drawing.Graphics]::FromImage($bmp); $g.Clear([System.Drawing.Color]::White)
+    $fn = New-Object System.Drawing.Font "Arial", 22
+    for ($i = 0; $i -lt 6 -and ($s + $i) -lt $names.Count; $i++) {
+        $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
+        $x = ($i % 2) * 900; $y = [math]::Floor($i / 2) * 550
+        $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
+        $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]($im.Height * $sc))
+        $g.DrawString($names[$s + $i], $fn, [System.Drawing.Brushes]::Red, $x, $y)
+        $g.DrawRectangle([System.Drawing.Pens]::Gray, $x, $y, 899, 549)
+        $im.Dispose()
+    }
+    $bmp.Save("$o\_check_$($s/6).png"); $g.Dispose(); $bmp.Dispose()
+}
+"вырезок: $($names.Count)"

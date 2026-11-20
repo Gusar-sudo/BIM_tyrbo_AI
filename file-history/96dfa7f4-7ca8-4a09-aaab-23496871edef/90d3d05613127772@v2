@@ -1,0 +1,41 @@
+# Разложить профили по результату scan_silhouette_seal: простые силуэты М2 (вырез 25.6) и М3 (вырез 30.7) —
+# в папку strip_pocket (копии без U5) для правки силуэта; сложные — оставить как есть (с нарисованным U5).
+import json, os, shutil, sys
+job = sys.argv[1]
+res = None
+for line in open(job, encoding="utf-8"):
+    o = json.loads(line)
+    if o.get("event") == "result":
+        res = json.loads(o["payload"])["output"]
+M2 = {25.6, 30.6, 32.0, 32.3, 32.5, 36.6}
+M3 = {30.7, 35.7, 37.0, 37.1, 37.4, 44.3, 41.2}
+box2, box3, cplx = [], [], []
+for c in res["covered"]:
+    s = set(c["silh_abs_y"])
+    if s <= M2 and 25.6 in s:
+        box2.append(c["profile"])
+    elif s <= M3 and 30.7 in s:
+        box3.append(c["profile"])
+    else:
+        cplx.append(c["profile"])
+ok = res["ok_profiles"]
+base = r"C:\Users\user\Desktop\Фристайл\_bim"
+src = base + r"\work\2026\families\strip_seal_2026-11-02"
+dst = base + r"\work\2026\families\strip_pocket_2026-11-02"
+os.makedirs(dst, exist_ok=True)
+strip = json.load(open(base + r"\batches\M2_C\args_strip_seal_2026-11-02.json", encoding="utf-8"))["items"]
+byfam = dict((i["family"][15:], i) for i in strip)
+items, p2, p3 = [], [], []
+for n in box2 + box3 + ok:
+    it = byfam[n]
+    t = os.path.join(dst, os.path.basename(it["rfa"]))
+    shutil.copy2(it["rfa"], t)
+    items.append({"symbol_id": it["symbol_id"], "rfa": t, "family": it["family"]})
+    if n in box2:
+        p2.append(t)
+    elif n in box3:
+        p3.append(t)
+json.dump({"items": items}, open(base + r"\batches\M2_C\args_strip_pocket_2026-11-02.json", "w", encoding="utf-8"), ensure_ascii=False)
+json.dump({"m2": p2, "m3": p3, "complex": cplx}, open(base + r"\batches\M2_C\pocket_lists.json", "w", encoding="utf-8"), ensure_ascii=False)
+print(len(box2), len(box3), len(ok), len(cplx), len(items))
+print("\n".join(cplx))

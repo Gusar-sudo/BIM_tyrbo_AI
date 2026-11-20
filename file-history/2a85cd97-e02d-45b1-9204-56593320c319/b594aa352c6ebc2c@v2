@@ -1,0 +1,17 @@
+import json, math, sys
+from collections import Counter
+H = json.load(open(sys.argv[1], encoding="utf-8"))["segs"]
+segs = []
+for s in H:
+    if s[0] == "L":
+        segs.append(((s[1], s[2]), (s[3], s[4])))
+    else:
+        segs.append(((s[1], s[2]), (s[5], s[6])))
+key = lambda p: (round(p[0], 2), round(p[1], 2))
+deg = Counter()
+for a, b in segs:
+    deg[key(a)] += 1; deg[key(b)] += 1
+print("vertex degrees", Counter(deg.values()))
+print("zero-length", sum(1 for a, b in segs if key(a) == key(b)))
+odd = [k for k, v in deg.items() if v != 2]
+print(odd[:10])

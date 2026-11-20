@@ -1,0 +1,42 @@
+"""Партия A М2: ADSK_Масса (кг/м сборки) = Σ вес 1 п.м. детали × расход; ADSK_Обозначение = артикул основания."""
+import csv, sys, json
+from collections import Counter
+types_csv, profiles_csv, out_csv = sys.argv[1:4]
+w = {}
+for r in csv.DictReader(open(profiles_csv, encoding="utf-8-sig"), delimiter=";"):
+    for k in ("code", "alt_code"):
+        c = (r.get(k) or "").strip()
+        if c and r["weight_kg_m"].strip():
+            w.setdefault(c, (float(r["weight_kg_m"].replace(",", ".")), r["source"]))
+manual = set()
+if len(sys.argv) > 4:  # веса вне альбома (catalog/weights_manual.csv) — только если в альбоме веса нет
+    for r in csv.DictReader(open(sys.argv[4], encoding="utf-8-sig"), delimiter=";"):
+        if r["code"] not in w:
+            w[r["code"]] = (float(r["weight_kg_m"]), r["source"]); manual.add(r["code"])
+parts = ["Основание", "Витраж", "Нащельник", "Рейка", "Держатель", "Заглушка", "Уплотнитель"]
+rows, missing = [], Counter()
+for t in csv.DictReader(open(types_csv, encoding="utf-8-sig"), delimiter=";"):
+    mass, miss, used_manual = 0.0, [], []
+    for p in parts:
+        code = (t.get(f"FT_{p}_Артикул") or "").strip()
+        q = float((t.get(f"FT_{p}_Расход") or "0").replace(",", ".") or 0)
+        if not code or q == 0:
+            continue
+        if code in w:
+            mass += w[code][0] * q
+            if code in manual:
+                used_manual.append(code)
+        else:
+            miss.append(f"{code}×{q:g}"); missing[code] += 1
+    rows.append({"type_id": t["type_id"], "type": t["type"], "fsc": t["fsc"],
+                 "ADSK_Обозначение": t["FT_Основание_Артикул"].strip(),
+                 "ADSK_Масса": round(mass, 3),
+                 "полнота": ("полная" if not miss else "без: " + ", ".join(miss))
+                            + (" (веса вне альбома: " + ", ".join(sorted(set(used_manual))) + ")" if used_manual else ""),
+                 "было_Обозначение": t["ADSK_Обозначение"], "было_Масса": t["ADSK_Масса"]})
+with open(out_csv, "w", encoding="utf-8-sig", newline="") as f:
+    wr = csv.DictWriter(f, fieldnames=list(rows[0]), delimiter=";"); wr.writeheader(); wr.writerows(rows)
+print(json.dumps({"types": len(rows), "full": sum(r["полнота"].startswith("полная") for r in rows),
+                  "missing_weight_codes": missing, "no_designation": sum(not r["ADSK_Обозначение"] for r in rows),
+                  "mass_range": [min(r["ADSK_Масса"] for r in rows), max(r["ADSK_Масса"] for r in rows)]},
+                 ensure_ascii=False))

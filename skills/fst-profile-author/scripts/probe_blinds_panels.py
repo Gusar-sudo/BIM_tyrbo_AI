@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+# Проба (всё откатывается): загрузить семейство жалюзи, поставить витраж L×H с ригелем, включить FT_Жалюзи и найти панели,
+# которые не формируются. Отчёт: размеры панелей (по bbox) и сообщения Revit. Аргументы: rfa, wall_type, length_mm, height_mm, transom_mm, grid_mm.
+# grid_mm добавляет линии к сетке ТИПА стены (автоматическая разбивка типа остаётся) — ширины панелей смотреть в отчёте.
+# Долго: панели с ламелями на «Высокой» — ~1 мин на большую панель; для пробы брать 2–6 панелей.
+import json, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+rec = []
+
+
+class Sw(IFailuresPreprocessor):
+    def PreprocessFailures(self, fa):
+        for f in fa.GetFailureMessages():
+            rec.append([f.GetDescriptionText()[:90], [i.Value for i in f.GetFailingElementIds()]])
+            if f.GetSeverity() == FailureSeverity.Warning:
+                fa.DeleteWarning(f)
+        return FailureProcessingResult.Continue
+
+
+class _LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, a, b, src, c):
+        src.Value = FamilySource.Family; c.Value = False
+        return True
+
+
+def tr(name):
+    t = Transaction(doc, name); t.Start()
+    fo = t.GetFailureHandlingOptions(); fo.SetFailuresPreprocessor(Sw()); t.SetFailureHandlingOptions(fo)
+    return t
+
+
+res = {}
+tg = TransactionGroup(doc, u"проба жалюзи (откат)"); tg.Start()
+try:
+    t = tr(u"загрузка"); res["loaded"] = doc.LoadFamily(args["rfa"], _LO(), clr.Reference[Family]()); t.Commit()
+    level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+    wt = [x for x in FilteredElementCollector(doc).OfClass(WallType) if x.Name == args["wall_type"]][0]
+    Lm = float(args["length_mm"]); Hm = float(args["height_mm"]); Tm = float(args["transom_mm"])
+    t = tr(u"стена")
+    P0 = XYZ(MM(60000), MM(560000), level.Elevation)
+    w = Wall.Create(doc, Line.CreateBound(P0, P0 + XYZ.BasisX * MM(Lm)), wt.Id, level.Id, MM(Hm), 0, False, False)
+    doc.Regenerate()
+    for g in args.get("grid_mm", [Lm / 2]):
+        w.CurtainGrid.AddGridLine(False, P0 + XYZ.BasisX * MM(g) + XYZ(0, 0, 1), False)
+    w.CurtainGrid.AddGridLine(True, P0 + XYZ.BasisX * MM(Lm / 4) + XYZ(0, 0, MM(Tm)), False)
+    t.Commit()
+    rows = []
+    for pid in w.CurtainGrid.GetPanelIds():
+        p = doc.GetElement(pid)
+        bb = p.get_BoundingBox(None)
+        del rec[:]
+        t = tr(u"жалюзи")
+        pp = p.LookupParameter(u"FT_Жалюзи")
+        if pp:
+            pp.Set(1)
+        st = t.Commit()
+        rows.append({"id": pid.Value, "type": p.Name, "w_mm": round((bb.Max.X - bb.Min.X) * FT, 1), "h_mm": round((bb.Max.Z - bb.Min.Z) * FT, 1),
+                     "z0_mm": round((bb.Min.Z - level.Elevation) * FT, 1), "commit": str(st), "msgs": list(rec)})
+    res["panels"] = rows
+finally:
+    tg.RollBack()
+bad = [r for r in res.get("panels", []) if r["msgs"] or r["commit"] != "Committed"]
+__output__ = {"status": "completed_unverified", "summary": u"панелей %d, проблемных %d; всё откатано" % (len(res.get("panels", [])), len(bad)), "result": res}

@@ -1,0 +1,1391 @@
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string.
+Parameter name: length"
+At line:10 char:51
++ ...  $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) } ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+maps: s0036.bin, s0026.bin, s0024.bin, s0022.bin, s0057.bin, s0025.bin
+=== s0023.bin ===
+[s0024.bin] A !  !$"$>#! "!
+[s0057.bin] U !  !$"$R#! "!
+[s0024.bin] % !!!1!fl! !
+[s0024.bin]  !!&"5! 2!  !  fi!!2!!!!
+[s0057.bin]  !!&"I! F!  !  fi!!F!!!!
+[s0024.bin] 2&# ! fi
+[s0057.bin] F&# ! fi
+[s0024.bin] @& fl!"fi"! &
+[s0024.bin] <! "   !!fi% !! " 
+[s0057.bin] P! "   !!fi% !! " 
+=== s0053.bin ===
+[s0024.bin] <!&  fi$!"  &!#
+[s0057.bin] P!&  fi$!"  &!#
+[s0024.bin] $
+[s0057.bin] $
+=== s0054.bin ===
+[s0024.bin] 8# !fi"#$ K/ 9"2
+[s0024.bin] L
+[s0057.bin] G
+[s0024.bin] )"! !! #!fi"! !!J!"
+[s0057.bin] )"! !! #!fi"! !!^!"
+[s0024.bin] !"
+[s0057.bin] !"
+[s0024.bin] 0J!" & $ # !&$ fi
+[s0057.bin] D^!" & $ # !&$ fi
+[s0024.bin] @ !!fi!"!  
+[s0057.bin] T !!fi!"!  
+[s0024.bin] <"!K L"!"!"J "! 
+[s0057.bin] P"!F G"!"!"^ "! 
+[s0024.bin] ;#  #fi !"!""!!
+[s0057.bin] O#  #fi !"!""!!
+=== s0058.bin ===
+[s0024.bin] 2&! !!$!  $!fl! 
+[s0024.bin] 2&! $! fi! & !K9 !2!!L
+[s0057.bin] F&! $! fi! & !FM !F!!G
+[s0024.bin] 9!  !  "##&
+[s0057.bin] M!  !  "##&

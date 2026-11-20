@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+# Только чтение: контуры профилей (собственные линии -> петли с bbox) и заливки во вложенной графике — где лента.
+import json, math
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+DET = ("DetailLine", "DetailArc", "DetailNurbSpline", "DetailEllipse", "DetailCurve")
+
+
+def chain(segs, tol=0.05):
+    loops = []; rest = list(segs)
+    while rest:
+        a, b = rest.pop(0); ch = [a, b]; grown = True
+        while grown:
+            grown = False
+            for i, (p, q) in enumerate(rest):
+                if math.hypot(p[0] - ch[-1][0], p[1] - ch[-1][1]) < tol:
+                    ch.append(q); rest.pop(i); grown = True; break
+                if math.hypot(q[0] - ch[-1][0], q[1] - ch[-1][1]) < tol:
+                    ch.append(p); rest.pop(i); grown = True; break
+        loops.append(ch)
+    return loops
+
+
+out = {}
+for n in args["families"]:
+    if n not in fams:
+        out[n] = u"нет"; continue
+    pd = doc.EditFamily(fams[n])
+    try:
+        segs = []
+        for c in FilteredElementCollector(pd).OfClass(CurveElement):
+            if c.GetType().Name in DET and c.GeometryCurve is not None:
+                ps = [(q.X * FT, q.Y * FT) for q in c.GeometryCurve.Tessellate()]
+                segs += [(ps[i], ps[i + 1]) for i in range(len(ps) - 1)]
+        loops = chain(segs)
+        lb = sorted([[round(min(p[0] for p in L), 1), round(max(p[0] for p in L), 1), round(min(p[1] for p in L), 1), round(max(p[1] for p in L), 1), len(L)] for L in loops], key=lambda b: -(b[1] - b[0]) * (b[3] - b[2]))
+        r = {"own_loops": lb[:8]}
+        fis = list(FilteredElementCollector(pd).OfClass(FamilyInstance))
+        if fis:
+            fi = fis[0]; tr = fi.GetTotalTransform()
+            r["nested"] = fi.Symbol.Family.Name
+            r["nested_transform"] = [[round(tr.Origin.X * FT, 2), round(tr.Origin.Y * FT, 2)], [round(tr.BasisX.X, 3), round(tr.BasisX.Y, 3)], [round(tr.BasisY.X, 3), round(tr.BasisY.Y, 3)]]
+            nd = pd.EditFamily(fi.Symbol.Family)
+            try:
+                v = [x for x in FilteredElementCollector(nd).OfClass(View) if not x.IsTemplate][0]
+                regs = []
+                for fr in FilteredElementCollector(nd).OfClass(FilledRegion):
+                    bb = fr.get_BoundingBox(v)
+                    if bb:
+                        a = tr.OfPoint(bb.Min); b = tr.OfPoint(bb.Max)
+                        regs.append([nd.GetElement(fr.GetTypeId()).Name, round(min(a.X, b.X) * FT, 1), round(max(a.X, b.X) * FT, 1), round(min(a.Y, b.Y) * FT, 1), round(max(a.Y, b.Y) * FT, 1)])
+                r["regions_in_profile_coords"] = regs
+            finally:
+                nd.Close(False)
+        out[n] = r
+    finally:
+        pd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"профилей %d (только чтение)" % len(out), "r": out}

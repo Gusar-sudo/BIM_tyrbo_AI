@@ -1,0 +1,14 @@
+# -*- coding: utf-8 -*-
+# Локально: текущие ширины типов импостов vs габарит силуэта профиля и положение нарисованного уплотнителя.
+import json, re, sys
+D = r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C"
+W = json.load(open(D + r"\mullion_widths.json", encoding="utf-8"))
+S = json.load(open(D + r"\silhouettes_all.json", encoding="utf-8"))
+flt = sys.argv[1] if len(sys.argv) > 1 else ""
+for t in sorted(W, key=lambda r: r["profile"]):
+    if flt and not re.search(flt, t["profile"]):
+        continue
+    xs = [p[0] for c in S[t["profile"]]["curves"] for p in c["p"]]
+    ys = [p[1] for c in S[t["profile"]]["curves"] for p in c["p"]]
+    print("%-58s w1=%6.2f w2=%6.2f  x[%6.1f..%6.1f] y[%6.1f..%6.1f]  %s" % (
+        t["profile"].replace("_ФристайлТехнолоджи", ""), t["w1"], t["w2"], min(xs), max(xs), min(ys), max(ys), t["name"]))

@@ -1,0 +1,75 @@
+# -*- coding: utf-8 -*-
+# Партия B (переделка): размеры стекла формулами в семействах панелей.
+#  FT_Стекло_Ширина = rounddown((ADSK_Размер_Ширина - 5 мм) / 1 мм) * 1 мм  (экземпляр)
+#  FT_Стекло_Высота = rounddown((ADSK_Размер_Высота - 5 мм) / 1 мм) * 1 мм  (экземпляр)
+# Берёт загруженные в проект семейства -> EditFamily -> добавляет общие параметры из ФОП -> SaveAs в out_dir.
+# Модель проекта НЕ меняется.
+# Аргументы: spf, out_dir, families: [имя семейства, ...]
+import json
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+app = doc.Application
+FORMULAS = {
+    u"FT_Стекло_Ширина": u"rounddown((ADSK_Размер_Ширина - 5 мм) / 1 мм) * 1 мм",
+    u"FT_Стекло_Высота": u"rounddown((ADSK_Размер_Высота - 5 мм) / 1 мм) * 1 мм",
+}
+
+
+def fparam(fm, name):
+    for p in fm.Parameters:
+        if p.Definition.Name == name:
+            return p
+    return None
+
+
+fams = {}
+for f in FilteredElementCollector(doc).OfClass(Family):
+    fams[f.Name] = f
+
+old_spf = app.SharedParametersFilename
+results = []
+try:
+    app.SharedParametersFilename = args["spf"]
+    defs = {}
+    for g in app.OpenSharedParameterFile().Groups:
+        for d in g.Definitions:
+            defs[d.Name] = d
+    for name in args["families"]:
+        r = {"family": name, "ok": False}
+        fam = fams.get(name)
+        if fam is None:
+            r["error"] = u"семейство не найдено в проекте"; results.append(r); continue
+        fdoc = doc.EditFamily(fam)
+        try:
+            fm = fdoc.FamilyManager
+            t = Transaction(fdoc, u"FT: размер стекла формулой")
+            t.Start()
+            added = []
+            for pn, fx in FORMULAS.items():
+                p = fparam(fm, pn)
+                if p is None:
+                    p = fm.AddParameter(defs[pn], GroupTypeId.Geometry, True)
+                    added.append(pn)
+                fm.SetFormula(p, fx)
+            fdoc.Regenerate()
+            pw = fparam(fm, u"FT_Стекло_Ширина"); ph = fparam(fm, u"FT_Стекло_Высота")
+            r.update({"added": added, "formula_w": pw.Formula, "formula_h": ph.Formula,
+                      "instance": [pw.IsInstance, ph.IsInstance],
+                      "guid_w": str(pw.GUID), "guid_h": str(ph.GUID), "types": fm.Types.Size})
+            t.Commit()
+            opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+            r["out_rfa"] = args["out_dir"] + u"\\" + name + u".rfa"
+            fdoc.SaveAs(r["out_rfa"], opts)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)
+        finally:
+            fdoc.Close(False)
+        results.append(r)
+finally:
+    app.SharedParametersFilename = old_spf
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Файлов семейств панелей: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

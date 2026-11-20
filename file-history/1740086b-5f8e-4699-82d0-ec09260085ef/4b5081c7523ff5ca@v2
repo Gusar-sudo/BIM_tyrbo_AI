@@ -1,0 +1,21 @@
+<section id="emdr" data-transition="fade" style="background:#E4F0F1;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<p style="font-size:32px;font-weight:700;color:#2E7884;text-transform:uppercase;letter-spacing:3px">Метод</p>
+<h2 style="font-size:72px;font-weight:800;line-height:1.1;color:#1F5560">EMDR — переработка опыта движениями глаз</h2>
+<p style="font-size:36px;line-height:1.4;color:#2B2B2E">Человек ненадолго вспоминает трудный эпизод, а терапевт ведёт стимуляцию то слева, то справа. Мозг завершает то, что не успел в момент стресса: «сохраняет и закрывает файл».</p>
+<div style="flex:1"></div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#F8F4EE;padding:40px;border-radius:24px">
+<h3 style="font-size:40px;font-weight:800;color:#1F5560">Движения глаз</h3>
+<p style="font-size:30px;color:#5A5650">из стороны в сторону</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#F8F4EE;padding:40px;border-radius:24px">
+<h3 style="font-size:40px;font-weight:800;color:#1F5560">Постукивания</h3>
+<p style="font-size:30px;color:#5A5650">поочерёдно, лёгкие</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#F8F4EE;padding:40px;border-radius:24px">
+<h3 style="font-size:40px;font-weight:800;color:#1F5560">Звуки</h3>
+<p style="font-size:30px;color:#5A5650">слева — справа</p>
+</div>
+</div>
+<aside>5:30–8:00. «Именно с этим работает EMDR: десенсибилизация и переработка движениями глаз. Во время сеанса человек ненадолго вспоминает трудный эпизод, а терапевт помогает делать ритмичные движения глаз из стороны в сторону. Иногда вместо этого используют поочерёдные постукивания или звуки. Эта двусторонняя стимуляция помогает мозгу переработать опыт: наконец сохранить и закрыть файл».</aside>
+</section>

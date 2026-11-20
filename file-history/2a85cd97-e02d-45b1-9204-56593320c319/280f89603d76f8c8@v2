@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+# Чтение: сравнить панель вне ведомости и панель в ней
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+sch = [v for v in FilteredElementCollector(doc).OfClass(ViewSchedule) if v.Name == u"О_Ведомость стекла"][0]
+inside = set(e.Id.Value for e in FilteredElementCollector(doc, sch.Id).WhereElementIsNotElementType())
+def info(i):
+    p = doc.GetElement(ElementId(i)); h = p.Host
+    d = {"id": i, "in": i in inside, "view_specific": p.ViewSpecific, "owner_view": p.OwnerViewId.Value,
+         "demolished": p.get_Parameter(BuiltInParameter.PHASE_DEMOLISHED).AsValueString(),
+         "host": h.Name if h else None, "host_id": h.Id.Value if h else None,
+         "host_demolished": h.get_Parameter(BuiltInParameter.PHASE_DEMOLISHED).AsValueString() if h else None,
+         "host_phase": h.get_Parameter(BuiltInParameter.PHASE_CREATED).AsValueString() if h else None,
+         "host_group": h.GroupId.Value if h else None, "host_assembly": h.AssemblyInstanceId.Value if h else None,
+         "host_curtain_in_wall": (h.StackedWallOwnerId.Value if h and hasattr(h, "StackedWallOwnerId") else None)}
+    for n in (u"ADSK_Наименование", u"ADSK_Завод-изготовитель", u"FT_Стекло_Ширина", u"FT_Стекло_Высота"):
+        q = p.LookupParameter(n)
+        d[n] = (q.AsString() if q.StorageType == StorageType.String else q.AsValueString(), q.Element.Id.Value == i) if q else None
+    return d
+rows = [info(i) for i in (3395048, 3434964, 3368025)]
+inn = [i for i in inside if doc.GetElement(ElementId(i)) is not None and doc.GetElement(ElementId(i)).Name.startswith(u"Двуслойная цельностеклянная")]
+rows += [info(i) for i in inn[:2]]
+__output__ = {"status": "completed_unverified", "summary": "probe", "rows": rows,
+              "sched_phase_filter": sch.get_Parameter(BuiltInParameter.VIEW_PHASE_FILTER).AsValueString()}

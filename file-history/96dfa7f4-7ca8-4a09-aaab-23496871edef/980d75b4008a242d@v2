@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+# ПРОБА с откатом: загрузить панели с контурным уплотнителем; в однослойной панели
+# variant "plan_off": сдвигам IsShownInTopBottom=False; variant "endlock": проверка привязки КОНЦА линии к плоскости.
+# Выгрузить узлы, откатить всё. Аргументы: rfas, variant, view_ids, out_dir, prefix
+import json, os, clr
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+res = {}
+tg = TransactionGroup(doc, u"проба видимости"); tg.Start()
+try:
+    t = Transaction(doc, u"загрузка"); t.Start()
+    for rfa in args["rfas"]:
+        doc.LoadFamily(rfa, LoadOpt(), clr.Reference[Family]())
+    t.Commit()
+    for fname in args.get("families", []):
+        fam = [f for f in FilteredElementCollector(doc).OfClass(Family) if f.Name == fname][0]
+        fdoc = doc.EditFamily(fam)
+        try:
+            tt = Transaction(fdoc, u"видимость"); tt.Start()
+            n = 0
+            for sw in FilteredElementCollector(fdoc).OfClass(Sweep):
+                v = sw.GetVisibility()
+                v.IsShownInTopBottom = False
+                sw.SetVisibility(v); n += 1
+            tt.Commit()
+            fdoc.LoadFamily(doc, LoadOpt())
+            res[fname] = n
+        finally:
+            fdoc.Close(False)
+    for vid in args["view_ids"]:
+        o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+        ids = List[ElementId](); ids.Add(ElementId(int(vid))); o.SetViewsAndSheets(ids)
+        o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = 1200
+        o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+        o.FilePath = os.path.join(args["out_dir"], args["prefix"] + str(vid))
+        doc.ExportImage(o)
+finally:
+    tg.RollBack()
+__output__ = {"status": "completed_unverified", "summary": u"проба, откат", "changed": res}

@@ -1,0 +1,17 @@
+# Рабочая папка BIM (ведёт Claude)
+
+Исходные документы в корне папки «Фристайл» не изменяются. Здесь — производные файлы.
+
+| Папка | Что | Кто создаёт |
+|---|---|---|
+| `extract\` | тексты документов + `index.json` (sha256, страницы) | skill `fst-docs-intake` |
+| `catalog\` | `profiles.csv` (110 профилей М1–М3), `glass_rules.csv` (17 правил), `questions.md` | `fst-docs-intake` |
+| `work\` | копии моделей для работы (исходники bimlib не открываются на запись) | `fst-curtainwall-author` |
+| `audit\` | отчёты аудита, `summary.json`, проверка стекла | `fst-family-audit` |
+| `spec\` | пересчёт спецификации и сверка с Revit | `fst-spec-price` |
+| `review\` | пакеты визуальной приёмки, `decisions.csv` | `fst-visual-review` |
+| `release\` | пакеты выпуска на bimlib, журнал версий | `fst-bimlib-release` |
+
+Порядок: fst-docs-intake → fst-curtainwall-author → fst-family-audit + fst-spec-price → fst-visual-review (человек смотрит и нажимает «Принять/Вернуть») → fst-bimlib-release.
+
+Открытые вопросы к производству — `catalog\questions.md`.

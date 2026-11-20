@@ -1,0 +1,62 @@
+# -*- coding: utf-8 -*-
+# Локально: параметры листов «альбом М2 — модель» для scheme_sheets.py (рисунки из docx альбома)
+import json
+C = r"C:\Users\user\Desktop\Фристайл\_bim\review\album_m2_media"
+W2 = u"BIMLIB_Витраж_Без разрезки_Система М2_Стойка основная_Двойное заполнение_62мм"
+P5 = u"Двуслойная стеклянная панель 62 мм"
+SRC = u"Альбом технических решений М2"
+GKL = u"В альбоме с одной стороны гипсокартон; глухой панели в библиотеке нет — в модели там стекло."
+M = lambda s: u"М2 " + s
+ALB = [{"label": u"Как в альбоме", "mx": True}, {"label": u"Зеркальная", "mx": False}, {"label": u"Повёрнута на 30°", "mx": True, "rot": 30}]
+PAIRV = [{"label": u"Как в альбоме", "mx": False}, {"label": u"Зеркальная", "mx": True}, {"label": u"Повёрнута на 30°", "mx": False, "rot": 30}]
+
+
+def S(key, title, kind, img, **kw):
+    d = {"key": key, "title": title, "kind": kind, "crop_png": C + "\\" + img, "scale": 1, "half_mm": 60, "source": SRC,
+         "wall_type": W2, "panel": P5}
+    d.update(kw)
+    return d
+
+
+def pair(key, fig, img, a, b, k, note=u""):
+    return S(key, u"Расчёт стекла: %s — %s (рис.%s)" % (a, b, fig), "pair", img, type_a=M(a + u" центральный с двухслойным остеклением") if u"FSC18" not in a else M(a),
+             type_b=M(b + u" центральный с двухслойным остеклением"), k_album=k, gap_mm=200, scale=2, half_mm=175, variants=PAIRV, note=note)
+
+
+schemes = [
+    pair(u"М2-43", 43, "image90.png", u"FSC17", u"FSC139", 33),
+    pair(u"М2-44", 44, "image91.png", u"FSC18 т-образный с двухслойным остеклением", u"FSC21", 23,
+         note=u"В альбоме столб FS.C-18 с держателем на конце стены; в модели взят Т-образный тип FSC18 (стена проходит)."),
+    pair(u"М2-45", 45, "image92.png", u"FSC21", u"FSC21", 21),
+    pair(u"М2-46", 46, "image93.png", u"FSC139", u"FSC139", 34),
+    pair(u"М2-47", 47, "image94.png", u"FSC139", u"FSC21", 28.5),
+    pair(u"М2-48", 48, "image95.png", u"FSC22", u"FSC21", 25),
+    pair(u"М2-49", 49, "image96.png", u"FSC22", u"FSC139", 30),
+    S(u"М2-Т9-3", u"Стойка усиленная FS.C-22 (табл.9 п.3)", "inline", "image80.png", mullion_type=M(u"FSC22 центральный с двухслойным остеклением"), note=GKL),
+    S(u"М2-Т9-4", u"Стойка широкая FS.C-139, край (табл.9 п.4)", "end", "image81.png", half_mm=70,
+      mullion_type=M(u"FSC139 не доходит до стены с двухслойным остеклением левый"), mullion_type_mirror=M(u"FSC139 не доходит до стены с двухслойным остеклением правый"), variants=ALB),
+    S(u"М2-Т10-1", u"Стойка основная FS.C-21 — примыкание к стене (табл.10 п.1)", "end_wall", "image83.png", half_mm=70,
+      mullion_type=M(u"FSC21 примыкание к стене с двухслойным остеклением левый"), mullion_type_mirror=M(u"FSC21 примыкание к стене с двухслойным остеклением правый"), variants=ALB,
+      note=u"Стена показана базовой стеной проекта."),
+    S(u"М2-Т10-2", u"Стойка широкая FS.C-139 — примыкание к стене (табл.10 п.2)", "end_wall", "image84.png", half_mm=70,
+      mullion_type=M(u"FSC139 примыкание к стене с двухслойным остеклением левый"), mullion_type_mirror=M(u"FSC139 примыкание к стене с двухслойным остеклением правый"), variants=ALB,
+      note=u"Стена показана базовой стеной проекта."),
+    S(u"М2-Т10-3", u"Стойка усиленная FS.C-22 — примыкание к стене (табл.10 п.3)", "end_wall", "image85.png", half_mm=70,
+      mullion_type=M(u"FSC22 примыкание к стене с двухслойным остеклением левый"), mullion_type_mirror=M(u"FSC22 примыкание к стене с двухслойным остеклением правый"), variants=ALB,
+      note=u"Стена показана базовой стеной проекта."),
+    S(u"М2-Т11-1", u"Поворот на произвольный угол на столбе FS.C-18 (табл.11 п.1)", "corner", "image86.png", scale=2, half_mm=140,
+      column_type=M(u"FSC18 угловой 135° с двухслойным остеклением левый"), radial=True, b_offset_mm=49.4, hub_from_end_mm=49.5,
+      variants=[{"label": u"135°", "angle_deg": 135}, {"label": u"120° с типом 135°", "angle_deg": 120}, {"label": u"150° с типом 135°", "angle_deg": 150}],
+      note=u"Тип FS.C-18 под 135° есть только левый; 120° и 150° собраны тем же типом — проверка, держит ли он другой угол."),
+    S(u"М2-Т11-2", u"Т-соединение на столбе три грани FS.C-17 (табл.11 п.2)", "tee", "image87.png", half_mm=95,
+      column_type=M(u"FSC17 т-образный с двухслойным остеклением"),
+      variants=[{"label": u"B вверх (как в альбоме)", "b_side": 1}, {"label": u"B вниз", "b_side": -1}, {"label": u"Повёрнута на 30°", "b_side": 1, "rot": 30}], note=GKL),
+    S(u"М2-Т11-3", u"Присоединение к стене столбом три грани FS.C-17 (табл.11 п.3)", "tee", "image88.png", half_mm=95, b_basic=True,
+      column_type=M(u"FSC17 т-образный с двухслойным остеклением"),
+      variants=[{"label": u"Стена снизу (как в альбоме)", "b_side": -1}, {"label": u"Стена сверху", "b_side": 1}, {"label": u"Повёрнута на 30°", "b_side": -1, "rot": 30}],
+      note=u"Стена показана базовой стеной проекта."),
+]
+json.dump({"schemes": schemes, "out_dir": r"C:\Users\user\Desktop\Фристайл\_bim\review\schemes_m2", "pdf_name": u"М2_альбом_схема-модель",
+           "origin_mm": [20000, 260000], "step_mm": 4000},
+          open(r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\args_schemes_m2.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(len(schemes))

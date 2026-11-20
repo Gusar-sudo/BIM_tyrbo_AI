@@ -1,0 +1,78 @@
+# -*- coding: utf-8 -*-
+# Локально: параметры листов «техтетрадь М3 — модель» для scheme_sheets.py
+import json
+C = r"C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops"
+W2 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Двойное заполнение_72мм"
+W1 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Одинарное заполнение_72мм"
+WO = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Нащельник омега_Двойное заполнение_72мм"
+WN2 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка узкая_Двойное заполнение_72мм"
+WN1 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка узкая_Одинарное заполнение_72мм"
+P6 = u"Двуслойная стеклянная панель 72 мм (стекло 6 мм)"
+P5 = u"Двуслойная стеклянная панель 72 мм"
+P61 = u"Однослойная стеклянная панель 72 мм (стекло 6 мм)"
+GKL = u"В тетради сторона из гипсовинила 13 мм; глухой панели в библиотеке нет — в модели на её месте стекло."
+RT = [{"label": u"Как в тетради", "mx": True, "rot": 180}, {"label": u"Зеркальная", "mx": False},
+      {"label": u"Повёрнута на 30°", "mx": True, "rot": 210}]
+
+
+def S(key, title, kind, **kw):
+    d = {"key": key, "title": title, "kind": kind, "crop_png": C + "\\" + key + ".png", "scale": 1, "half_mm": 60}
+    d.update(kw)
+    return d
+
+
+def tee_vars(ct_down, ct_up):
+    return [{"label": u"Как в тетради (B вниз)", "b_side": -1, "column_type": ct_down},
+            {"label": u"Зеркальная (B вверх)", "b_side": 1, "column_type": ct_up},
+            {"label": u"Повёрнута на 30°", "b_side": -1, "column_type": ct_down, "rot": 30}]
+
+
+F04 = u"М3 FSC04 т-образный с двухслойным остеклением "
+F05 = u"М3 FSC05 т-образный с двухслойным остеклением "
+schemes = [
+    S("1.1.01", u"Внутренняя стойка FS.C-01, двойной витраж, стекло 6", "inline", wall_type=W2, mullion_type=u"М3 FSC01 центральный с двухслойным остеклением", panel=P6),
+    S("1.1.02", u"Внутренняя стойка FS.C-01, омега, стекло 5", "inline", wall_type=WO, panel=P5),
+    S("1.1.03", u"Внутренняя стойка FS.C-01, стекло 6 / 5", "inline", wall_type=W2, mullion_type=u"М3 FSC01 центральный с двухслойным остеклением", panel_left=P6, panel_right=P5),
+    S("1.1.04", u"Стойка FS.C-01, край проёма (накрывающая рейка)", "end", wall_type=W2, panel=P6,
+      mullion_type=u"М3 FSC01 не доходит до стены с двухслойным остеклением левый", mullion_type_mirror=u"М3 FSC01 не доходит до стены с двухслойным остеклением правый"),
+    S("1.1.06", u"Стойка FS.C-01 по примыканию к бетону", "end_wall", wall_type=W2, panel=P6, half_mm=70,
+      mullion_type=u"М3 FSC01 примыкание к стене с двухслойным остеклением левый", mullion_type_mirror=u"М3 FSC01 примыкание к стене с двухслойным остеклением правый",
+      note=u"Бетон показан базовой стеной проекта."),
+    S("1.1.07", u"Стойка FS.C-01 по примыканию к гипсокартону", "end_wall", wall_type=W2, panel=P6, half_mm=70,
+      mullion_type=u"М3 FSC01 примыкание к стене с двухслойным остеклением левый", mullion_type_mirror=u"М3 FSC01 примыкание к стене с двухслойным остеклением правый",
+      note=u"Гипсокартон показан базовой стеной проекта; крепёж не моделируется."),
+    S("1.1.08", u"Внутренняя стойка узкая FS.C-09, двойной витраж", "inline", wall_type=WN2, mullion_type=u"М3 FSC09 центральный с двухслойным остеклением", panel=P6),
+    S("1.1.10", u"Стойка узкая FS.C-09 по примыканию к бетону", "end_wall", wall_type=WN2, panel=P6, half_mm=70,
+      mullion_type=u"М3 FSC09 примыкание к стене с двухслойным остеклением левый", mullion_type_mirror=u"М3 FSC09 примыкание к стене с двухслойным остеклением правый",
+      note=u"Бетон показан базовой стеной проекта."),
+    S("1.1.11", u"Внутренняя стойка FS.C-01, одинарный витраж", "inline", wall_type=W1, mullion_type=u"М3 FSC01 центральный с однослойным остеклением", panel=P61),
+    S("1.1.12", u"Внутренняя стойка узкая FS.C-09, одинарный витраж", "inline", wall_type=WN1, mullion_type=u"М3 FSC09 центральный с однослойным остеклением", panel=P61),
+    S("1.1.15", u"Стойка узкая FS.C-09, край проёма, одинарный витраж", "end", wall_type=WN1, panel=P61,
+      mullion_type=u"М3 FSC09 не доходит до стены с однослойным остеклением левый", mullion_type_mirror=u"М3 FSC09 не доходит до стены с однослойным остеклением правый"),
+    S("2.1.02", u"Угол 90° на столбе произвольного угла FS.C-05", "corner", wall_type=W1, panel=P61, scale=2, half_mm=150,
+      column_type=u"М3 FSC05 угловой с однослойным остеклением левый", column_type_mirror=u"М3 FSC05 угловой с однослойным остеклением правый",
+      radial=True, b_offset_mm=59.4, variants=RT, note=GKL),
+    S("2.1.03", u"Угол 90° на столбе Т-образного соединения FS.C-04", "corner", wall_type=W2, panel=P6, half_mm=95,
+      column_type=u"М3 FSC04 угловой с двухслойным остеклением левый", column_type_mirror=u"М3 FSC04 угловой с двухслойным остеклением правый",
+      variants=RT, note=GKL),
+    S("2.1.04", u"Угловой столб-дуга FS.C-08 с примыканием к торцу стены", "corner", wall_type=W1, panel=P61, scale=2, half_mm=130,
+      column_type=u"М3 FSC08 угловой с однослойным остеклением левый", column_type_mirror=u"М3 FSC08 угловой с однослойным остеклением правый",
+      b_basic=True, variants=RT, note=u"Торец существующей стены показан базовой стеной проекта."),
+    S("2.2.01", u"Т-узел на столбе FS.C-04", "tee", wall_type=W2, panel=P6, half_mm=95,
+      column_type=F04 + u"сверху", variants=tee_vars(F04 + u"сверху", F04 + u"снизу"), note=GKL),
+    S("2.2.02", u"Т-узел на столбе FS.C-05 с двумя держателями", "tee", wall_type=W2, panel=P6, scale=2, half_mm=150,
+      column_type=F05 + u"сверху", radial=True, b_offset_mm=59.4, variants=tee_vars(F05 + u"сверху", F05 + u"снизу"),
+      note=u"В тетради одинарный витраж; в библиотеке Т-столб FS.C-05 есть только с двухслойным остеклением. " + GKL),
+    S("2.2.03", u"Т-узел FS.C-04 с примыканием к торцу стены", "tee", wall_type=W2, panel=P6, half_mm=95, b_basic=True,
+      column_type=F04 + u"сверху", variants=tee_vars(F04 + u"сверху", F04 + u"снизу"), note=u"Торец существующей стены показан базовой стеной проекта."),
+    S("2.4.01", u"Две перегородки под произвольным углом на столбе FS.C-05", "corner", wall_type=W2, panel=P6, scale=2, half_mm=150,
+      column_type=u"М3 FSC05 угловой 135° с двухслойным остеклением левый", radial=True, b_offset_mm=59.4, hub_from_end_mm=63.7,
+      variants=[{"label": u"135° (как в тетради, зеркально)", "angle_deg": 135},
+                {"label": u"120° с типом 135°", "angle_deg": 120},
+                {"label": u"150° с типом 135°", "angle_deg": 150}],
+      note=u"Тип FS.C-05 под 135° есть только левый; углы 120° и 150° собраны тем же типом — проверка, держит ли он другой угол."),
+]
+json.dump({"schemes": schemes, "out_dir": r"C:\Users\user\Desktop\Фристайл\_bim\review\schemes_m3", "pdf_name": u"М3_техтетрадь_схема-модель",
+           "origin_mm": [20000, 200000], "step_mm": 4000},
+          open(r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\args_schemes_m3.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(len(schemes))

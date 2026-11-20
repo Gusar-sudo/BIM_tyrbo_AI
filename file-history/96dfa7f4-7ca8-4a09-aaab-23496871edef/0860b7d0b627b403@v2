@@ -1,0 +1,75 @@
+# PDF «Все углы и Т-узлы М2/М3»: на листе левый и правый вариант рядом (крупно), Т-узлы и 135° отдельно.
+import os, re
+from PIL import Image, ImageDraw, ImageFont
+base = r"C:\Users\user\Desktop\Фристайл\_bim\test\2026-10-28_M2M3_seals\types_review"
+src = os.path.join(base, "schemes_all")
+out_pdf = os.path.join(base, "М2_М3_все_углы_и_Т_2026-11-02.pdf")
+W, H = 3307, 2339
+F = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arial.ttf", s)
+FB = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arialbd.ttf", s)
+files = {}
+for f in os.listdir(src):
+    m = re.match(r"s_Все (\d\d) (.*)\.png$", f)
+    if m:
+        files[int(m.group(1))] = (m.group(2).split(" - ")[0], os.path.join(src, f))
+pages = []
+
+
+def center(im, k):
+    cw, ch = im.width * k, im.height * k
+    return im.crop((int((im.width - cw) / 2), int((im.height - ch) / 2), int((im.width + cw) / 2), int((im.height + ch) / 2)))
+
+
+def page(title, sub, items, ncol=4, nrow=2, k=0.62):
+    p = Image.new("RGB", (W, H), "white"); d = ImageDraw.Draw(p)
+    d.text((80, 50), title, fill="black", font=FB(52)); d.text((80, 122), sub, fill=(90, 90, 90), font=F(30))
+    d.line([(80, 175), (W - 80, 175)], fill=(160, 160, 160), width=3)
+    d.text((80, H - 70), "стр. %d" % (len(pages) + 1), fill=(150, 150, 150), font=F(26))
+    d.text((W - 700, H - 70), "Фристайл · М2/М3 · test_M2M3_seals · 02.11.2026", fill=(150, 150, 150), font=F(26))
+    top, bot = 200, H - 100
+    nrow = (len(items) + ncol - 1) // ncol
+    cw = (W - 160 - (ncol - 1) * 20) // ncol; chh = min((bot - top - (nrow - 1) * 20) // nrow, cw + 60)
+    for i, n in enumerate(items):
+        name, f = files[n]
+        x = 80 + (i % ncol) * (cw + 20); y = top + (i // ncol) * (chh + 20)
+        d.rectangle([x, y, x + cw, y + chh], outline=(190, 190, 190), width=2)
+        d.text((x + 12, y + 10), name, fill=(170, 0, 0), font=FB(30))
+        im = center(Image.open(f).convert("RGB"), k); im.thumbnail((cw - 16, chh - 56), Image.LANCZOS)
+        p.paste(im, (x + (cw - im.width) // 2, y + 50 + (chh - 56 - im.height) // 2))
+    pages.append(p)
+
+
+# титул с выводами
+p = Image.new("RGB", (W, H), "white"); d = ImageDraw.Draw(p)
+d.text((80, 50), "М2 и М3 — все угловые и Т-столбы: схемы с двумя настоящими стенами", fill="black", font=FB(52))
+d.text((80, 122), "Пробный прогон в test_M2M3_seals, 30 схем, предупреждений Revit 0, всё откатано. Модель не менялась.", fill=(90, 90, 90), font=F(30))
+d.line([(80, 175), (W - 80, 175)], fill=(160, 160, 160), width=3)
+y = 230
+for t, b in (("Как построено", 1),
+             ("• Стена A — горизонтальная, фасад (стекло однослойных) снизу; столб — её крайний импост; стена B входит в держатель столба.", 0),
+             ("• «Левый» угол: стена A приходит слева. «Правый» — зеркально: A приходит справа (так «правые» типы и должны стоять: зеркало левого вдоль стены).", 0),
+             ("• Т-узлы М3 «снизу / сверху» — вторая стена уходит вверх / вниз. Углы 135° есть только «левые» (правых типов в модели нет).", 0),
+             ("", 0),
+             ("Что видно", 1),
+             ("• Все углы 90° FSC17, FSC18 (М2) и FSC04, FSC05 (М3), левые и правые, 1сл и 2сл: стена B входит в держатель, уплотнитель на месте.", 0),
+             ("• Т-узлы FSC17, FSC18, FSC04, FSC05 и углы 135° FSC18/FSC05 — стыкуются.", 0),
+             ("• ОШИБКА: М3 FSC08 угловой «правый» (1сл и 2сл) по форме совпадает с «левым» — дуга и рамка стены A не зеркальны.", 0),
+             ("   Ни в одной раскладке стена A не входит в рамку. Нужен профиль = зеркало левого вдоль стены (стр. 5 и 6, правые FSC08).", 0),
+             ("• В FSC05 135° уплотнитель ещё нарисован в профиле — может выглядеть двойным.", 0),
+             ("", 0),
+             ("Состав: стр. 2–4 — М2 (углы 1сл, 2сл, 135° и Т), стр. 5–7 — М3 (углы 1сл, 2сл, 135° и Т).", 0)):
+    d.text((100, y), t, fill="black" if b else ((170, 0, 0) if "ОШИБКА" in t or "Ни в одной" in t else (40, 40, 40)), font=FB(40) if b else F(32))
+    y += 58 if t else 28
+pages.append(p)
+
+SUB ="Две настоящие стены, общий столб, план 1:2, стекло 5 мм, фасад снизу. «Левый»: стена A приходит слева; «правый» — зеркально: A справа. Пробный прогон, модель не менялась."
+page("М2 · углы 90°: однослойное (левый | правый)", SUB, [1, 3, 2, 4], ncol=2)
+page("М2 · углы 90°: двухслойное (левый | правый)", SUB, [6, 8, 7, 9], ncol=2)
+page("М2 · угол 135° (только левый) и Т-узлы", SUB, [5, 10, 11, 12], ncol=2)
+page("М3 · углы 90°: однослойное (левый | правый)", SUB, [13, 16, 14, 17, 15, 18], ncol=3)
+page("М3 · углы 90°: двухслойное (левый | правый)", SUB, [20, 23, 21, 24, 22, 25], ncol=3)
+page("М3 · угол 135° (только левый) и Т-узлы сверху / снизу", SUB, [19, 26, 27, 28, 29, 30], ncol=3)
+pages[0].save(out_pdf, save_all=True, append_images=pages[1:], resolution=200)
+for i, pg in enumerate(pages):
+    pg.resize((W // 2, H // 2)).save(os.path.join(base, "schemes_all_page_%02d.png" % (i + 1)))
+print(out_pdf, len(pages), len(files))

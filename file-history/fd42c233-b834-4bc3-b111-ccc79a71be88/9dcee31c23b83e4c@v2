@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+# Партия C, шаг A: копия семейства профиля с контуром из DWG -> отдельный .rfa. Модель НЕ меняется.
+# Аргументы (HORIZUN_ARGS_JSON): symbol_id, json (контуры, мм), out_rfa
+import json
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+with open(args["json"], encoding="utf-8") as f:
+    loops = json.load(f)["loops"]
+
+sym = doc.GetElement(ElementId(int(args["symbol_id"])))
+fam = sym.Family
+res = {"status": "failed", "family": fam.Name, "out_rfa": args["out_rfa"]}
+fdoc = doc.EditFamily(fam)
+try:
+    view = [v for v in FilteredElementCollector(fdoc).OfClass(ViewPlan) if v.Name == u"Опорный уровень"][0]
+    old = [e.Id for e in FilteredElementCollector(fdoc).OfClass(CurveElement) if e.GetType().Name == "DetailLine"]
+    res["old_lines"] = len(old)
+    t = Transaction(fdoc, u"FT: контур профиля из DWG")
+    t.Start()
+    for i in old:
+        fdoc.Delete(i)
+    created = 0
+    for loop in loops:
+        n = len(loop)
+        for k in range(n):
+            a, b = loop[k], loop[(k + 1) % n]
+            ln = Line.CreateBound(XYZ(a[0] / FT, a[1] / FT, 0), XYZ(b[0] / FT, b[1] / FT, 0))
+            fdoc.FamilyCreate.NewDetailCurve(view, ln)
+            created += 1
+    t.Commit()
+    res["created_lines"] = created
+    # перечитать: число линий и габарит
+    xs, ys, cnt = [], [], 0
+    for e in FilteredElementCollector(fdoc).OfClass(CurveElement):
+        if e.GetType().Name != "DetailLine":
+            continue
+        cnt += 1
+        c = e.GeometryCurve
+        for p in (c.GetEndPoint(0), c.GetEndPoint(1)):
+            xs.append(p.X * FT); ys.append(p.Y * FT)
+    res["read_back_lines"] = cnt
+    res["read_back_bbox_mm"] = [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)]
+    opts = SaveAsOptions()
+    opts.OverwriteExistingFile = True
+    fdoc.SaveAs(args["out_rfa"], opts)
+    res["saved"] = True
+    res["status"] = "completed_unverified"
+    res["summary"] = u"Контур заменён в копии семейства и сохранён в отдельный файл; проект не изменён."
+finally:
+    fdoc.Close(False)
+__output__ = res

@@ -1,0 +1,29 @@
+# Анализ DXF с уплотнителями: сущности модели с габаритами, тексты, картинка.
+import sys, json
+import ezdxf
+from ezdxf import bbox
+from ezdxf.addons.drawing import matplotlib as mpl_draw
+src, out = sys.argv[1], sys.argv[2]
+doc = ezdxf.readfile(src)
+msp = doc.modelspace()
+rows = []
+for e in msp:
+    try:
+        b = bbox.extents([e])
+        bb = [round(b.extmin.x, 2), round(b.extmin.y, 2), round(b.extmax.x, 2), round(b.extmax.y, 2)] if b.has_data else None
+    except Exception:
+        bb = None
+    r = {"t": e.dxftype(), "layer": e.dxf.layer, "bbox": bb}
+    if e.dxftype() == "INSERT":
+        r["block"] = e.dxf.name
+        r["rot"] = e.dxf.rotation
+        r["scale"] = [e.dxf.xscale, e.dxf.yscale]
+    if e.dxftype() == "MTEXT":
+        r["text"] = e.plain_text()
+    if bb:
+        r["size"] = [round(bb[2] - bb[0], 2), round(bb[3] - bb[1], 2)]
+    rows.append(r)
+json.dump(rows, open(out + "/entities.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+for r in rows:
+    print(r)
+mpl_draw.qsave(msp, out + "/model.png", bg="#FFFFFF", dpi=300, size_inches=(24, 12))

@@ -1,0 +1,290 @@
+# -*- coding: utf-8 -*-
+# Уплотнитель стекла в семействе панели (вариант «в панели», решение пользователя 28.10.2026).
+# Вертикальные полосы вдоль левой и правой кромок КАЖДОГО стекла, с внутренней стороны стекла:
+#   поперёк стены: от внутренней грани стекла до посадки (лицевая грань − FT_Уплотнитель_Посадка) => высота = Посадка − Толщина стекла;
+#   вдоль стены: отступ FT_Уплотнитель_Отступ от кромки стекла, ширина FT_Уплотнитель_Ширина (размеры с метками к плоскости кромки);
+#   по высоте: на всю высоту стекла (выравнивание с плоскостями низа/верха стекла).
+# Видимость: FT_Уплотнитель_Показать = not(FT_Система_М1). Материал FT_Уплотнитель_EPDM (чёрный, сплошная заливка в разрезе).
+# Копии семейств -> SaveAs в out_dir. Проект НЕ меняется.
+# Аргументы: families: [...], out_dir, seat_mm, inset_mm, width_mm
+import json
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+SEAT = float(args.get("seat_mm", 15.1)); INSET = float(args.get("inset_mm", 5.5)); WIDTH = float(args.get("width_mm", 8.2))
+TOL = 0.2 / FT
+
+
+def fparam(fm, name):
+    for p in fm.Parameters:
+        if p.Definition.Name == name:
+            return p
+    return None
+
+
+def add_len(fm, name, val=None, formula=None):
+    p = fparam(fm, name)
+    if p is None:
+        p = fm.AddParameter(name, GroupTypeId.Geometry, SpecTypeId.Length, False)
+    if formula:
+        fm.SetFormula(p, formula)
+    elif val is not None:
+        for tp in list(fm.Types):
+            fm.CurrentType = tp
+            fm.Set(p, val / FT)
+    return p
+
+
+def solid_of(fdoc, el):
+    o = Options(); o.ComputeReferences = True; o.IncludeNonVisibleObjects = True
+    for g in el.get_Geometry(o):
+        if isinstance(g, Solid) and g.Volume > 0:
+            return g
+    return None
+
+
+def face_by_normal(sol, nx, ny, nz):
+    best = None
+    for f in sol.Faces:
+        if isinstance(f, PlanarFace):
+            n = f.FaceNormal
+            if abs(n.X - nx) < 1e-6 and abs(n.Y - ny) < 1e-6 and abs(n.Z - nz) < 1e-6:
+                best = f
+    return best
+
+
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+results = []
+for name in args["families"]:
+    r = {"family": name, "ok": False, "steps": []}
+    fdoc = doc.EditFamily(fams[name])
+    try:
+        fm = fdoc.FamilyManager
+        t = Transaction(fdoc, u"FT: уплотнитель стекла в панели")
+        t.Start()
+        glasses = [e for e in FilteredElementCollector(fdoc).OfClass(Extrusion)
+                   if e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM) and fdoc.GetElement(e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).AsElementId()) is not None
+                   and u"Стекло" in fdoc.GetElement(e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).AsElementId()).Name
+                   and not e.Name.startswith(u"FT_Уплотнитель")]
+        # стекло через ассоциацию материала (у новых полос материала стекла нет)
+        p_thk = fparam(fm, u"Толщина стекла"); p_adsk = fparam(fm, u"ADSK_Размер_Толщина")
+        # 1) по всем типам: где лицевая грань каждого стекла (+H или -H)
+        flex = []
+        for tp in list(fm.Types):
+            fm.CurrentType = tp
+            fdoc.Regenerate()
+            H = tp.AsDouble(p_adsk) * FT / 2.0
+            row = {"type": tp.Name, "t": round(tp.AsDouble(p_thk) * FT, 2), "H": round(H, 2), "g": []}
+            for g in glasses:
+                bb = g.get_BoundingBox(None)
+                row["g"].append([round(bb.Min.Y * FT, 2), round(bb.Max.Y * FT, 2)])
+            flex.append(row)
+        sides = []
+        for i in range(len(glasses)):
+            plus = all(abs(row["g"][i][1] - row["H"]) < 0.3 for row in flex)
+            minus = all(abs(row["g"][i][0] + row["H"]) < 0.3 for row in flex)
+            sides.append("+" if plus and not minus else ("-" if minus and not plus else "?"))
+        r["outer_face"] = sides
+        r["flex_sample"] = flex[:3]
+        if "?" in sides:
+            raise Exception(u"не удалось определить лицевую грань стекла: %s" % sides)
+        # 2) параметры
+        add_len(fm, u"FT_Уплотнитель_Посадка", SEAT)
+        add_len(fm, u"FT_Уплотнитель_Отступ", INSET)
+        add_len(fm, u"FT_Уплотнитель_Ширина", WIDTH)
+        pv = fparam(fm, u"FT_Уплотнитель_Показать")
+        if pv is None:
+            pv = fm.AddParameter(u"FT_Уплотнитель_Показать", GroupTypeId.Graphics, SpecTypeId.Boolean.YesNo, False)
+        fm.SetFormula(pv, u"not(FT_Система_М1)")
+        se = {}
+        for i, s in enumerate(sides):
+            # ось выдавливания -Y: y = -offset. лицевая +H: y в [H-Посадка, H-t] => start = t-H, end = Посадка-H
+            if s == "+":
+                fs, fe = u"Толщина стекла - ADSK_Размер_Толщина / 2", u"FT_Уплотнитель_Посадка - ADSK_Размер_Толщина / 2"
+            else:  # лицевая -H: y в [-H+t, -H+Посадка] => start = H-Посадка, end = H-t
+                fs, fe = u"ADSK_Размер_Толщина / 2 - FT_Уплотнитель_Посадка", u"ADSK_Размер_Толщина / 2 - Толщина стекла"
+            se[i] = (add_len(fm, u"FT_Уплотнитель_С%d_Начало" % (i + 1), formula=fs), add_len(fm, u"FT_Уплотнитель_С%d_Конец" % (i + 1), formula=fe))
+        fdoc.Regenerate()
+        # материал
+        mat = None
+        for m in FilteredElementCollector(fdoc).OfClass(Material):
+            if m.Name == u"FT_Уплотнитель_EPDM":
+                mat = m
+        if mat is None:
+            mat = fdoc.GetElement(Material.Create(fdoc, u"FT_Уплотнитель_EPDM"))
+            mat.Color = Color(30, 30, 30)
+            solid = [fp for fp in FilteredElementCollector(fdoc).OfClass(FillPatternElement) if fp.GetFillPattern().IsSolidFill]
+            if solid:
+                mat.CutForegroundPatternId = solid[0].Id
+                mat.CutForegroundPatternColor = Color(0, 0, 0)
+                mat.SurfaceForegroundPatternId = solid[0].Id
+                mat.SurfaceForegroundPatternColor = Color(30, 30, 30)
+        # виды и опорные плоскости
+        plan = [v for v in FilteredElementCollector(fdoc).OfClass(ViewPlan) if not v.IsTemplate][0]
+        elev = [v for v in FilteredElementCollector(fdoc).OfClass(View) if not v.IsTemplate and v.ViewType == ViewType.Elevation
+                and abs(abs(v.ViewDirection.Y) - 1) < 1e-6][0]
+        rps = list(FilteredElementCollector(fdoc).OfClass(ReferencePlane))
+
+        def rp_x(x):
+            for rp in rps:
+                if abs(abs(rp.Normal.X) - 1) < 1e-6 and abs(rp.BubbleEnd.X - x) < TOL and rp.Name not in (u"Слева", u"Справа"):
+                    return rp
+            for rp in rps:
+                if abs(abs(rp.Normal.X) - 1) < 1e-6 and abs(rp.BubbleEnd.X - x) < TOL:
+                    return rp
+            return None
+
+        def rp_z(z):
+            for rp in rps:
+                if abs(abs(rp.Normal.Z) - 1) < 1e-6 and abs(rp.BubbleEnd.Z - z) < TOL:
+                    return rp
+            return None
+
+        sp = SketchPlane.Create(fdoc, Plane.CreateByNormalAndOrigin(XYZ(0, -1, 0), XYZ.Zero))
+        made = []
+        for i, g in enumerate(glasses):
+            bb = g.get_BoundingBox(None)
+            for side in ("L", "R"):
+                if side == "L":
+                    x0 = bb.Min.X + INSET / FT; x1 = x0 + WIDTH / FT; xe = bb.Min.X
+                else:
+                    x1 = bb.Max.X - INSET / FT; x0 = x1 - WIDTH / FT; xe = bb.Max.X
+                z0, z1 = bb.Min.Z, bb.Max.Z
+                pts = [XYZ(x0, 0, z0), XYZ(x1, 0, z0), XYZ(x1, 0, z1), XYZ(x0, 0, z1)]
+                ca = CurveArray()
+                for k in range(4):
+                    ca.Append(Line.CreateBound(pts[k], pts[(k + 1) % 4]))
+                prof = CurveArrArray(); prof.Append(ca)
+                ex = fdoc.FamilyCreate.NewExtrusion(True, prof, sp, 1.0 / FT)
+                ex.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).Set(mat.Id)
+                fm.AssociateElementParameterToFamilyParameter(ex.get_Parameter(BuiltInParameter.EXTRUSION_START_PARAM), se[i][0])
+                fm.AssociateElementParameterToFamilyParameter(ex.get_Parameter(BuiltInParameter.EXTRUSION_END_PARAM), se[i][1])
+                fm.AssociateElementParameterToFamilyParameter(ex.get_Parameter(BuiltInParameter.IS_VISIBLE_PARAM), pv)
+                vis = FamilyElementVisibility(FamilyElementVisibilityType.Model)
+                vis.IsShownInCoarse = False
+                ex.SetVisibility(vis)
+                fdoc.Regenerate()
+                sol = solid_of(fdoc, ex)
+                st = {"glass": i + 1, "side": side}
+                # размеры вдоль стены: кромка стекла -> ближняя грань (Отступ), ближняя -> дальняя (Ширина)
+                rpe = rp_x(xe)
+                fn = face_by_normal(sol, -1 if side == "L" else 1, 0, 0)
+                ff = face_by_normal(sol, 1 if side == "L" else -1, 0, 0)
+                if rpe is None or fn is None or ff is None:
+                    raise Exception(u"нет плоскости кромки или граней полосы (стекло %d %s)" % (i + 1, side))
+                yy = (bb.Min.Y + bb.Max.Y) / 2.0
+                ra = ReferenceArray(); ra.Append(rpe.GetReference()); ra.Append(fn.Reference)
+                d1 = fdoc.FamilyCreate.NewDimension(plan, Line.CreateBound(XYZ(xe, yy + 0.2, 0), XYZ(x1, yy + 0.2, 0)), ra)
+                d1.FamilyLabel = fparam(fm, u"FT_Уплотнитель_Отступ")
+                rb = ReferenceArray(); rb.Append(fn.Reference); rb.Append(ff.Reference)
+                d2 = fdoc.FamilyCreate.NewDimension(plan, Line.CreateBound(XYZ(x0, yy + 0.3, 0), XYZ(x1, yy + 0.3, 0)), rb)
+                d2.FamilyLabel = fparam(fm, u"FT_Уплотнитель_Ширина")
+                # по высоте: низ/верх полосы к плоскостям низа/верха стекла
+                rzb, rzt = rp_z(z0), rp_z(z1)
+                fb, ftop = face_by_normal(sol, 0, 0, -1), face_by_normal(sol, 0, 0, 1)
+                if rzb is not None and fb is not None:
+                    fdoc.FamilyCreate.NewAlignment(elev, rzb.GetReference(), fb.Reference); st["z_bottom"] = "locked"
+                if rzt is not None and ftop is not None:
+                    fdoc.FamilyCreate.NewAlignment(elev, rzt.GetReference(), ftop.Reference); st["z_top"] = "locked"
+                st["id"] = int(ex.Id.Value)
+                made.append((ex, i, side, st))
+                fdoc.Regenerate()
+            # горизонтальные полосы (низ/верх стекла): по всей ширине стекла, отступ/ширина по высоте
+            for side in ("B", "T"):
+                if side == "B":
+                    z0 = bb.Min.Z + INSET / FT; z1 = z0 + WIDTH / FT; ze = bb.Min.Z
+                else:
+                    z1 = bb.Max.Z - INSET / FT; z0 = z1 - WIDTH / FT; ze = bb.Max.Z
+                x0, x1 = bb.Min.X, bb.Max.X
+                pts = [XYZ(x0, 0, z0), XYZ(x1, 0, z0), XYZ(x1, 0, z1), XYZ(x0, 0, z1)]
+                ca = CurveArray()
+                for k in range(4):
+                    ca.Append(Line.CreateBound(pts[k], pts[(k + 1) % 4]))
+                prof = CurveArrArray(); prof.Append(ca)
+                ex = fdoc.FamilyCreate.NewExtrusion(True, prof, sp, 1.0 / FT)
+                ex.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).Set(mat.Id)
+                fm.AssociateElementParameterToFamilyParameter(ex.get_Parameter(BuiltInParameter.EXTRUSION_START_PARAM), se[i][0])
+                fm.AssociateElementParameterToFamilyParameter(ex.get_Parameter(BuiltInParameter.EXTRUSION_END_PARAM), se[i][1])
+                fm.AssociateElementParameterToFamilyParameter(ex.get_Parameter(BuiltInParameter.IS_VISIBLE_PARAM), pv)
+                vis = FamilyElementVisibility(FamilyElementVisibilityType.Model)
+                vis.IsShownInCoarse = False
+                ex.SetVisibility(vis)
+                fdoc.Regenerate()
+                sol = solid_of(fdoc, ex)
+                st = {"glass": i + 1, "side": side}
+                rze = rp_z(ze)
+                fn = face_by_normal(sol, 0, 0, -1 if side == "B" else 1)
+                ff = face_by_normal(sol, 0, 0, 1 if side == "B" else -1)
+                if rze is None or fn is None or ff is None:
+                    raise Exception(u"нет плоскости кромки или граней горизонтальной полосы (стекло %d %s)" % (i + 1, side))
+                xx = (x0 + x1) / 2.0
+                ra = ReferenceArray(); ra.Append(rze.GetReference()); ra.Append(fn.Reference)
+                d1 = fdoc.FamilyCreate.NewDimension(elev, Line.CreateBound(XYZ(xx, 0, ze), XYZ(xx, 0, z1 if side == "B" else z0)), ra)
+                d1.FamilyLabel = fparam(fm, u"FT_Уплотнитель_Отступ")
+                rb = ReferenceArray(); rb.Append(fn.Reference); rb.Append(ff.Reference)
+                d2 = fdoc.FamilyCreate.NewDimension(elev, Line.CreateBound(XYZ(xx + 0.3, 0, z0), XYZ(xx + 0.3, 0, z1)), rb)
+                d2.FamilyLabel = fparam(fm, u"FT_Уплотнитель_Ширина")
+                rxl, rxr = rp_x(x0), rp_x(x1)
+                fl, fr_ = face_by_normal(sol, -1, 0, 0), face_by_normal(sol, 1, 0, 0)
+                if rxl is not None and fl is not None:
+                    fdoc.FamilyCreate.NewAlignment(plan, rxl.GetReference(), fl.Reference); st["x_left"] = "locked"
+                if rxr is not None and fr_ is not None:
+                    fdoc.FamilyCreate.NewAlignment(plan, rxr.GetReference(), fr_.Reference); st["x_right"] = "locked"
+                st["id"] = int(ex.Id.Value)
+                made.append((ex, i, side, st))
+                fdoc.Regenerate()
+        # 3) проверка по всем типам: полосы у кромок, высота = Посадка - t, на внутренней стороне стекла
+        check = []
+        for tp in list(fm.Types):
+            fm.CurrentType = tp
+            fdoc.Regenerate()
+            tt = tp.AsDouble(p_thk) * FT; H = tp.AsDouble(p_adsk) * FT / 2.0
+            row = {"type": tp.Name, "t": round(tt, 1), "seals": []}
+            for ex, i, side, st in made:
+                bb = ex.get_BoundingBox(None); gb = glasses[i].get_BoundingBox(None)
+                if bb is None:
+                    row["seals"].append({"g": i + 1, "side": side, "hidden": True}); continue
+                h = (bb.Max.Y - bb.Min.Y) * FT
+                touch = abs(bb.Max.Y - gb.Min.Y) * FT < 0.05 or abs(bb.Min.Y - gb.Max.Y) * FT < 0.05
+                if side in ("L", "R"):
+                    inset = (bb.Min.X - gb.Min.X) * FT if side == "L" else (gb.Max.X - bb.Max.X) * FT
+                    span_ok = abs(bb.Min.Z - gb.Min.Z) < TOL and abs(bb.Max.Z - gb.Max.Z) < TOL
+                else:
+                    inset = (bb.Min.Z - gb.Min.Z) * FT if side == "B" else (gb.Max.Z - bb.Max.Z) * FT
+                    span_ok = abs(bb.Min.X - gb.Min.X) < TOL and abs(bb.Max.X - gb.Max.X) < TOL
+                row["seals"].append({"g": i + 1, "side": side, "h": round(h, 2), "touch_glass": touch, "inset": round(inset, 2),
+                                     "span_ok": span_ok})
+            check.append(row)
+        bad = []
+        hs = {}
+        for row in check:
+            for s in row["seals"]:
+                if s.get("hidden"):
+                    continue
+                okk = s["touch_glass"] and abs(s["inset"] - INSET) < 0.05 and s["span_ok"] and abs(s["h"] - (SEAT - row["t"])) < 0.05
+                hs.setdefault(str(row["t"]), set()).add(s["h"])
+                if not okk:
+                    bad.append({"type": row["type"], "seal": s})
+        r["check_summary"] = {"types": len(check), "seals_per_type": len(made), "bad": bad[:10], "bad_count": len(bad),
+                              "height_by_glass": dict((k, sorted(v)) for k, v in hs.items())}
+        r["seals"] = [st for _, _, _, st in made]
+        t.Commit()
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["out_rfa"] = args["out_dir"] + u"\\" + name + u".rfa"
+        fdoc.SaveAs(r["out_rfa"], opts)
+        r["ok"] = True
+    except Exception as ex:
+        r["error"] = str(ex)
+        try:
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        except Exception:
+            pass
+    finally:
+        fdoc.Close(False)
+    results.append(r)
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Семейств панелей с уплотнителем: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

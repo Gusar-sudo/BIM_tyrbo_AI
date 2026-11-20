@@ -1,0 +1,78 @@
+# -*- coding: utf-8 -*-
+# Варианты торца стекла у одной стороны столба (схемы рядом): паз, 3D-тело, стекло 8 мм до заданного торца,
+# кратчайший зазор от углов стекла до паза (стрелка), заход стекла в паз — штриховка.
+# py -P -E compose_pocket_variants.py <pocket.json> <variants.json> <out.png>
+# variants.json: {"title": .., "rows": [{"type", "side", "title", "variants": [{"label", "end", "note"}]}]}
+import json, io, sys, math
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+plt.rcParams["font.family"] = "Segoe UI"
+D = json.load(io.open(sys.argv[1], encoding="utf-8"))
+V = json.load(io.open(sys.argv[2], encoding="utf-8-sig"))
+INK, MUT, GL, BODY, REAL, OK, BAD = "#283040", "#6b7280", "#9fd3ef", "#d23c3c", "#8a8f98", "#16a34a", "#d23c3c"
+MAP = {"-X": lambda x, y: (x, y), "+X": lambda x, y: (-x, y), "-Y": lambda x, y: (y, x), "+Y": lambda x, y: (-y, x)}
+
+
+def near(p, s):
+    ax_, ay, bx, by = s; dx, dy = bx - ax_, by - ay; L = dx * dx + dy * dy
+    t = 0 if L == 0 else max(0, min(1, ((p[0] - ax_) * dx + (p[1] - ay) * dy) / L))
+    q = (ax_ + t * dx, ay + t * dy); return math.hypot(p[0] - q[0], p[1] - q[1]), q
+
+
+def inside(p, x0, x1, y0, y1):
+    return x0 < p[0] < x1 and y0 < p[1] < y1
+
+
+rows = V["rows"]; cols = max(len(r["variants"]) for r in rows)
+fig, axs = plt.subplots(len(rows), cols, figsize=(cols * 6.2, len(rows) * 6.4), squeeze=False)
+out = []
+for ri, r in enumerate(rows):
+    d = D[r["type"]]; f = MAP[r["side"]]
+    face = 35.7 if r["type"].startswith(u"М3") else 30.6
+    nest = [(lambda a, b: (a[0], a[1], b[0], b[1]))(f(s[0], s[1]), f(s[2], s[3])) for s in d["nested"]]
+    own = [(lambda a, b: (a[0], a[1], b[0], b[1]))(f(s[0], s[1]), f(s[2], s[3])) for s in d["own"]]
+    for ci in range(cols):
+        ax = axs[ri][ci]
+        if ci >= len(r["variants"]): ax.axis("off"); continue
+        v = r["variants"][ci]; ex = v["end"]
+        gx0, gx1, gy0, gy1 = -ex - 60, -ex, -face, -face + 8
+        # заход: точки паза внутри прямоугольника стекла
+        inn = [p for s in nest for p in ((s[0], s[1]), (s[2], s[3]), ((s[0] + s[2]) / 2, (s[1] + s[3]) / 2)) if inside(p, gx0, gx1, gy0, gy1)]
+        best = None
+        for c in ((gx1, gy0), (gx1, gy1)):
+            for s in nest:
+                dd, q = near(c, s)
+                if best is None or dd < best[0]: best = (dd, c, q)
+        for s in nest: ax.plot([s[0], s[2]], [s[1], s[3]], color=REAL, lw=1.0)
+        for s in own: ax.plot([s[0], s[2]], [s[1], s[3]], color=BODY, lw=1.8)
+        ax.add_patch(Rectangle((gx0, gy0), gx1 - gx0, 8, color=GL, alpha=0.6, lw=0))
+        ax.plot([-ex, -ex], [gy0 - 1.5, gy1 + 1.5], color=OK if not inn else BAD, lw=2.6)
+        if inn:
+            ax.add_patch(Rectangle((min(p[0] for p in inn), gy0), gx1 - min(p[0] for p in inn), 8, fill=False, hatch="////", ec=BAD, lw=0))
+            gap = u"стекло заходит в стенку паза"
+        else:
+            dd, c, q = best
+            ax.annotate("", xy=q, xytext=c, arrowprops=dict(arrowstyle="<->", color=OK, lw=1.8))
+            gap = u"наименьший зазор %s мм" % (u"%.1f" % dd).replace(".", ",")
+        if v.get("ref"):
+            rx, ry = v["ref"]  # точка отсчёта (мм в повёрнутой системе) и горизонтальная стрелка до торца
+            ax.plot([rx], [ry], "o", color=OK, ms=10, zorder=6)
+            ax.plot([rx, rx], [ry, gy0], color=OK, lw=1, ls=":")
+            ax.annotate("", xy=(rx, gy0 - 0.6), xytext=(-ex, gy0 - 0.6), arrowprops=dict(arrowstyle="<->", color=OK, lw=1.8))
+            ax.text((rx - ex) / 2, gy0 - 0.9, (u"%.1f" % abs(-ex - rx)).replace(".", ","), color=OK, fontsize=13, ha="center", va="top", fontweight="bold")
+        out.append({"row": r["title"], "variant": v["label"], "end": ex, "gap": gap})
+        x0, x1 = -(ex + 14), -(min(ex, 40) - 14); y0, y1 = -face - 7, -face + 14
+        ax.set_xlim(x0, x1); ax.set_ylim(y0, y1); ax.set_aspect("equal"); ax.grid(lw=0.25, color="#e5e7eb")
+        ax.tick_params(labelsize=8, colors=MUT)
+        ax.set_title(u"%s · %s" % (r["title"], v["label"]), fontsize=12.5, color=INK, loc="left", fontweight="bold")
+        ax.text(x0 + 0.5, y1 - 0.5, u"Торец стекла %s мм от оси\n%s\n%s" % ((u"%.2f" % ex).replace(".", ","), gap, v.get("note", u"")),
+                fontsize=10, color=INK, va="top", bbox=dict(fc="white", ec="#d1d5db"))
+fig.suptitle(V["title"], fontsize=16, color=INK, x=0.02, ha="left")
+h = [plt.Line2D([], [], color=BODY, lw=2, label=u"3D-тело"), plt.Line2D([], [], color=REAL, lw=1, label=u"паз (графика узла)"),
+     Rectangle((0, 0), 1, 1, color=GL, alpha=0.6, label=u"стекло 8 мм"), plt.Line2D([], [], color=OK, lw=1.8, label=u"наименьший зазор от угла стекла"),
+     Rectangle((0, 0), 1, 1, fill=False, hatch="////", ec=BAD, label=u"стекло в стенке паза")]
+fig.legend(handles=h, loc="lower left", ncol=5, fontsize=11, frameon=False, bbox_to_anchor=(0.02, 0.0))
+fig.tight_layout(rect=(0, 0.04, 1, 0.95))
+fig.savefig(sys.argv[3], dpi=120, facecolor="white")
+for o in out: print(o["row"], "|", o["variant"], o["end"], o["gap"])

@@ -1,0 +1,68 @@
+{
+	"nodes":[
+		{"id":"grpA","type":"group","label":"1. Сбор данных и аудит","x":0,"y":0,"width":400,"height":1240},
+		{"id":"grpB","type":"group","label":"2. Проектирование семейств","x":520,"y":0,"width":400,"height":1240},
+		{"id":"grpC","type":"group","label":"3. Сборка (человек ведёт, ИИ помогает)","x":1040,"y":0,"width":400,"height":1240},
+		{"id":"grpD","type":"group","label":"4. Проверка (чек-лист 8 разделов / 55 пунктов)","x":1560,"y":0,"width":400,"height":1240},
+		{"id":"grpE","type":"group","label":"5. Публикация и жизненный цикл","x":2080,"y":0,"width":400,"height":1000},
+
+		{"id":"legend","type":"text","text":"**Легенда**\n🟦 ведёт ИИ (сильная сторона по опыту Fetch)\n🟧 ведёт человек, ИИ помогает\n🟪 гейт — решение человека\n🟩 результат для показа\n\nСтрока «Skill:» — какой skill / инструмент запускать на шаге","x":-460,"y":0,"width":380,"height":260},
+
+		{"id":"in","type":"text","text":"**ВХОД**\nСтарое семейство перегородок «Фристайл Технолоджи» + запрос производителя\n\nSkill: horizun_health (какой Revit и документ), horizun_file_info (версия .rfa без открытия)","x":40,"y":-330,"width":320,"height":250,"color":"1"},
+
+		{"id":"a1","type":"text","text":"**1.1 Данные производителя**\nкаталог, техлисты, узлы, артикулы, прайс, вес, сроки, отделки\nисточник правды — производитель, не старое семейство\n\nSkill: pdf (каталоги, техлисты), xlsx (прайс), deep-research (сайт, аналоги)","x":40,"y":40,"width":320,"height":260,"color":"5"},
+		{"id":"a2","type":"text","text":"**1.2 Матрица продукта и таблица цен (SKU)**\nвсе реальные конфигурации: MIN / MAX / шаг, двери, заполнения; код, вес, цена\n\nSkill: xlsx","x":40,"y":330,"width":320,"height":220,"color":"5"},
+		{"id":"a3","type":"text","text":"**1.3 Аудит старого семейства**\nпо чек-листу Fetch (8 разделов) + потребности проектировщика, генподрядчика, производителя → оценка по разделам\n\nSkill: horizun_audit_model (импорты, предупреждения, вес файла, снимок «до»), horizun_query_model; xlsx (оценки)","x":40,"y":580,"width":320,"height":300,"color":"5"},
+		{"id":"a4","type":"text","text":"**1.4 ТЗ**\nчто пересобрать; не импортировать DWG производства, не делать «пустую коробку»\n\nSkill: docs (ТЗ с комментариями производителя и BIM-менеджера)","x":40,"y":910,"width":320,"height":260,"color":"2"},
+
+		{"id":"g1","type":"text","text":"**ГЕЙТ 1 — человек**\nпроизводитель + BIM-менеджер утверждают ТЗ, матрицу, таблицу цен","x":520,"y":-330,"width":400,"height":180,"color":"6"},
+
+		{"id":"b1","type":"text","text":"**2.1 Архитектура**\nкатегория Revit (иначе не работают спецификации и марки)\nдверь — общее вложенное семейство (отдельная строка спецификации)\nOptimal < 1 МБ, 1–2 вложенных; Complex 1–1,5 МБ, 3–5\n\nSkill: человек решает; docs (фиксация решений)","x":560,"y":40,"width":320,"height":300,"color":"2"},
+		{"id":"b2","type":"text","text":"**2.2 Именование**\n{Brand}_{ProductType}_{Descriptor}_{MaterialType}\nтипы — только значимые конфигурации, один тип = «Default»\n\nSkill: xlsx (реестр имён + regex для проверки)","x":560,"y":370,"width":320,"height":240,"color":"5"},
+		{"id":"b3","type":"text","text":"**2.3 Схема параметров**\nпрефиксы ENTER_ / ACTUAL_ / MIN_ / MAX_ / MAT_ / INFO_ (+ ADD_, MODIFY_)\nобщие параметры, единые группы, подсказки, служебные скрыты; классификация (IFC / КСИ); никаких проектных параметров-заплаток\n\nSkill: xlsx (схема) → horizun_manage_parameters create_shared (файл общих параметров); horizun_catalog_lookup (bSDD/IFC)","x":560,"y":640,"width":320,"height":340,"color":"5"},
+		{"id":"b4","type":"text","text":"**2.4 Данные — 5 областей**\nParameters, Properties, Files, Categories, Price table\nцены и сроки синхронизируются, а не вшиваются навсегда\n\nSkill: xlsx","x":560,"y":1010,"width":320,"height":200,"color":"5"},
+
+		{"id":"c1","type":"text","text":"**3.1 Каркас**\nопорные плоскости (Named / Strong, IsReference), размеры, параметры → flex-тест ДО геометрии\n\nSkill: свой skill «partition-family-author» (skill-creator); horizun_execute_python — только если typed-команда разрешила fallback","x":1080,"y":40,"width":320,"height":280,"color":"2"},
+		{"id":"c2","type":"text","text":"**3.2 Геометрия + flex-тест**\nвсё на плоскостях; массивы только при > 3 повторах; void по необходимости; вложенные — к плоскостям родителя\n\nSkill: человек в Family Editor; ИИ — проверка flex","x":1080,"y":350,"width":320,"height":250,"color":"2"},
+		{"id":"c3","type":"text","text":"**3.3 Формулы и ограничения**\nACTUAL_ = clamp(ENTER_, MIN_, MAX_) с округлением до шага; нельзя собрать то, что не выпускается\n\nSkill: horizun_family_apply (общие параметры, значения, тип «Default», чистка мусора; dry_run)","x":1080,"y":630,"width":320,"height":260,"color":"2"},
+		{"id":"c4","type":"text","text":"**3.4 Графика и материалы**\nCoarse очень простой; маскирующие области, символьные линии, подкатегории; линия тыла; PBR со встроенными картами\n\nSkill: horizun_manage_materials; текстуры — вручную","x":1080,"y":920,"width":320,"height":280,"color":"2"},
+
+		{"id":"d1","type":"text","text":"**4.1 Автопроверка**\nNaming (regex), Performance, Parameters, Imports, References, Standardization → оценка + список правок\n\nSkill: horizun_audit_model (requirement_set = чек-лист, снимок «после»); свой skill «fetch-checklist-audit»","x":1600,"y":40,"width":320,"height":280,"color":"5"},
+		{"id":"d2","type":"text","text":"**4.2 Тест в пустом проекте**\nвсе типы грузятся без предупреждений; крайние значения диапазона; Revit 2023–2027\n\nSkill: horizun_create_schedule (спецификация с артикулами и ценами), horizun_quantities","x":1600,"y":350,"width":320,"height":260,"color":"5"},
+		{"id":"d3","type":"text","text":"**4.3 Демо: перегородка с дверью**\nгруппа моделей + сводная спецификация; дверь — отдельной строкой\n\nSkill: pptx / Slides (показ производителю)","x":1600,"y":640,"width":320,"height":240,"color":"4"},
+		{"id":"d4","type":"text","text":"**4.4 Отчёт «было → стало»**\nоценки по 8 разделам до и после\n\nSkill: xlsx + dataviz (дашборд оценок)","x":1600,"y":910,"width":320,"height":200,"color":"4"},
+
+		{"id":"g2","type":"text","text":"**ГЕЙТ 2 — человек**\nвторой специалист проверяет по чек-листу (обязательный пункт QA); производитель — узлы, артикулы, цены","x":2080,"y":-330,"width":400,"height":200,"color":"6"},
+
+		{"id":"e1","type":"text","text":"**5.1 Публикация**\nbimlib / каталог: семейство + карточка, файлы, спецификации, наборы; версия с примечаниями (что и почему, какие Revit)\n\nSkill: docs (примечания к выпуску)","x":2120,"y":40,"width":320,"height":260,"color":"2"},
+		{"id":"e2","type":"text","text":"**5.2 Инструкция пользователя**\nвставка → настройка → спецификация → обновление\n\nSkill: docs","x":2120,"y":330,"width":320,"height":180,"color":"2"},
+		{"id":"e3","type":"text","text":"**5.3 Жизненный цикл**\nтолько данные (цены) → уведомить, синхронизировать\nгеометрия → новая версия, журнал, повтор проверки\nпроекты закреплены за версией; устаревшее — с путём миграции\n\nSkill: schedule (регулярная сверка прайса); каждая ошибка ИИ → правило в skill","x":2120,"y":540,"width":320,"height":340,"color":"3"}
+	],
+	"edges":[
+		{"id":"e_in_a1","fromNode":"in","fromSide":"bottom","toNode":"a1","toSide":"top"},
+		{"id":"e_a1_a2","fromNode":"a1","fromSide":"bottom","toNode":"a2","toSide":"top"},
+		{"id":"e_a2_a3","fromNode":"a2","fromSide":"bottom","toNode":"a3","toSide":"top"},
+		{"id":"e_a3_a4","fromNode":"a3","fromSide":"bottom","toNode":"a4","toSide":"top"},
+		{"id":"e_a4_g1","fromNode":"a4","fromSide":"right","toNode":"g1","toSide":"left"},
+		{"id":"e_g1_b1","fromNode":"g1","fromSide":"bottom","toNode":"b1","toSide":"top","label":"утверждено"},
+		{"id":"e_g1_a1","fromNode":"g1","fromSide":"left","toNode":"a1","toSide":"right","label":"доработать ТЗ","color":"1"},
+		{"id":"e_b1_b2","fromNode":"b1","fromSide":"bottom","toNode":"b2","toSide":"top"},
+		{"id":"e_b2_b3","fromNode":"b2","fromSide":"bottom","toNode":"b3","toSide":"top"},
+		{"id":"e_b3_b4","fromNode":"b3","fromSide":"bottom","toNode":"b4","toSide":"top"},
+		{"id":"e_b4_c1","fromNode":"b4","fromSide":"right","toNode":"c1","toSide":"left"},
+		{"id":"e_c1_c2","fromNode":"c1","fromSide":"bottom","toNode":"c2","toSide":"top","label":"flex ок"},
+		{"id":"e_c2_c3","fromNode":"c2","fromSide":"bottom","toNode":"c3","toSide":"top"},
+		{"id":"e_c3_c4","fromNode":"c3","fromSide":"bottom","toNode":"c4","toSide":"top"},
+		{"id":"e_c4_d1","fromNode":"c4","fromSide":"right","toNode":"d1","toSide":"left"},
+		{"id":"e_d1_c1","fromNode":"d1","fromSide":"top","toNode":"c1","toSide":"top","label":"не прошло","color":"1"},
+		{"id":"e_d1_d2","fromNode":"d1","fromSide":"bottom","toNode":"d2","toSide":"top","label":"прошло"},
+		{"id":"e_d2_d3","fromNode":"d2","fromSide":"bottom","toNode":"d3","toSide":"top"},
+		{"id":"e_d3_d4","fromNode":"d3","fromSide":"bottom","toNode":"d4","toSide":"top"},
+		{"id":"e_d4_g2","fromNode":"d4","fromSide":"right","toNode":"g2","toSide":"left"},
+		{"id":"e_g2_e1","fromNode":"g2","fromSide":"bottom","toNode":"e1","toSide":"top","label":"принято"},
+		{"id":"e_g2_g1","fromNode":"g2","fromSide":"top","toNode":"g1","toSide":"top","label":"на доработку (в проектирование)","color":"1"},
+		{"id":"e_e1_e2","fromNode":"e1","fromSide":"bottom","toNode":"e2","toSide":"top"},
+		{"id":"e_e2_e3","fromNode":"e2","fromSide":"bottom","toNode":"e3","toSide":"top"},
+		{"id":"e_e3_d1","fromNode":"e3","fromSide":"left","toNode":"d1","toSide":"right","label":"новая версия → повторная проверка","color":"3"}
+	]
+}

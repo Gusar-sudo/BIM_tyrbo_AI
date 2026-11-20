@@ -1,0 +1,31 @@
+# Найти подписи профилей в DXF (модель и листы, включая блоки) и их координаты.
+import sys, re, json
+import ezdxf
+from ezdxf import bbox
+src, pat = sys.argv[1], sys.argv[2]
+doc = ezdxf.readfile(src)
+rx = re.compile(pat)
+out = []
+for layout in doc.layouts:
+    for e in layout:
+        ents = [e]
+        if e.dxftype() == "INSERT":
+            try:
+                ents = list(e.virtual_entities())
+            except Exception:
+                ents = []
+        for x in ents:
+            t = None
+            if x.dxftype() == "TEXT":
+                t = x.dxf.text
+            elif x.dxftype() == "MTEXT":
+                t = x.plain_text()
+            elif x.dxftype() in ("ATTRIB",):
+                t = x.dxf.text
+            if t and rx.search(t):
+                p = x.dxf.insert
+                out.append({"layout": layout.name, "text": t.replace("\n", " ")[:60], "x": round(p.x, 1), "y": round(p.y, 1)})
+for o in out:
+    print(o)
+ext = doc.modelspace()
+print("units", doc.header.get("$INSUNITS"))

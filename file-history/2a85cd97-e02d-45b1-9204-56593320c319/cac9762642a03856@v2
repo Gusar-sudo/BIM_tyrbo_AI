@@ -1,0 +1,6 @@
+# -*- coding: utf-8 -*-
+# Чтение: есть ли несохранённые изменения в открытых проектах
+from Autodesk.Revit.DB import *
+app = __revit__.Application
+r = [[d.Title[:30], d.IsModified, d.PathName[-60:]] for d in app.Documents if not d.IsFamilyDocument]
+__output__ = {"status": "completed_unverified", "summary": str(r), "docs": r}

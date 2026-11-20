@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+# Панели: горизонтальные полосы уплотнителя (низ/верх стекла) не показывать на планах (IsShownInTopBottom=False),
+# чтобы под секущей плоскостью не было «ленты»; вертикальные полосы — как есть. SaveAs в out_dir. Проект НЕ меняется.
+# Аргументы: families, out_dir
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+res = []
+for name in args["families"]:
+    r = {"family": name, "ok": False, "horizontal": 0, "vertical": 0}
+    fdoc = doc.EditFamily(fams[name])
+    try:
+        t = Transaction(fdoc, u"Уплотнитель: горизонтальные полосы не на планах")
+        t.Start()
+        for ex in FilteredElementCollector(fdoc).OfClass(Extrusion):
+            mp = ex.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM)
+            m = fdoc.GetElement(mp.AsElementId()) if mp else None
+            if m is None or m.Name != u"FT_Уплотнитель_EPDM":
+                continue
+            bb = ex.get_BoundingBox(None)
+            horiz = (bb.Max.X - bb.Min.X) > (bb.Max.Z - bb.Min.Z)
+            vis = ex.GetVisibility()
+            vis.IsShownInCoarse = False
+            if horiz:
+                vis.IsShownInTopBottom = False; r["horizontal"] += 1
+            else:
+                r["vertical"] += 1
+            ex.SetVisibility(vis)
+        t.Commit()
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["out_rfa"] = args["out_dir"] + u"\\" + name + u".rfa"
+        fdoc.SaveAs(r["out_rfa"], opts)
+        r["ok"] = True
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        fdoc.Close(False)
+    res.append(r)
+__output__ = {"status": "completed_unverified", "summary": "%d/%d" % (sum(1 for r in res if r["ok"]), len(res)), "results": res}

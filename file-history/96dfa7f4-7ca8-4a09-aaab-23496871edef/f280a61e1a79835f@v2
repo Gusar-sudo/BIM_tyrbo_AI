@@ -1,0 +1,69 @@
+# -*- coding: utf-8 -*-
+# Только чтение: в каких профилях импостов место уплотнителя (центр нарисованного U5 во вложенном 2D) лежит ВНУТРИ
+# силуэта профиля (контура 3D-тела) — тогда тело импоста перекрывает уплотнитель панели на плане.
+# Для таких — y-координаты вершин силуэта рядом с уплотнителем (подсказка, какой край выреза двигать).
+# Аргументы: prefix
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+pref = args.get("prefix", u"BIMLIB_Профиль_")
+
+
+def inside(px, py, segs):
+    c = False
+    for (x1, y1, x2, y2) in segs:
+        if (y1 > py) != (y2 > py):
+            xi = x1 + (py - y1) * (x2 - x1) / (y2 - y1)
+            if xi > px:
+                c = not c
+    return c
+
+
+sids = set()
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    if p and p.AsElementId() != ElementId.InvalidElementId:
+        s = doc.GetElement(p.AsElementId())
+        if s is not None and s.Family.Name.startswith(pref):
+            sids.add(int(p.AsElementId().Value))
+sids = sorted(sids)
+res = []
+for k, sid in enumerate(sids):
+    fam = doc.GetElement(ElementId(sid)).Family
+    checkpoint(fam.Name[:60], k, len(sids))
+    pdoc = doc.EditFamily(fam)
+    try:
+        segs = []
+        for ce in FilteredElementCollector(pdoc).OfClass(CurveElement):
+            for a, b in zip(list(ce.GeometryCurve.Tessellate())[:-1], list(ce.GeometryCurve.Tessellate())[1:]):
+                segs.append((a.X * FT, a.Y * FT, b.X * FT, b.Y * FT))
+        seals = []
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            T = fi.GetTotalTransform()
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                for fr in FilteredElementCollector(nd).OfClass(FilledRegion):
+                    ft = nd.GetElement(fr.GetTypeId())
+                    fp = nd.GetElement(ft.ForegroundPatternId) if ft else None
+                    if fp is None or not fp.GetFillPattern().IsSolidFill:
+                        continue
+                    pts = [T.OfPoint(p) for lp in fr.GetBoundaries() for c in lp for p in c.Tessellate()]
+                    xs = [p.X * FT for p in pts]; ys = [p.Y * FT for p in pts]
+                    if max(xs) - min(xs) <= 12 and max(ys) - min(ys) <= 12:
+                        seals.append(((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2))
+            finally:
+                nd.Close(False)
+    finally:
+        pdoc.Close(False)
+    if not seals:
+        continue
+    cov = [s for s in seals if inside(s[0], s[1], segs)]
+    ys = sorted(set(round(abs(v), 1) for (x1, y1, x2, y2) in segs for v in (y1, y2)))
+    res.append({"profile": fam.Name[15:], "seals": len(seals), "covered": len(cov),
+                "seal_abs_y": sorted(set(round(abs(s[1]), 1) for s in seals)), "seal_abs_x": sorted(set(round(abs(s[0]), 1) for s in seals)),
+                "silh_abs_y": ys, "silh_segments": len(segs)})
+cov = [r for r in res if r["covered"]]
+__output__ = {"status": "completed_unverified", "summary": u"профилей с уплотнителем %d, перекрыт силуэтом %d" % (len(res), len(cov)),
+              "covered": cov, "ok_profiles": [r["profile"] for r in res if not r["covered"]]}

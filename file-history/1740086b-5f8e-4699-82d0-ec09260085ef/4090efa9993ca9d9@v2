@@ -1,0 +1,16 @@
+<section id="file" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<h2 style="font-size:72px;font-weight:800;line-height:1.1;color:#2B2B2E">Файл, который не сохранился</h2>
+<div style="display:flex;gap:40px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;background:#E4F0F1;padding:56px;border-radius:24px">
+<p style="font-size:28px;font-weight:800;color:#2E7884;text-transform:uppercase;letter-spacing:2px">Архив</p>
+<h3 style="font-size:48px;font-weight:800;line-height:1.2;color:#1F5560">Законченные проекты</h3>
+<p style="font-size:34px;line-height:1.4;color:#2B2B2E">Подписаны и лежат в папках. Вы их помните, но они не мешают работать над новыми.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;background:#F7E3D6;padding:56px;border-radius:24px">
+<p style="font-size:28px;font-weight:800;color:#A94E1E;text-transform:uppercase;letter-spacing:2px">Открыт и завис</p>
+<h3 style="font-size:48px;font-weight:800;line-height:1.2;color:#7A3814">Тяжёлое воспоминание</h3>
+<p style="font-size:34px;line-height:1.4;color:#2B2B2E">Висит на экране, забирает память — и вся система начинает тормозить.</p>
+</div>
+</div>
+<aside>3:30–5:30. «Представьте рабочий стол компьютера. Законченные проекты лежат в архиве: вы их помните, но они не мешают новым. А один файл не сохранился. Он висит открытым, компьютер не может его ни закрыть, ни заархивировать. Файл забирает память, и даже простая задача идёт медленно. Примерно так ведёт себя тяжёлое воспоминание».</aside>
+</section>

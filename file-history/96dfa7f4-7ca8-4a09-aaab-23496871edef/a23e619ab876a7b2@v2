@@ -1,0 +1,29 @@
+import sys, ezdxf
+from collections import Counter
+src = sys.argv[1]; x0, y0, x1, y1 = [float(v) for v in sys.argv[2].split(",")]
+doc = ezdxf.readfile(src)
+def flat(es, d=0):
+    for e in es:
+        if e.dxftype() == "INSERT" and d < 6:
+            try: yield from flat(e.virtual_entities(), d + 1)
+            except Exception: pass
+        else: yield e
+c = Counter(); polys = []
+for e in flat(doc.modelspace()):
+    t = e.dxftype()
+    try:
+        if t == "LWPOLYLINE": pts = [(p[0], p[1]) for p in e.get_points()]
+        elif t == "LINE": pts = [(e.dxf.start.x, e.dxf.start.y), (e.dxf.end.x, e.dxf.end.y)]
+        elif t in ("ARC", "CIRCLE", "SPLINE", "ELLIPSE"): pts = [(v.x, v.y) for v in e.flattening(0.05)]
+        elif t == "POLYLINE": pts = [(v.dxf.location.x, v.dxf.location.y) for v in e.vertices]
+        elif t == "HATCH": pts = []
+        else: continue
+    except Exception: continue
+    if pts and all(x0 <= x <= x1 and y0 <= y <= y1 for x, y in pts):
+        closed = bool(getattr(e, "closed", False)) or (t == "POLYLINE" and e.is_closed)
+        c[(t, closed, e.dxf.layer)] += 1
+        if t in ("LWPOLYLINE", "POLYLINE"):
+            xs, ys = zip(*pts)
+            polys.append((len(pts), closed, round(min(xs),2), round(min(ys),2), round(max(xs),2), round(max(ys),2), e.dxf.layer))
+for k, v in c.most_common(): print(v, k)
+for p in sorted(polys, key=lambda p: -(p[4]-p[2])*(p[5]-p[3]))[:25]: print(p)

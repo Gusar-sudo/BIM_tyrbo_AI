@@ -1,0 +1,56 @@
+# -*- coding: utf-8 -*-
+# Чтение: устройство семейства панели — тела (выдавливания), их параметры видимости/материала/границ, вложенные семейства,
+# опорные плоскости. EditFamily, закрыть без сохранения. Аргументы: family. Модель не меняется.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fam = [f for f in FilteredElementCollector(doc).OfClass(Family) if f.Name == args["family"]][0]
+fd = doc.EditFamily(fam)
+out = {"forms": [], "nested": [], "refplanes": [], "dims": []}
+try:
+    fm = fd.FamilyManager
+
+    def assoc(el, bip):
+        p = el.get_Parameter(bip)
+        if p is None:
+            return None
+        fp = fm.GetAssociatedFamilyParameter(p)
+        return fp.Definition.Name if fp else None
+    for f in FilteredElementCollector(fd).OfClass(GenericForm):
+        r = {"id": int(f.Id.Value), "class": f.GetType().Name, "solid": f.IsSolid, "name": f.Name}
+        bb = f.get_BoundingBox(None)
+        if bb:
+            r["bb_mm"] = [[round(v * FT, 1) for v in (bb.Min.X, bb.Min.Y, bb.Min.Z)], [round(v * FT, 1) for v in (bb.Max.X, bb.Max.Y, bb.Max.Z)]]
+        r["visible_param"] = assoc(f, BuiltInParameter.IS_VISIBLE_PARAM)
+        r["material_param"] = assoc(f, BuiltInParameter.MATERIAL_ID_PARAM)
+        for nm, bip in (("start", BuiltInParameter.EXTRUSION_START_PARAM), ("end", BuiltInParameter.EXTRUSION_END_PARAM)):
+            p = f.get_Parameter(bip)
+            if p:
+                r[nm] = [round(p.AsDouble() * FT, 2), assoc(f, bip)]
+        sp = getattr(f, "Sketch", None)
+        if sp is not None:
+            try:
+                r["plane"] = sp.SketchPlane.Name
+            except Exception:
+                pass
+        sub = f.Subcategory
+        r["subcat"] = sub.Name if sub else None
+        out["forms"].append(r)
+    for fi in FilteredElementCollector(fd).OfClass(FamilyInstance):
+        out["nested"].append({"family": fi.Symbol.Family.Name, "type": fi.Symbol.Name, "visible_param": assoc(fi, BuiltInParameter.IS_VISIBLE_PARAM)})
+    for rp in FilteredElementCollector(fd).OfClass(ReferencePlane):
+        out["refplanes"].append([rp.Name, [round(v * FT, 1) for v in (rp.BubbleEnd.X, rp.BubbleEnd.Y, rp.BubbleEnd.Z)], [round(v, 3) for v in (rp.Normal.X, rp.Normal.Y, rp.Normal.Z)]])
+    for dm in FilteredElementCollector(fd).OfClass(Dimension):
+        try:
+            lab = dm.FamilyLabel.Definition.Name if dm.FamilyLabel else None
+        except Exception:
+            lab = None
+        if lab:
+            out["dims"].append([lab, round((dm.Value or 0) * FT, 2) if dm.Value is not None else None])
+    out["category"] = fd.OwnerFamily.FamilyCategory.Name
+    out["template_params"] = [p.Definition.Name for p in fm.Parameters if p.Definition.Name in (u"Ширина", u"Высота")]
+finally:
+    fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"тел %d, вложенных %d" % (len(out["forms"]), len(out["nested"])), "result": out}

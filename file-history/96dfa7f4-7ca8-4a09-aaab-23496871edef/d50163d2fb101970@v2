@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+# Замер (откат): где стекло стены относительно линии привязки — до и после Flip. Типы стен: wall_types [имена].
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: l.Elevation)[0]
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+
+
+def glass_x(w):
+    xs = []
+    for pid in w.CurtainGrid.GetPanelIds():
+        pn = doc.GetElement(pid)
+
+        def walk(ge, tr):
+            for g in ge:
+                if isinstance(g, Solid) and g.Volume > 1e-9:
+                    for e in g.Edges:
+                        for q in e.Tessellate():
+                            xs.append((tr.OfPoint(q) if tr else q).X)
+                elif isinstance(g, GeometryInstance):
+                    walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+        walk(pn.get_Geometry(Options()), None)
+    return [round((min(xs) - X0) * FT, 2), round((max(xs) - X0) * FT, 2)]
+
+
+X0 = 100.0
+res = []
+tg = TransactionGroup(doc, u"замер flip (откат)"); tg.Start()
+try:
+    for name in args["wall_types"]:
+        t = Transaction(doc, u"стена"); t.Start()
+        w = Wall.Create(doc, Line.CreateBound(XYZ(X0, 0, level.Elevation), XYZ(X0, 3000 / FT, level.Elevation)),
+                        wtypes[name].Id, level.Id, 2700 / FT, 0, False, False)
+        t.Commit()
+        a = glass_x(w)
+        t = Transaction(doc, u"flip"); t.Start(); w.Flip(); t.Commit()
+        b = glass_x(w)
+        lp = w.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM)
+        res.append({"type": name[:60], "unflipped_x": a, "flipped_x": b, "loc_line": lp.AsValueString() if lp else None})
+finally:
+    tg.RollBack()
+__output__ = {"status": "completed_unverified", "summary": u"замер %d типов, всё откатано" % len(res), "res": res}

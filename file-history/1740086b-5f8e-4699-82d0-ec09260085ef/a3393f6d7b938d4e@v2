@@ -1,0 +1,18 @@
+<section id="group" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<img src="/_blob/4ddd3e44bc4d7d12a5d8674095017ffa" alt="" style="position:absolute;left:0px;top:0px;width:56px;height:1080px;object-fit:cover">
+<p style="font-size:32px;font-weight:700;color:#2E7884;text-transform:uppercase;letter-spacing:3px">Групповой формат</p>
+<h2 style="font-family:'Cormorant Garamond', Georgia, serif;font-style:italic;font-size:96px;font-weight:600;line-height:1.1;color:#1F5560">В группе не нужно рассказывать свою историю вслух</h2>
+<div style="flex:1"></div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:4px solid #3A8F9C;padding:32px 0px 0px">
+<p style="font-size:34px;line-height:1.35">Каждый работает внутри себя, со своим материалом</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:4px solid #3A8F9C;padding:32px 0px 0px">
+<p style="font-size:34px;line-height:1.35">Протокол и специалист дают безопасность и опору</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;border-top:4px solid #3A8F9C;padding:32px 0px 0px">
+<p style="font-size:34px;line-height:1.35">Это не «группа поддержки»: границы остаются при вас</p>
+</div>
+</div>
+<aside>8:00–9:30. «EMDR бывает индивидуальным и групповым. В группе не нужно рассказывать свою историю вслух». Пауза, дать фразе дойти. «Каждый работает со своим материалом внутри себя, никто не узнает, о чём вы думали. Специалист ведёт группу по протоколу, правила дают безопасность. Это не группа поддержки, где надо раскрываться. Для творческих людей это часто идеальный первый шаг».</aside>
+</section>

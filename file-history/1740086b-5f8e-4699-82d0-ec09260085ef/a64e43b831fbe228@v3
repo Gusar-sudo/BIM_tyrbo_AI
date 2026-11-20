@@ -1,0 +1,7 @@
+<section id="quote" data-transition="fade" style="background:#F7E3D6;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px 160px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<p style="font-size:40px;font-weight:800;color:#7A3814;text-transform:uppercase;letter-spacing:3px">Частый запрос дизайнеров</p>
+<h2 style="font-size:84px;font-weight:800;font-style:italic;line-height:1.15;color:#7A3814">«Переделываю макет по десять раз, хотя клиент доволен»</h2>
+<hr style="width:240px;border-top:6px solid #C9622A">
+<p style="font-size:68px;font-weight:800;line-height:1.2;color:#2B2B2E">Вдохновение — не магия. Это ресурс.</p>
+<aside>«Есть запрос, который я слышу от дизайнеров снова и снова: „Я переделываю макет по десять раз, хотя клиент давно доволен“. Это не про вкус и не про перфекционизм. Это застрявший страх. Когда фоновый стресс снят, освобождается место для вдохновения. Вдохновение — это не магия, это ресурс. Когда психика перестаёт тратить силы на тревогу, он возвращается». Если есть обезличенный случай с согласия клиента, добавить одну деталь.</aside>
+</section>

@@ -1,0 +1,415 @@
+# -*- coding: utf-8 -*-
+# Листы «схема тетради/альбома — модель»: каждая схема строится в вариантах orig / mirror / rot30 (и угол для FS.C-05),
+# планы 1:2 Fine, на листе A3 — вырезка схемы + планы + подписи + итог самопроверки (пересечения импостов со стеклом).
+# PDF и PNG листов выгружаются, затем ВСЁ откатывается (модель не меняется).
+# Аргументы: args_file -> {schemes:[...], out_dir, pdf_name, origin_mm, step_mm}
+# Схема: {key, title, crop_png, kind: inline|end|corner|tee, wall_type, mullion_type (inline/end, orig), mullion_type_mirror,
+#   column_type, column_type_mirror (corner/tee), panel_left, panel_right (inline), panel (прочие), note, variants, angles}
+import json, os, math
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+L = 600 / FT
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+ptypes = dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s)
+              for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels))
+vft = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+ttype = FilteredElementCollector(doc).OfClass(TextNoteType).FirstElementId()
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_GenericAnnotation, BuiltInCategory.OST_CLines,
+        BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers]
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+MM = lambda v: v / FT
+
+
+def mullion_near(w, pt, vertical=True):
+    best, bd = None, 1e9
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        bb = m.get_BoundingBox(None)
+        if bb is None or (vertical and (bb.Max.Z - bb.Min.Z) < 1.0):
+            continue
+        c = (bb.Min + bb.Max) * 0.5
+        dd = math.hypot(c.X - pt.X, c.Y - pt.Y)
+        if dd < bd:
+            best, bd = m, dd
+    return best, bd * FT
+
+
+def new_wall(p0, p1, wt, flip):
+    w = Wall.Create(doc, Line.CreateBound(p0, p1), wtypes[wt].Id, level.Id, 2700 / FT, 0, False, False)
+    if flip:
+        w.Flip()
+    WallUtils.DisallowWallJoinAtEnd(w, 0); WallUtils.DisallowWallJoinAtEnd(w, 1)
+    return w
+
+
+def set_panels(w, P, d, left, right):
+    # left/right — по направлению d от точки P
+    for pid in w.CurtainGrid.GetPanelIds():
+        p = doc.GetElement(pid)
+        bb = p.get_BoundingBox(None)
+        if bb is None:
+            continue
+        c = (bb.Min + bb.Max) * 0.5
+        s = (c - P).DotProduct(d)
+        nm = left if s < 0 else right
+        if nm and nm in ptypes:
+            st = ptypes[nm]
+            if not st.IsActive:
+                st.Activate()
+            try:
+                p.Pinned = False
+            except Exception:
+                pass
+            if p.GetTypeId() != st.Id:
+                p.ChangeTypeId(st.Id)
+
+
+def solids(el):
+    out = []
+
+    def wk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                wk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    o = Options(); o.DetailLevel = ViewDetailLevel.Fine
+    wk(el.get_Geometry(o), None)
+    return out
+
+
+def overlap(mull, walls):
+    # объём пересечения тела импоста/столба с панелями стен (мм3 на метр высоты)
+    cs = solids(mull); tot = 0.0
+    for w in walls:
+        for pid in w.CurtainGrid.GetPanelIds():
+            for ps in solids(doc.GetElement(pid)):
+                for c in cs:
+                    try:
+                        x = BooleanOperationsUtils.ExecuteBooleanOperation(c, ps, BooleanOperationsType.Intersect)
+                        if x is not None:
+                            tot += x.Volume
+                    except Exception:
+                        pass
+    return round(tot * FT ** 3 / 2700.0, 0)
+
+
+GL = {}
+basic_wt = None
+for _w in FilteredElementCollector(doc).OfClass(WallType):
+    if _w.Kind == WallKind.Basic and _w.Width * FT >= 100:
+        basic_wt = _w
+        if u"етон" in _w.Name or u"ирпич" in _w.Name:
+            break
+
+
+def basic_wall(p0, p1):
+    w = Wall.Create(doc, Line.CreateBound(p0, p1), basic_wt.Id, level.Id, 2700 / FT, 0, False, False)
+    WallUtils.DisallowWallJoinAtEnd(w, 0); WallUtils.DisallowWallJoinAtEnd(w, 1)
+    return w
+
+
+def hub_of(ma, sc, P):
+    best = None
+    for s in solids(ma):
+        for f in s.Faces:
+            if isinstance(f, CylindricalFace):
+                rad = f.get_Radius(0).GetLength()
+                if rad * FT > 15 and (best is None or rad > best[1]):
+                    best = (f.Origin, rad)
+    return best
+
+
+def build(sc, var, P):
+    """Строит вариант схемы в точке P. var: dict(mx, column_type, b_side, angle_deg). Возвращает (walls, key_mullion)."""
+    mx = bool(var.get("mx"))
+    th = math.radians(var.get("rot", 0))
+    d = XYZ(math.cos(th), math.sin(th), 0)          # локальная ось X схемы
+    n = XYZ(-math.sin(th), math.cos(th), 0)         # локальная ось Y схемы
+    kind = sc["kind"]
+
+    def uv(el):
+        us, vs = [], []
+        for s in solids(el):
+            for e in s.Edges:
+                for q in e.Tessellate():
+                    us.append((q - P).DotProduct(d)); vs.append((q - P).DotProduct(n))
+        return us, vs
+    if kind == "pair":
+        # две стойки на расстоянии gap, стекло между ними; для сверки размера стекла с альбомом
+        gap = MM(sc.get("gap_mm", 200))
+        w = new_wall(P - d * L, P + d * (gap + L), sc["wall_type"], False)
+        doc.Regenerate()
+        w.CurtainGrid.AddGridLine(False, P + XYZ(0, 0, 1), False)
+        doc.Regenerate()
+        w.CurtainGrid.AddGridLine(False, P + d * gap + XYZ(0, 0, 1), False)
+        doc.Regenerate()
+        ta, tb = (sc["type_b"], sc["type_a"]) if mx else (sc["type_a"], sc["type_b"])
+        mA, _ = mullion_near(w, P); mB, _ = mullion_near(w, P + d * gap)
+        mA.ChangeTypeId(mtypes[ta].Id); mB.ChangeTypeId(mtypes[tb].Id)
+        set_panels(w, P, d, sc.get("panel"), sc.get("panel"))
+        doc.Regenerate()
+        GL.pop(sc["key"], None)
+        for pid in w.CurtainGrid.GetPanelIds():
+            pn = doc.GetElement(pid)
+            bb = pn.get_BoundingBox(None)
+            s = ((bb.Min + bb.Max) * 0.5 - P).DotProduct(d)
+            if 0 < s < gap:
+                st = doc.GetElement(pn.GetTypeId())
+                Lf = pn.LookupParameter(u"ADSK_Размер_Ширина").AsDouble() * FT
+                vs_ = st.LookupParameter(u"Выступ сбоку").AsDouble() * FT
+                ftw = pn.LookupParameter(u"FT_Стекло_Ширина").AsDouble() * FT
+                GL[sc["key"] + var["label"]] = (Lf, Lf + 2 * vs_, ftw)
+        return [w], mA
+    if kind == "end_wall":
+        walls, m = build(dict(sc, kind="end"), var, P)
+        doc.Regenerate()
+        us, vs = uv(m)
+        hw = basic_wt.Width / 2.0
+        c = P + d * ((min(us) - hw) if mx else (max(us) + hw))
+        basic_wall(c - n * MM(500), c + n * MM(500))
+        return walls, m
+    if kind == "inline":
+        w = new_wall(P + d * L, P - d * L, sc["wall_type"], True) if mx else new_wall(P - d * L, P + d * L, sc["wall_type"], False)
+        doc.Regenerate()
+        w.CurtainGrid.AddGridLine(False, P + XYZ(0, 0, 1), False)
+        doc.Regenerate()
+        m, _ = mullion_near(w, P)
+        if sc.get("mullion_type"):
+            m.ChangeTypeId(mtypes[sc["mullion_type_mirror" if mx and sc.get("mullion_type_mirror") else "mullion_type"]].Id)
+        pl, pr = sc.get("panel_left", sc.get("panel")), sc.get("panel_right", sc.get("panel"))
+        set_panels(w, P, d, pr if mx else pl, pl if mx else pr)
+        doc.Regenerate()
+        return [w], m
+    if kind == "end":
+        # orig: стена приходит слева и кончается в P; mirror: стена начинается в P и уходит вправо
+        w = new_wall(P, P + d * L, sc["wall_type"], False) if mx else new_wall(P - d * L, P, sc["wall_type"], False)
+        doc.Regenerate()
+        m, _ = mullion_near(w, P)
+        m.ChangeTypeId(mtypes[sc["mullion_type_mirror" if mx else "mullion_type"]].Id)
+        set_panels(w, P, d, sc.get("panel"), sc.get("panel"))
+        doc.Regenerate()
+        return [w], m
+    if kind in ("corner", "tee"):
+        ang = math.radians(var.get("angle_deg", sc.get("angle_deg", 90)))
+        if kind == "tee":
+            wa = new_wall(P - d * L, P + d * L, sc["wall_type"], False)
+            doc.Regenerate()
+            wa.CurtainGrid.AddGridLine(False, P + XYZ(0, 0, 1), False)
+        elif mx:
+            wa = new_wall(P, P + d * L, sc["wall_type"], False)
+        else:
+            wa = new_wall(P - d * L, P, sc["wall_type"], False)
+        doc.Regenerate()
+        ma, _ = mullion_near(wa, P)
+        ct = var.get("column_type") or sc["column_type_mirror" if (mx and kind == "corner") else "column_type"]
+        ma.ChangeTypeId(mtypes[ct].Id)
+        set_panels(wa, P, d, sc.get("panel"), sc.get("panel"))
+        doc.Regenerate()
+        us, vs = uv(ma)
+        side = int(var.get("b_side", sc.get("b_side", 1)))
+        dirB = d * ((1 if (mx or kind == "tee") else -1) * math.cos(ang)) + n * (side * math.sin(ang))
+        b0 = P + d * ((min(us) + max(us)) / 2.0) + n * (max(vs) if side > 0 else min(vs))
+        if sc.get("radial"):
+            if sc.get("hub_from_end_mm") is not None:
+                hub = P + d * ((min(us) + MM(sc["hub_from_end_mm"])) if mx else (max(us) - MM(sc["hub_from_end_mm"])))
+            else:
+                hb = hub_of(ma, sc, P)
+                hub = XYZ(hb[0].X, hb[0].Y, P.Z) if hb else P + d * ((min(us) + max(us)) / 2.0)
+            b0 = hub + dirB * MM(sc.get("b_offset_mm", 59.4))
+        if sc.get("b_basic"):
+            # сторона B — существующая стена (основание), стекла нет
+            basic_wall(b0 + dirB * (basic_wt.Width / 2.0), b0 + dirB * (basic_wt.Width / 2.0 + L))
+            return [wa], ma
+        wb = new_wall(b0, b0 + dirB * L, sc["wall_type"], mx)
+        doc.Regenerate()
+        mb, db = mullion_near(wb, b0)
+        if mb is not None and db < 50:
+            mb.Pinned = False
+            doc.Delete(mb.Id)
+        set_panels(wb, b0, dirB, sc.get("panel_b", sc.get("panel")), sc.get("panel_b", sc.get("panel")))
+        doc.Regenerate()
+        # стекло B заходит за грань столба на «Выступ сбоку» (как в стойку)
+        pr = []
+        for pid in wb.CurtainGrid.GetPanelIds():
+            for s in solids(doc.GetElement(pid)):
+                for e in s.Edges:
+                    for q in e.Tessellate():
+                        pr.append((q - b0).DotProduct(dirB))
+        pn0 = doc.GetElement(list(wb.CurtainGrid.GetPanelIds())[0])
+        vp = doc.GetElement(pn0.GetTypeId()).LookupParameter(u"Выступ сбоку")
+        if pr and vp:
+            ElementTransformUtils.MoveElement(doc, wb.Id, dirB * (-vp.AsDouble() - min(pr)))
+            doc.Regenerate()
+        return [wa, wb], ma
+    raise Exception(u"kind " + kind)
+
+
+def plan(P, half, name, scale):
+    v = ViewPlan.Create(doc, vft.Id, level.Id)
+    v.Name = name[:60]
+    vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, 500 / FT); v.SetViewRange(vr)
+    box = BoundingBoxXYZ(); box.Min = XYZ(P.X - half, P.Y - half * 0.62, -1000); box.Max = XYZ(P.X + half, P.Y + half * 0.62, 1000)
+    v.CropBox = box; v.CropBoxActive = True; v.CropBoxVisible = False
+    v.Scale = scale; v.DetailLevel = ViewDetailLevel.Fine
+    for bic in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(bic), True)
+        except Exception:
+            pass
+    return v
+
+
+VLABEL = {"orig": u"Исходная (как в тетради)", "mirror": u"Зеркальная", "rot30": u"Повёрнута на 30°"}
+res = {"sheets": [], "errors": []}
+sheet_ids = List[ElementId]()
+ox, oy = args.get("origin_mm", [20000, 200000])
+step = args.get("step_mm", 4000) / FT
+tg = TransactionGroup(doc, u"листы схема-модель (откат)"); tg.Start()
+try:
+    if args.get("preload_rfas"):
+        import clr
+
+        class _LO(IFamilyLoadOptions):
+            def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+                overwriteParameterValues.Value = True
+                return True
+
+            def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+                source.Value = FamilySource.Family
+                overwriteParameterValues.Value = True
+                return True
+        t0 = Transaction(doc, u"семейства (откат)"); t0.Start()
+        res["preloaded"] = [bool(doc.LoadFamily(f, _LO(), clr.Reference[Family]())) for f in args["preload_rfas"]]
+        t0.Commit()
+        ptypes.update(dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s)
+                           for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels)))
+        if args.get("mullion_types_create"):
+            t0 = Transaction(doc, u"типы стоек (откат)"); t0.Start()
+            fams_ = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+            for it in args["mullion_types_create"]:
+                if it["new_type"] in mtypes or it["new_profile"] not in fams_:
+                    continue
+                nt = mtypes[it["base_type"]].Duplicate(it["new_type"])
+                nt.get_Parameter(BuiltInParameter.MULLION_PROFILE).Set(list(fams_[it["new_profile"]].GetFamilySymbolIds())[0])
+                mtypes[it["new_type"]] = nt
+            t0.Commit()
+        if args.get("type_params"):
+            t0 = Transaction(doc, u"параметры типов (откат)"); t0.Start()
+            for it in args["type_params"]:
+                ptypes[it["type"]].LookupParameter(it["param"]).Set(it["mm"] / FT)
+            t0.Commit()
+    for i, sc in enumerate(args["schemes"]):
+        checkpoint(sc["key"], i, len(args["schemes"]))
+        r = {"key": sc["key"], "variants": {}}
+        try:
+            t = Transaction(doc, u"схема " + sc["key"]); t.Start()
+            half = MM(sc.get("half_mm", 75))
+            scale = int(sc.get("scale", 1))
+            variants = sc.get("variants") or [{"label": u"Как в тетради", "mx": False}, {"label": u"Зеркальная", "mx": True},
+                                              {"label": u"Повёрнута на 30°", "mx": False, "rot": 30}]
+            views = []
+            for j, var in enumerate(variants):
+                P = XYZ(MM(ox) + i * step, MM(oy) + j * step, level.Elevation)
+                before = set(e.Value for e in FilteredElementCollector(doc).OfClass(Wall).ToElementIds())
+                walls, key_m = build(sc, var, P)   # поворот учтён в системе координат схемы
+                doc.Regenerate()
+                ov = overlap(key_m, walls)
+                mtn = doc.GetElement(key_m.GetTypeId()).get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
+                r["variants"][var["label"]] = {"overlap_mm3_per_m": ov, "mullion": mtn}
+                lab = u"%s [%s]" % (var["label"], mtn)
+                Pc = P
+                if sc["kind"] == "pair":
+                    th = math.radians(var.get("rot", 0))
+                    dd = XYZ(math.cos(th), math.sin(th), 0)
+                    Pc = P + dd * MM(sc.get("gap_mm", 200) / 2.0)
+                    g = None
+                    try:
+                        best = None
+                        for pid in walls[0].CurtainGrid.GetPanelIds():
+                            pn = doc.GetElement(pid)
+                            bb = pn.get_BoundingBox(None)
+                            s_ = abs(((bb.Min + bb.Max) * 0.5 - P).DotProduct(dd) * FT - sc.get("gap_mm", 200) / 2.0)
+                            if best is None or s_ < best[0]:
+                                best = (s_, pn)
+                        if best:
+                                pn = best[1]
+                                st = doc.GetElement(pn.GetTypeId())
+                                Lf = pn.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH).AsDouble() * FT
+                                vs_ = st.LookupParameter(u"Выступ сбоку").AsDouble() * FT
+                                fp = pn.LookupParameter(u"FT_Стекло_Ширина")
+                                g = (Lf, Lf + 2 * vs_, fp.AsDouble() * FT if fp else -1)
+                    except Exception as exg:
+                        r["variants"][var["label"]]["glass_err"] = str(exg)[:120]
+                    if g and sc.get("k_album") is not None:
+                        la = g[0] + sc["k_album"]
+                        lab += u"\nL=%.1f; стекло в модели (геометрия) %.1f; FT_Стекло_Ширина без поправки %.0f; по альбому l=L+%s=%.1f; геометрия−альбом %+.1f" % (
+                            g[0], g[1], g[2], sc["k_album"], la, g[1] - la)
+                        r["variants"][var["label"]]["glass"] = [round(g[0], 1), round(g[1], 1), round(g[2], 1), round(la, 1)]
+                views.append((lab, plan(Pc, half * (1.15 if (var.get("rot", 0) % 90) else 1.0), u"%s — %s" % (sc["key"], var["label"]), scale), ov))
+            doc.Regenerate()
+            # лист A3 (без рамки), сетка 2х2: [схема тетради | исходная] / [зеркальная | повёрнутая]
+            sh = ViewSheet.Create(doc, ElementId.InvalidElementId)
+            nm = u"%s %s" % (sc["key"], sc.get("title", u""))
+            for ch in u':{}[]|;<>?`~\\':
+                nm = nm.replace(ch, u" ")
+            sh.Name = nm[:60]
+            sh.SheetNumber = u"СХ-" + sc["key"]
+            TextNote.Create(doc, sh.Id, XYZ(MM(5), MM(296), 0),
+                            u"%s  %s.   Источник: %s.   Масштаб планов 1:%d.\n%s" % (sc["key"], sc.get("title", u""), sc.get("source", u"Техническая тетрадь FS.Model3 2018"), scale, sc.get("note", u"")), ttype)
+            it = ImageType.Create(doc, ImageTypeOptions(sc["crop_png"], False, ImageTypeSource.Import))
+            im = ImageInstance.Create(doc, sh, it.Id, ImagePlacementOptions(XYZ(MM(5), MM(280), 0), BoxPlacement.TopLeft))
+            im.Width = MM(200)
+            doc.Regenerate()
+            bb = im.get_BoundingBox(sh)
+            if bb:
+                ElementTransformUtils.MoveElement(doc, im.Id, XYZ(MM(5) - bb.Min.X, MM(280) - bb.Max.Y, 0))
+            cells = [(MM(215), MM(282)), (MM(5), MM(141)), (MM(215), MM(141))]
+            for j, (var, v, ov) in enumerate(views[:3]):
+                x0, y0 = cells[j]
+                Viewport.Create(doc, sh.Id, v.Id, XYZ(x0 + MM(102), y0 - MM(72), 0))
+                TextNote.Create(doc, sh.Id, XYZ(x0, y0, 0),
+                                u"%s\nпересечение импост–стекло — %s" % (var, u"нет" if ov < 500 else u"%d мм³/м" % ov), ttype)
+            t.Commit()
+            sheet_ids.Add(sh.Id)
+            # PNG листа для самопроверки
+            e = ImageExportOptions(); e.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(sh.Id); e.SetViewsAndSheets(ids)
+            e.ZoomType = ZoomFitType.FitToPage; e.PixelSize = int(args.get("px", 3500))
+            e.ImageResolution = ImageResolution.DPI_300; e.HLRandWFViewsFileType = ImageFileType.PNG
+            e.FilePath = os.path.join(OUT, u"sheet_" + sc["key"].replace(u".", u"-"))
+            doc.ExportImage(e)
+        except Exception as ex:
+            r["error"] = str(ex)[:200]
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        res["sheets"].append(r)
+    if sheet_ids.Count:
+        o = PDFExportOptions()
+        o.FileName = args.get("pdf_name", u"схемы_модель")
+        o.Combine = True
+        o.PaperFormat = ExportPaperFormat.ISO_A3
+        o.PaperOrientation = PageOrientationType.Landscape
+        o.ZoomType = ZoomType.FitToPage
+        o.HideCropBoundaries = True
+        o.HideScopeBoxes = True
+        o.HideReferencePlane = True
+        res["pdf_ok"] = bool(doc.Export(OUT, sheet_ids, o))
+        res["pdf"] = os.path.join(OUT, o.FileName + u".pdf")
+finally:
+    tg.RollBack()
+bad = [s["key"] for s in res["sheets"] if "error" in s]
+res["status"] = "completed_unverified" if not bad else "partial"
+res["summary"] = u"листов %d, ошибок %d, PDF %s; всё откатано" % (sheet_ids.Count, len(bad), res.get("pdf_ok"))
+__output__ = res

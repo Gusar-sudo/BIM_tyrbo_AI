@@ -1,0 +1,25 @@
+﻿{
+    "loops_json":  "C:\\Users\\user\\Desktop\\Фристайл\\_bim\\batches\\M2_C\\loops_fsc05_corner2_left.json",
+    "vitr_group":  "FS.C-24",
+    "fixed_groups":  [
+                         "FS.C-05"
+                     ],
+    "rot_groups":  [
+
+                   ],
+    "angles":  [
+                   90,
+                   135,
+                   180,
+                   225,
+                   270
+               ],
+    "px_mm":  40,
+    "min_seg_mm":  0.85,
+    "dp_mm":  0.03,
+    "circle_r_mm":  41.7,
+    "disc_min_x_mm":  -39.77,
+    "out_json":  "C:\\Users\\user\\Desktop\\Фристайл\\_bim\\batches\\M2_C\\body_fsc05_2l.json",
+    "preview_png":  "C:\\Users\\user\\Desktop\\Фристайл\\_bim\\review\\2026-11-11_open_issues\\04_angles\\holder\\body_fsc05_2l.png",
+    "holder_json":  "C:\\Users\\user\\Desktop\\Фристайл\\_bim\\batches\\M2_C\\holder_fsc06_prof.json"
+}

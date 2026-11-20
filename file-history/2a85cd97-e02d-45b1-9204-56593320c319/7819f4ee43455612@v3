@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+# Подготовка (include для horizun_execute_python): определяет PREP(doc) — загрузить профили с лентой из папки и
+# переключить краевые типы импостов («примыкание к стене/полу/потолку», не дверные) с общих профилей на копии «…Стена».
+# Параметры берутся из глобальной PREP_ARGS (dict): rfa_dir, copies {исходное семейство: копия}.
+# Вызывающий скрипт сам открывает и откатывает/фиксирует группу транзакций.
+import os, clr
+from Autodesk.Revit.DB import *
+
+
+class _PrepLO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True
+        return True
+
+    def OnSharedFamilyFound(self, a, b, src, c):
+        src.Value = FamilySource.Family; c.Value = True
+        return True
+
+
+def _is_edge(n):
+    return (u"М2" in n or u"М3" in n) and (u"примыкание к стене" in n or u"примыкание к полу" in n or u"примыкание к потолку" in n) and u"дверн" not in n.lower()
+
+
+def PREP(doc, pa=None):
+    pa = pa or globals().get("PREP_ARGS") or {}
+    out = {"loaded": 0, "load_fail": [], "swapped": [], "swap_fail": []}
+    t = Transaction(doc, u"FT: лента — загрузка профилей"); t.Start()
+    for f in sorted(os.listdir(pa["rfa_dir"])):
+        if f.lower().endswith(".rfa") and not __import__("re").search(r"\.\d{4}\.rfa$", f.lower()):   # резервные копии Revit не грузить
+            ok = doc.LoadFamily(os.path.join(pa["rfa_dir"], f), _PrepLO(), clr.Reference[Family]())
+            if ok:
+                out["loaded"] += 1
+            else:
+                out["load_fail"].append(f)
+    t.Commit()
+    fams = dict((fa.Name, fa) for fa in FilteredElementCollector(doc).OfClass(Family))
+    copies = pa.get("copies") or {}
+    if pa.get("copies_file"):   # {"copies": {...}} файлом
+        import io, json as _j
+        copies = _j.loads(io.open(pa["copies_file"], encoding="utf-8").read())["copies"]
+    t = Transaction(doc, u"FT: лента — краевые типы на копии профилей"); t.Start()
+    for m in FilteredElementCollector(doc).OfClass(MullionType):
+        if not _is_edge(m.Name):
+            continue
+        p = m.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+        pr = doc.GetElement(p.AsElementId())
+        if pr is None or pr.FamilyName not in copies:
+            continue
+        cf = fams.get(copies[pr.FamilyName])
+        if cf is None:
+            out["swap_fail"].append([m.Name, u"нет копии"]); continue
+        sid = list(cf.GetFamilySymbolIds())[0]
+        if p.Set(sid):
+            out["swapped"].append(m.Name)
+        else:
+            out["swap_fail"].append([m.Name, u"Set отказал"])
+    t.Commit()
+    return out

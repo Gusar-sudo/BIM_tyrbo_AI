@@ -1,0 +1,49 @@
+# Только чтение: скрипты skills vs SKILL.md, шапки скриптов, копия плагина vs рабочие skills
+import os, re, io, hashlib, json, glob
+H = os.path.expanduser("~/.claude/skills")
+P = "C:/Users/user/Desktop/Фристайл/_bim/plugin"
+out = {"skills": {}, "plugin": {}}
+def md5(p): return hashlib.md5(open(p, "rb").read()).hexdigest()
+for sk in sorted(os.listdir(H)):
+    d = os.path.join(H, sk)
+    if not os.path.isdir(d) or not (sk.startswith("fst-") or sk in ("partition-family-author", "fetch-checklist-audit")):
+        continue
+    md = io.open(os.path.join(d, "SKILL.md"), encoding="utf-8").read() if os.path.exists(os.path.join(d, "SKILL.md")) else ""
+    refs = ""
+    for r in glob.glob(os.path.join(d, "references", "*.md")):
+        refs += io.open(r, encoding="utf-8").read()
+    scripts = sorted(os.path.basename(f) for f in glob.glob(os.path.join(d, "scripts", "*")) if os.path.isfile(f))
+    mentioned = set(re.findall(r"[\w\-]+\.(?:py|ps1)", md))
+    undoc = [s for s in scripts if s not in md and s not in refs]
+    dangling = [m for m in mentioned if m not in scripts and not any(os.path.exists(os.path.join(H, o, "scripts", m)) for o in os.listdir(H))]
+    nohdr = []
+    for s in scripts:
+        if not s.endswith(".py"): continue
+        txt = io.open(os.path.join(d, "scripts", s), encoding="utf-8", errors="replace").read(1500)
+        if not re.search(r"(Аргумент|Запуск|Usage|argv|HORIZUN_ARGS_JSON)", txt):
+            nohdr.append(s)
+    out["skills"][sk] = {"scripts": len(scripts), "skill_md_lines": md.count("\n"), "undocumented": undoc, "dangling_refs": dangling, "no_args_header": nohdr,
+                         "lessons_lines": io.open(os.path.join(d, "references", "lessons.md"), encoding="utf-8").read().count("\n") if os.path.exists(os.path.join(d, "references", "lessons.md")) else None}
+# плагин
+src_root = None
+for c in [os.path.join(P, "fst-bim", "skills"), os.path.join(P, "skills"), os.path.join(P, "plugins", "fst-bim", "skills")]:
+    if os.path.isdir(c): src_root = c
+out["plugin"]["root"] = src_root
+if src_root:
+    diff = {"only_home": [], "only_plugin": [], "changed": []}
+    for sk in out["skills"]:
+        a = os.path.join(H, sk); b = os.path.join(src_root, sk)
+        fa = set(os.path.relpath(os.path.join(r, f), a) for r, _, fs in os.walk(a) for f in fs if "__pycache__" not in r)
+        fb = set(os.path.relpath(os.path.join(r, f), b) for r, _, fs in os.walk(b) for f in fs if "__pycache__" not in r) if os.path.isdir(b) else set()
+        diff["only_home"] += [sk + "/" + x for x in sorted(fa - fb)]
+        diff["only_plugin"] += [sk + "/" + x for x in sorted(fb - fa)]
+        diff["changed"] += [sk + "/" + x for x in sorted(fa & fb) if md5(os.path.join(a, x)) != md5(os.path.join(b, x))]
+    out["plugin"]["diff_counts"] = dict((k, len(v)) for k, v in diff.items())
+    out["plugin"]["diff"] = diff
+    for f in glob.glob(os.path.join(P, "**", "plugin.json"), recursive=True) + glob.glob(os.path.join(P, "**", "marketplace.json"), recursive=True):
+        try:
+            j = json.load(io.open(f, encoding="utf-8")); out["plugin"].setdefault("manifests", {})[os.path.relpath(f, P)] = j.get("version") or [p.get("version") for p in j.get("plugins", [])]
+        except Exception as e:
+            out["plugin"].setdefault("manifests", {})[f] = str(e)
+    out["plugin"]["dist"] = [(os.path.basename(f), os.path.getmtime(f)) for f in glob.glob(os.path.join(P, "dist", "*"))]
+print(json.dumps(out, ensure_ascii=False, indent=1))

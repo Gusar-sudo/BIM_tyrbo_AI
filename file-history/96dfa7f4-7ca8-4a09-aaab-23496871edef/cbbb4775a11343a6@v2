@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+# Вариант A уплотнителей, шаг A: копии семейств стеклянных панелей ->
+#  1) ADSK_Размер_Ширина/Высота -> отчётные (фактический размер панели);
+#  2) общие параметры FT_Стекло_Уплотнитель_Артикул (тип, формула от «Толщина стекла»),
+#     FT_Стекло_Уплотнитель_Линий (тип), FT_Стекло_Уплотнитель_Длина (экземпляр, формула);
+#  3) к каждому типу — типы с другими толщинами стекла из [5, 6, 8, 10] мм («<имя> (стекло N мм)»);
+#  -> SaveAs в out_dir. Модель проекта НЕ меняется.
+# Аргументы: spf, out_dir, families: [{family_id, lines}]
+import json
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+app = doc.Application
+FT = 304.8
+THK = [5, 6, 8, 10]
+F_ART = u'if(Толщина стекла < 5.5 мм, "FS.C-U5", if(Толщина стекла < 7 мм, "FS.C-U6", if(Толщина стекла < 9 мм, "FS.C-U8", "FS.C-U10")))'
+F_LEN = u"2 * (ADSK_Размер_Ширина + ADSK_Размер_Высота) * FT_Стекло_Уплотнитель_Линий"
+
+
+def fparam(fm, name):
+    for p in fm.Parameters:
+        if p.Definition.Name == name:
+            return p
+    return None
+
+
+old_spf = app.SharedParametersFilename
+results = []
+try:
+    app.SharedParametersFilename = args["spf"]
+    defs = {}
+    for g in app.OpenSharedParameterFile().Groups:
+        for d in g.Definitions:
+            defs[d.Name] = d
+    for job in args["families"]:
+        fam = doc.GetElement(ElementId(int(job["family_id"])))
+        r = {"family": fam.Name, "ok": False, "steps": []}
+        fdoc = doc.EditFamily(fam)
+        try:
+            fm = fdoc.FamilyManager
+            t = Transaction(fdoc, u"FT: уплотнитель по толщине стекла")
+            t.Start()
+            for nm in (u"ADSK_Размер_Ширина", u"ADSK_Размер_Высота"):
+                p = fparam(fm, nm)
+                if p is not None and not p.IsReporting:
+                    fm.MakeReporting(p)
+                r["steps"].append(u"%s reporting=%s" % (nm, fparam(fm, nm).IsReporting))
+            p_art = fparam(fm, u"FT_Стекло_Уплотнитель_Артикул") or fm.AddParameter(defs[u"FT_Стекло_Уплотнитель_Артикул"], GroupTypeId.Data, False)
+            p_lin = fparam(fm, u"FT_Стекло_Уплотнитель_Линий") or fm.AddParameter(defs[u"FT_Стекло_Уплотнитель_Линий"], GroupTypeId.Data, False)
+            p_len = fparam(fm, u"FT_Стекло_Уплотнитель_Длина") or fm.AddParameter(defs[u"FT_Стекло_Уплотнитель_Длина"], GroupTypeId.Data, True)
+            p_thk = fparam(fm, u"Толщина стекла")
+            orig = [(tp, tp.Name) for tp in fm.Types]
+            created = []
+            for tp, name in orig:
+                fm.CurrentType = tp
+                fm.Set(p_lin, float(job["lines"]))
+                cur = int(round(tp.AsDouble(p_thk) * FT))
+                for th in THK:
+                    if th == cur:
+                        continue
+                    nn = u"%s (стекло %d мм)" % (name, th)
+                    if any(x.Name == nn for x in fm.Types):
+                        continue
+                    fm.CurrentType = tp
+                    nt = fm.NewType(nn)
+                    fm.CurrentType = nt
+                    fm.Set(p_thk, th / FT)
+                    fm.Set(p_lin, float(job["lines"]))
+                    created.append(nn)
+            fm.SetFormula(p_art, F_ART)
+            fm.SetFormula(p_len, F_LEN)
+            fdoc.Regenerate()
+            check = []
+            for tp in fm.Types:
+                fm.CurrentType = tp
+                fdoc.Regenerate()
+                check.append({"type": tp.Name, "glass_mm": int(round(tp.AsDouble(p_thk) * FT)), "article": tp.AsString(p_art), "lines": tp.AsDouble(p_lin)})
+            t.Commit()
+            r.update({"types_before": len(orig), "types_created": len(created), "types_after": fm.Types.Size, "check": check,
+                      "formula_art": p_art.Formula, "formula_len": p_len.Formula})
+            opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+            r["out_rfa"] = args["out_dir"] + u"\\" + fam.Name + u".rfa"
+            fdoc.SaveAs(r["out_rfa"], opts)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)
+        finally:
+            fdoc.Close(False)
+        results.append(r)
+finally:
+    app.SharedParametersFilename = old_spf
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Файлов семейств панелей: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

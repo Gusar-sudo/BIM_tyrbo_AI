@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+# Локально: аргументы vertical_nodes.py — секции альбомов М2 (рис.32-35) и М3 (рис.38-41), H=3000, ригель 2100.
+import json
+A = r"C:\Users\user\Desktop\Фристайл\_bim\review\album_vertical"
+W = {u"М2": u"BIMLIB_Витраж_Без разрезки_Система М2_Стойка основная_%s заполнение_62мм",
+     u"М3": u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_%s заполнение_72мм"}
+ST = {u"М2": u"FSC21", u"М3": u"FSC01К"}
+G = {u"М2": u"Глухая панель ГКЛ 12,5 с утеплителем 62 мм", u"М3": u"Глухая панель ГКЛ 12,5 с утеплителем 72 мм"}
+S1 = {u"М2": u"Однослойная стеклянная панель 62 мм", u"М3": u"Однослойная стеклянная панель 72 мм"}
+FIG = {u"М2": {u"глухая": (u"M2_рис32_глухая.png", u"рис.32"), u"одинарное": (u"M2_рис33_одинарное.png", u"рис.33"),
+               u"двойное": (u"M2_рис34_двойное.png", u"рис.34"), u"комбинированная": (u"M2_рис35_комбинированная.png", u"рис.35")},
+       u"М3": {u"глухая": (u"M3_рис38_глухая.png", u"рис.38"), u"одинарное": (u"M3_рис39_одинарное.png", u"рис.39"),
+               u"двойное": (u"M3_рис40_двойное.png", u"рис.40"), u"комбинированная": (u"M3_рис41_комбинированная.png", u"рис.41")}}
+items = []
+for s in (u"М2", u"М3"):
+    st = ST[s]
+    base = {"length_mm": 2000, "height_mm": 3000, "transom_mm": 2100, "grid_mm": [1000]}
+    for kind in (u"глухая", u"одинарное", u"двойное", u"комбинированная"):
+        png, cap = FIG[s][kind]
+        it = dict(base, key=u"%s-%s" % (s, kind), album_png=A + u"\\" + png,
+                  album_caption=u"Альбом технических решений %s, %s (вертикальное сечение)" % (s, cap))
+        B = lambda w_: u"%s %s %s" % (s, st, w_)
+        if kind == u"глухая":
+            z = {u"bottom": B(u"примыкание к полу глухой ГКЛ"), u"top": B(u"примыкание к потолку глухой ГКЛ"),
+                 u"transom": B(u"центральный глухой ГКЛ")}
+            for zz in (u"below", u"above"):
+                z[u"L_" + zz] = B(u"примыкание к стене глухой ГКЛ правый"); z[u"R_" + zz] = B(u"примыкание к стене глухой ГКЛ левый")
+                z[u"M_" + zz] = B(u"центральный глухой ГКЛ")
+            it.update(title=u"глухая секция ГКЛ", wall_type=W[s] % u"Двойное", panel_below=G[s], panel_above=G[s], zone_types=z)
+        elif kind == u"одинарное":
+            it.update(title=u"секция с одинарным остеклением", wall_type=W[s] % u"Одинарное")
+        elif kind == u"двойное":
+            it.update(title=u"секция с двойным остеклением", wall_type=W[s] % u"Двойное")
+        else:
+            it.update(title=u"комбинированная: стекло ниже ригеля, ГКЛ выше", wall_type=W[s] % u"Одинарное",
+                      panel_below=S1[s], panel_above=G[s],
+                      zone_types={u"transom": B(u"центральный стекло + ГКЛ с однослойным остеклением, ГКЛ справа"),
+                                  u"top": B(u"примыкание к потолку глухой ГКЛ"),
+                                  u"L_above": B(u"примыкание к стене глухой ГКЛ правый"),
+                                  u"R_above": B(u"примыкание к стене глухой ГКЛ левый"),
+                                  u"M_above": B(u"центральный глухой ГКЛ")})
+        items.append(it)
+mtc = []
+for fn in (u"args_gkl_side_FSC21_FSC139_FSC22.json", u"args_gkl_side_FSC01_FSC01К_FSC111_FSC09.json"):
+    for x in json.load(open(fn, encoding="utf-8"))["items"]:
+        mtc.append({"new_type": x["new_type"], "base_type": x["base_type"], "new_profile": x["new_profile"]})
+json.dump({"items": items, "preload_dir": r"C:\Users\user\Desktop\Фристайл\_bim\work\2026\families\gkl_side_2026-11-06",
+           "mullion_types_create": mtc, "out_dir": r"C:\Users\user\Desktop\Фристайл\_bim\review\vertical_nodes_gkl",
+           "pdf_name": u"Вертикальные_сечения_ригель_2100_модель_и_альбом", "origin_mm": [60000, 480000]},
+          open("args_vertical_nodes.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(len(items))

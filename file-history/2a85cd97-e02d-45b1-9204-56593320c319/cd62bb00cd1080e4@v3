@@ -1,0 +1,179 @@
+# -*- coding: utf-8 -*-
+# Партия КОПИЙ .rfa профилей (проект не меняется): для каждого семейства профиля из активного проекта
+# 1) в графику узла (вложенное семейство) — заливка FT_Алюминий по fills_dir\<имя>.json (под линиями, граница невидима),
+#    старые заливки FT_Алюминий удаляются, чёрные заливки уплотнителя -> seal_rgb;
+# 2) собственный контур профиля (3D-тело) заменяется контурами body_dir\<имя>.json (через трансформацию вложенного экземпляра);
+#    проверка: габарит нового контура против старого (dev_mm) — больше tol_bbox_mm -> копия не сохраняется.
+# Аргументы: names [] (или args_file), fills_dir, body_dir, out_dir, rgb, seal_rgb, tol_bbox_mm=1.5, save=true
+import json, io, os
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if args.get("args_file"):
+    args = json.loads(io.open(args["args_file"], encoding="utf-8-sig").read())
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+RGB = args.get("rgb", [169, 184, 199]); SEAL = args.get("seal_rgb", [29, 34, 41]); TN = u"FT_Алюминий"
+TOL = __revit__.Application.ShortCurveTolerance * FT * 1.02
+TB = float(args.get("tol_bbox_mm", 1.5))
+OUT = args["out_dir"]
+if not os.path.isdir(OUT): os.makedirs(OUT)
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+DET = ("DetailLine", "DetailArc", "DetailCurve", "DetailEllipse", "DetailNurbSpline")
+
+
+class LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True; return True
+
+    def OnSharedFamilyFound(self, s, a, src, b):
+        src.Value = FamilySource.Family; b.Value = True; return True
+
+
+def clean(pts):
+    out = []
+    for p in pts:
+        if not out or ((p[0] - out[-1][0]) ** 2 + (p[1] - out[-1][1]) ** 2) ** 0.5 >= TOL:
+            out.append(p)
+    while len(out) > 3 and ((out[0][0] - out[-1][0]) ** 2 + (out[0][1] - out[-1][1]) ** 2) ** 0.5 < TOL:
+        out.pop()
+    return out
+
+
+def loop_of(pts):
+    pts = clean(pts); cl = CurveLoop(); n = len(pts)
+    for i in range(n):
+        a = pts[i]; b = pts[(i + 1) % n]
+        cl.Append(Line.CreateBound(XYZ(a[0] / FT, a[1] / FT, 0), XYZ(b[0] / FT, b[1] / FT, 0)))
+    return cl
+
+
+def bbox(pts):
+    xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+    return [min(xs), min(ys), max(xs), max(ys)]
+
+
+rows = []
+for i, n in enumerate(args["names"]):
+    checkpoint(n, i, len(args["names"]))
+    r = {"family": n}
+    pd = None
+    try:
+        F = json.loads(io.open(os.path.join(args["fills_dir"], n + ".json"), encoding="utf-8").read())["regions"]
+        B = json.loads(io.open(os.path.join(args["body_dir"], n + ".json"), encoding="utf-8").read())["loops"]
+        pd = doc.EditFamily(fams[n])
+        fi = list(FilteredElementCollector(pd).OfClass(FamilyInstance))[0]
+        nd = pd.EditFamily(fi.Symbol.Family)
+        try:
+            t = Transaction(nd, u"цвет: алюминий"); t.Start()
+            solid = [fp for fp in FilteredElementCollector(nd).OfClass(FillPatternElement) if fp.GetFillPattern().IsSolidFill][0]
+            frts = list(FilteredElementCollector(nd).OfClass(FilledRegionType))
+            ft = [x for x in frts if x.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() == TN]
+            ft = ft[0] if ft else frts[0].Duplicate(TN)
+            ft.ForegroundPatternId = solid.Id; ft.ForegroundPatternColor = Color(RGB[0], RGB[1], RGB[2])
+            ft.BackgroundPatternId = ElementId.InvalidElementId
+            old = [x.Id for x in FilteredElementCollector(nd).OfClass(FilledRegion) if x.GetTypeId() == ft.Id]
+            for x in old: nd.Delete(x)
+            r["old_fills_removed"] = len(old); r["seal_recolored"] = 0
+            for x in frts:
+                if x.Id == ft.Id: continue
+                c0 = x.ForegroundPatternColor
+                if c0.IsValid and c0.Red < 30 and c0.Green < 30 and c0.Blue < 30:
+                    x.ForegroundPatternColor = Color(SEAL[0], SEAL[1], SEAL[2]); r["seal_recolored"] += 1
+            view = [v for v in FilteredElementCollector(nd).OfClass(View) if not v.IsTemplate and v.ViewType in (ViewType.FloorPlan, ViewType.CeilingPlan, ViewType.Detail, ViewType.DraftingView)][0]
+            inv = None
+            for gs in FilteredElementCollector(nd).OfClass(GraphicsStyle):
+                nm = gs.Name or ""
+                if (u"Невидим" in nm or "Invisible" in nm) and FilledRegion.IsValidLineStyleIdForFilledRegion(nd, gs.Id):
+                    inv = gs.Id; break
+            made = []; errs = []
+            def try_region(loops):
+                ll = List[CurveLoop]()
+                for l in loops: ll.Add(l)
+                st = SubTransaction(nd); st.Start()
+                try:
+                    fr = FilledRegion.Create(nd, ft.Id, view.Id, ll); st.Commit(); return fr
+                except Exception:
+                    st.RollBack(); return None
+            r["holes_skipped"] = 0
+            for rg in F:
+                try:
+                    outer = loop_of(rg["outer"])
+                except Exception as ex:
+                    errs.append(u"контур: " + str(ex)[:80]); continue
+                holes = []
+                for h in rg["holes"]:
+                    try: holes.append(loop_of(h))
+                    except Exception: r["holes_skipped"] += 1
+                fr = try_region([outer] + holes)
+                if fr is None:
+                    # по одной полости: оставить те, с которыми контур строится
+                    keep = []
+                    for h in holes:
+                        t2 = try_region([outer] + keep + [h])
+                        if t2 is not None:
+                            nd.Delete(t2.Id); keep.append(h)
+                        else:
+                            r["holes_skipped"] += 1
+                    fr = try_region([outer] + keep)
+                if fr is None:
+                    errs.append(u"заливка не построена"); continue
+                if inv is not None: fr.SetLineStyleId(inv)
+                made.append(fr.Id)
+            if made:
+                try: DetailElementOrderUtils.SendToBack(nd, view, List[ElementId](made))
+                except Exception: pass
+            r["fills"] = len(made); r["fill_errors"] = errs[:5]
+            t.Commit()
+            nd.LoadFamily(pd, LO())
+        finally:
+            nd.Close(False)
+        # 3D-тело
+        fi = list(FilteredElementCollector(pd).OfClass(FamilyInstance))[0]
+        T = fi.GetTotalTransform()
+        # отражение экземпляра (FacingFlipped/HandFlipped) в трансформации не учтено: применяем в координатах вложенного
+        fy = -1.0 if fi.FacingFlipped else 1.0; fx = -1.0 if fi.HandFlipped else 1.0
+        r["flip"] = [fx, fy]
+        own =[ce for ce in FilteredElementCollector(pd).OfClass(CurveElement) if ce.GetType().Name in DET]
+        oldpts = []
+        for ce in own:
+            for p in ce.GeometryCurve.Tessellate(): oldpts.append((p.X * FT, p.Y * FT))
+        newloops = [[T.OfPoint(XYZ(fx * p[0] / FT, fy * p[1] / FT, 0)) for p in lp["pts"]] for lp in B]
+        newpts = [(q.X * FT, q.Y * FT) for lp in newloops for q in lp]
+        bo = bbox(oldpts); bn = bbox(newpts)
+        dev = max(abs(a - b) for a, b in zip(bo, bn))
+        r.update(old_lines=len(own), new_lines=sum(len(l) for l in newloops), bbox_dev_mm=round(dev, 2), bbox_old=[round(v, 1) for v in bo], bbox_new=[round(v, 1) for v in bn])
+        if dev > TB:
+            r["skip"] = u"габарит тела отличается на %.2f мм" % dev
+        else:
+            view = pd.GetElement(own[0].OwnerViewId)
+            gs = own[0].LineStyle
+            t = Transaction(pd, u"тело по графике узла"); t.Start()
+            for ce in own: pd.Delete(ce.Id)
+            bad = 0
+            for P in newloops:
+                for k in range(len(P)):
+                    a = P[k]; b = P[(k + 1) % len(P)]
+                    try:
+                        c = pd.FamilyCreate.NewDetailCurve(view, Line.CreateBound(XYZ(a.X, a.Y, 0), XYZ(b.X, b.Y, 0)))
+                        try: c.LineStyle = gs
+                        except Exception: pass
+                    except Exception:
+                        bad += 1
+            r["body_errors"] = bad
+            if bad:
+                t.RollBack(); r["skip"] = u"тело: %d линий не создано" % bad
+            else:
+                t.Commit()
+        if args.get("save", True) and not r.get("skip"):
+            o = SaveAsOptions(); o.OverwriteExistingFile = True
+            pd.SaveAs(os.path.join(OUT, n + ".rfa"), o); r["saved"] = True
+    except Exception as ex:
+        r["error"] = str(ex)[:200]
+    finally:
+        if pd is not None: pd.Close(False)
+    rows.append(r)
+io.open(os.path.join(OUT, "_report.json"), "w", encoding="utf-8").write(json.dumps(rows, ensure_ascii=False, indent=1))
+__output__ = {"status": "completed_unverified", "summary": u"копий сохранено %d из %d; пропущено %d; ошибок %d; проект не менялся" % (
+    sum(1 for r in rows if r.get("saved")), len(rows), sum(1 for r in rows if r.get("skip")), sum(1 for r in rows if r.get("error"))),
+    "skipped": [[r["family"], r["skip"]] for r in rows if r.get("skip")][:40], "errors": [[r["family"], r["error"]] for r in rows if r.get("error")][:20]}

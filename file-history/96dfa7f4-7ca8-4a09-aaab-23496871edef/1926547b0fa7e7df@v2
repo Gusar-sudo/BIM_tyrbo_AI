@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+# Только чтение: все типы импостов М2/М3 — профиль, параметры ADSK, число экземпляров, в каких типах стен используются
+# (по умолчанию в типе стены и фактически). Пишет out_json.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+inst = {}
+walls_by_type = {}
+for m in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType():
+    tid = int(m.GetTypeId().Value)
+    inst[tid] = inst.get(tid, 0) + 1
+    h = m.Host
+    if h is not None:
+        walls_by_type.setdefault(tid, set()).add(h.Name)
+wt_default = {}
+for wt in FilteredElementCollector(doc).OfClass(WallType):
+    if wt.Kind != WallKind.Curtain:
+        continue
+    for bip in (BuiltInParameter.AUTO_MULLION_BORDER1_VERT, BuiltInParameter.AUTO_MULLION_BORDER2_VERT, BuiltInParameter.AUTO_MULLION_BORDER1_HORIZ,
+                BuiltInParameter.AUTO_MULLION_BORDER2_HORIZ, BuiltInParameter.AUTO_MULLION_INTERIOR_VERT, BuiltInParameter.AUTO_MULLION_INTERIOR_HORIZ):
+        p = wt.get_Parameter(bip)
+        if p and p.AsElementId() != ElementId.InvalidElementId:
+            wt_default.setdefault(int(p.AsElementId().Value), set()).add(wt.Name)
+rows = []
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    name = mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
+    if not (name.startswith(u"М2") or name.startswith(u"М3")):
+        continue
+    pp = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    prof = doc.GetElement(pp.AsElementId()) if pp else None
+    r = {"id": int(mt.Id.Value), "name": name, "profile": prof.Family.Name if prof else None,
+         "instances": inst.get(int(mt.Id.Value), 0),
+         "in_walls": sorted(walls_by_type.get(int(mt.Id.Value), [])),
+         "default_in_wall_types": sorted(wt_default.get(int(mt.Id.Value), []))}
+    for pn in (u"ADSK_Обозначение", u"ADSK_Наименование", u"ADSK_Марка"):
+        p = mt.LookupParameter(pn)
+        if p and p.AsString():
+            r[pn] = p.AsString()
+    rows.append(r)
+rows.sort(key=lambda r: r["name"])
+with open(args["out_json"], "w", encoding="utf-8") as f:
+    json.dump(rows, f, ensure_ascii=False, indent=1)
+__output__ = {"status": "completed_unverified", "summary": u"типов импостов М2/М3: %d, без экземпляров: %d" % (len(rows), sum(1 for r in rows if not r["instances"]))}

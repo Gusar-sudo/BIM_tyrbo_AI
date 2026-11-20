@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+# Семейства-профили уплотнителей FS.C-U5/U6/U8/U10 по контурам из «Уплотнители в перегородку.dwg»
+# (seal_profiles.json: x — от кромки стекла внутрь стекла, y — от лицевой грани стекла, минус — вглубь).
+# Шаблон «Метрическая система, профиль.rft»; линии — в виде «Опорный уровень»; SaveAs в out_dir. Проект НЕ меняется.
+# Аргументы: profiles_json, out_dir
+import json, os
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+FT = 304.8
+tpl = os.path.join(app.FamilyTemplatePath, u"Метрическая система, профиль.rft")
+prof = json.load(open(args["profiles_json"], encoding="utf-8"))
+res = []
+for name in ("U5", "U6", "U8", "U10"):
+    pts = prof[name]["pts"]
+    fname = u"BIMLIB_Профиль_Уплотнитель_FS.C-%s_ФристайлТехнолоджи" % name
+    fdoc = app.NewFamilyDocument(tpl)
+    r = {"name": name, "family": fname, "ok": False}
+    try:
+        view = [v for v in FilteredElementCollector(fdoc).OfClass(ViewPlan) if not v.IsTemplate][0]
+        t = Transaction(fdoc, u"контур"); t.Start()
+        n = len(pts)
+        for i in range(n):
+            a = XYZ(pts[i][0] / FT, pts[i][1] / FT, 0); b = XYZ(pts[(i + 1) % n][0] / FT, pts[(i + 1) % n][1] / FT, 0)
+            fdoc.FamilyCreate.NewDetailCurve(view, Line.CreateBound(a, b))
+        fm = fdoc.FamilyManager
+        if fm.CurrentType is None:
+            fm.NewType(u"Тип 1")
+        t.Commit()
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["rfa"] = os.path.join(args["out_dir"], fname + u".rfa")
+        fdoc.SaveAs(r["rfa"], opts)
+        r["lines"] = n; r["ok"] = True
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        fdoc.Close(False)
+    res.append(r)
+__output__ = {"status": "completed_unverified" if all(x["ok"] for x in res) else "partial",
+              "summary": u"профилей: %d" % sum(1 for x in res if x["ok"]), "profiles": res}

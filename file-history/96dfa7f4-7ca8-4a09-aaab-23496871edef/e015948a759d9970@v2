@@ -1,0 +1,59 @@
+# -*- coding: utf-8 -*-
+# Только чтение: состав семейства профиля углового столба — замкнутые контуры линий силуэта (габариты, есть ли дуги),
+# вложенные 2D-элементы (положение) и их содержимое (линии/области/компоненты с габаритами). Без сохранения.
+# Аргументы: family_names
+import json, math
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+byname = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+
+
+def loops(curves):
+    # группировка соединённых кривых
+    groups = []
+    for c in curves:
+        p0, p1 = c[1].GetEndPoint(0), c[1].GetEndPoint(1)
+        hit = [g for g in groups if any(p0.IsAlmostEqualTo(q) or p1.IsAlmostEqualTo(q) for q in g["pts"])]
+        if not hit:
+            groups.append({"ids": [c[0]], "pts": [p0, p1], "arcs": 1 if isinstance(c[1], Arc) else 0, "crv": [c[1]]})
+        else:
+            g = hit[0]
+            for h in hit[1:]:
+                g["ids"] += h["ids"]; g["pts"] += h["pts"]; g["arcs"] += h["arcs"]; g["crv"] += h["crv"]; groups.remove(h)
+            g["ids"].append(c[0]); g["pts"] += [p0, p1]; g["arcs"] += 1 if isinstance(c[1], Arc) else 0; g["crv"].append(c[1])
+    out = []
+    for g in groups:
+        xs = [p.X * FT for p in g["pts"]]; ys = [p.Y * FT for p in g["pts"]]
+        big = [(round(a.Center.X * FT, 1), round(a.Center.Y * FT, 1), round(a.Radius * FT, 1)) for a in g["crv"] if isinstance(a, Arc) and a.Radius * FT > 15]
+        out.append({"n": len(g["ids"]), "bbox": [round(min(xs), 1), round(min(ys), 1), round(max(xs), 1), round(max(ys), 1)], "arcs": g["arcs"], "big_arcs": big})
+    return out
+
+
+res = []
+for fn in args["family_names"]:
+    pdoc = doc.EditFamily(byname[fn])
+    try:
+        cs = [(int(ce.Id.Value), ce.GeometryCurve) for ce in FilteredElementCollector(pdoc).OfClass(CurveElement) if ce.GetType().Name == "DetailLine"]
+        r = {"family": fn, "silhouette_loops": loops(cs), "nested": []}
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            t = fi.GetTotalTransform()
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                ncs = [(int(ce.Id.Value), ce.GeometryCurve) for ce in FilteredElementCollector(nd).OfClass(CurveElement)]
+                frs = []
+                for fr in FilteredElementCollector(nd).OfClass(FilledRegion):
+                    bb = fr.get_BoundingBox(None)
+                    frs.append([round(bb.Min.X * FT, 1), round(bb.Min.Y * FT, 1), round(bb.Max.X * FT, 1), round(bb.Max.Y * FT, 1)])
+                comps = [[x.Symbol.Family.Name, round(x.GetTotalTransform().Origin.X * FT, 1), round(x.GetTotalTransform().Origin.Y * FT, 1)] for x in FilteredElementCollector(nd).OfClass(FamilyInstance)]
+                r["nested"].append({"family": fi.Symbol.Family.Name, "origin": [round(t.Origin.X * FT, 1), round(t.Origin.Y * FT, 1)],
+                                    "basisX": [round(t.BasisX.X, 3), round(t.BasisX.Y, 3)], "mirrored": fi.Mirrored,
+                                    "curve_loops": loops(ncs), "filled_regions": frs, "components": comps,
+                                    "classes": sorted(set(e.GetType().Name for e in FilteredElementCollector(nd).WhereElementIsNotElementType()))[:30]})
+            finally:
+                nd.Close(False)
+        res.append(r)
+    finally:
+        pdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": "read-only", "profiles": res}

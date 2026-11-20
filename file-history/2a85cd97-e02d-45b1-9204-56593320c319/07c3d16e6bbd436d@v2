@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+import json, sys
+S = json.load(open(r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\silhouettes_all.json", encoding="utf-8"))
+pairs = [(k, k.replace(u"Левый", u"Правый")) for k in S if u"ОднослойныйЛевый" in k and k.replace(u"Левый", u"Правый") in S]
+def pts(k):
+    return [(round(p[0], 1), round(p[1], 1)) for c in S[k]["curves"] for p in c["p"]]
+for l, r in pairs:
+    L, R = pts(l), pts(r)
+    lx = [p[0] for p in L]; ly = [p[1] for p in L]; rx = [p[0] for p in R]; ry = [p[1] for p in R]
+    print(l.replace(u"BIMLIB_Профиль_", ""))
+    print("  L x[%.1f..%.1f] y[%.1f..%.1f]   R x[%.1f..%.1f] y[%.1f..%.1f]" % (min(lx), max(lx), min(ly), max(ly), min(rx), max(rx), min(ry), max(ry)))
+    # best mirror: x -> -x (+dx), y unchanged; and y -> -y
+    Rs = set(R)
+    for name, f in ((u"x->-x", lambda p, d: (round(-p[0] + d, 1), p[1])), (u"y->-y", lambda p, d: (p[0], round(-p[1] + d, 1)))):
+        best = None
+        for d10 in range(-200, 201):
+            d = d10 / 10.0
+            m = sum(1 for p in L if f(p, d) in Rs)
+            if best is None or m > best[1]:
+                best = (d, m)
+        print("  %s shift %.1f: match %d/%d" % (name, best[0], best[1], len(L)))

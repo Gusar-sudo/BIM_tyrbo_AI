@@ -1,0 +1,84 @@
+# -*- coding: utf-8 -*-
+# Партия C, шаг B/C (пакет): загрузить несколько .rfa профилей в ОДНОЙ транзакции, замерить все импосты, чьи типы
+# ссылаются на эти профили; commit=false -> откат (пробный прогон).
+# Аргументы: items: [{symbol_id, rfa}], commit
+import json, clr
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    _commit = args.get("commit")
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+    if _commit is not None:
+        args["commit"] = _commit
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+sids = set(int(i["symbol_id"]) for i in args["items"])
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def measure():
+    rows = {}
+    for m in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType():
+        mt = doc.GetElement(m.GetTypeId())
+        p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE) if mt else None
+        if p is None or int(p.AsElementId().Value) not in sids:
+            continue
+        b = m.get_BoundingBox(None)
+        d = sorted([round((b.Max.X - b.Min.X) * FT, 2), round((b.Max.Y - b.Min.Y) * FT, 2), round((b.Max.Z - b.Min.Z) * FT, 2)]) if b else None
+        rows[int(m.Id.Value)] = {"profile": int(p.AsElementId().Value), "section_mm": d[:2] if d else None}
+    return rows
+
+
+res = {"status": "failed", "commit": commit}
+before = measure()
+res["mullions_measured"] = len(before)
+res["warnings_before"] = len(doc.GetWarnings())
+t = Transaction(doc, u"М2 партия C: профили FSC21 (%d)" % len(args["items"]))
+t.Start()
+try:
+    loaded = []
+    for it in args["items"]:
+        ref = clr.Reference[Family]()
+        ok = doc.LoadFamily(it["rfa"], LoadOpt(), ref)
+        loaded.append({"symbol_id": int(it["symbol_id"]), "load_returned": bool(ok)})
+    doc.Regenerate()
+    after = measure()
+    res["loaded"] = loaded
+    res["warnings_after"] = len(doc.GetWarnings())
+    res["new_warnings"] = [w.GetDescriptionText() for w in doc.GetWarnings()][:10]
+    changes = {}
+    for mid, a in after.items():
+        bb = before.get(mid)
+        key = str(a["profile"])
+        changes.setdefault(key, {"mullions": 0, "before": set(), "after": set()})
+        changes[key]["mullions"] += 1
+        changes[key]["before"].add(str(bb["section_mm"]) if bb else "нет")
+        changes[key]["after"].add(str(a["section_mm"]))
+    res["by_profile"] = {k: {"mullions": v["mullions"], "section_before": sorted(v["before"]), "section_after": sorted(v["after"])} for k, v in changes.items()}
+    res["mullions_lost"] = [m for m in before if m not in after]
+    if commit:
+        t.Commit(); res["transaction"] = "Committed"
+    else:
+        t.RollBack(); res["transaction"] = u"RolledBack (пробный прогон)"
+    res["status"] = "completed_unverified"
+except Exception as ex:
+    if t.HasStarted() and not t.HasEnded():
+        t.RollBack()
+    res["error"] = str(ex); res["transaction"] = u"RolledBack (ошибка)"
+end = measure()
+res["after_end_sample"] = {str(k): v["section_mm"] for k, v in list(end.items())[:6]}
+res["summary"] = u"%s; импостов %d" % (res.get("transaction"), len(end))
+__output__ = res

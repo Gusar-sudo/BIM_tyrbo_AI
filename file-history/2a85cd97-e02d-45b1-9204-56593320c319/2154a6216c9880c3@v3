@@ -1,0 +1,92 @@
+# -*- coding: utf-8 -*-
+# Планы узлов 1:2 (Fine) по типам витражей: средняя стойка и край у стены (с примыкающей стеной).
+# На тип: стена length_mm с одной линией сетки посередине, рядом стена-примыкание у начала. Всё откатывается.
+# Аргументы: wall_types [имена], out_dir, abut_wall_type (имя базовой стены, "auto" или null), length_mm (1200), half_mm (130), px (1200),
+#            load_rfas [пути .rfa — загрузить перед планами, для пробы], tag_offset
+# PNG: NN_центр.png, NN_край.png (NN — порядковый номер + tag_offset).
+import json, os
+from Autodesk.Revit.DB import *
+from System.Collections.Generic import List
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+L = float(args.get("length_mm", 1200)); HALF = float(args.get("half_mm", 130))
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+vft = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+abut = wtypes.get(args.get("abut_wall_type") or "")
+if args.get("abut_wall_type") == "auto":   # первая базовая стена толщиной 100–300 мм
+    cand = sorted([w for w in wtypes.values() if w.Kind == WallKind.Basic and MM(100) <= w.Width <= MM(300)], key=lambda w: w.Width)
+    abut = cand[0] if cand else None
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev, BuiltInCategory.OST_Sections, BuiltInCategory.OST_CLines]
+res = {"types": []}
+class _LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True
+        return True
+
+    def OnSharedFamilyFound(self, a, b, src, c):
+        src.Value = FamilySource.Family; c.Value = True
+        return True
+
+
+tg = TransactionGroup(doc, u"FT: планы узлов (откат)"); tg.Start()
+try:
+    views = []
+    if args.get("load_rfas"):   # проба новых профилей/семейств: загрузить перед планами (всё откатится)
+        t = Transaction(doc, u"загрузка"); t.Start()
+        res["loaded"] = [bool(doc.LoadFamily(f, _LO())) for f in args["load_rfas"]]
+        t.Commit()
+    for k, wn in enumerate(args["wall_types"]):
+        checkpoint(u"тип %s" % wn, k, len(args["wall_types"]))
+        tag = u"%02d" % (k + 1 + int(args.get("tag_offset", 0)))
+        r = {"tag": tag, "wall_type": wn}
+        if wn not in wtypes:
+            r["error"] = u"нет типа"; res["types"].append(r); continue
+        t = Transaction(doc, u"узлы"); t.Start()
+        P0 = XYZ(MM(60000), MM(500000 + 3000 * k), level.Elevation)
+        w = Wall.Create(doc, Line.CreateBound(P0, P0 + XYZ.BasisX * MM(L)), wtypes[wn].Id, level.Id, MM(3000), 0, False, False)
+        WallUtils.DisallowWallJoinAtEnd(w, 0); WallUtils.DisallowWallJoinAtEnd(w, 1)
+        doc.Regenerate()
+        w.CurtainGrid.AddGridLine(False, P0 + XYZ.BasisX * MM(L / 2) + XYZ(0, 0, 1), False)
+        doc.Regenerate()
+        if abut is not None:
+            th = abut.Width
+            aw = Wall.Create(doc, Line.CreateBound(XYZ(P0.X - th / 2, P0.Y - MM(400), P0.Z), XYZ(P0.X - th / 2, P0.Y + MM(400), P0.Z)), abut.Id, level.Id, MM(3000), 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(aw, 0); WallUtils.DisallowWallJoinAtEnd(aw, 1)
+        for key, cx in ((u"центр", P0.X + MM(L / 2)), (u"край", P0.X + MM(40))):
+            v = ViewPlan.Create(doc, vft.Id, level.Id); v.Name = u"FT узел %s %s" % (tag, key)
+            v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+            cb = v.CropBox
+            cb.Min = XYZ(cx - MM(HALF), P0.Y - MM(HALF * 0.75), cb.Min.Z); cb.Max = XYZ(cx + MM(HALF), P0.Y + MM(HALF * 0.75), cb.Max.Z)
+            v.CropBox = cb; v.CropBoxActive = True; v.CropBoxVisible = False
+            for b in HIDE:
+                try:
+                    v.SetCategoryHidden(ElementId(b), True)
+                except Exception:
+                    pass
+            views.append((v, u"%s_%s" % (tag, key)))
+        t.Commit()
+        ms = {}
+        for mid in w.CurtainGrid.GetMullionIds():
+            m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+            if bb and (bb.Max.Z - bb.Min.Z) > (bb.Max.X - bb.Min.X):
+                xc = (bb.Min.X + bb.Max.X) / 2
+                ms[u"центр" if abs(xc - (P0.X + MM(L / 2))) < MM(60) else (u"край" if abs(xc - P0.X) < MM(60) else u"конец")] = m.Name
+        r["mullions"] = ms
+        res["types"].append(r)
+    for v, key in views:
+        opt = ImageExportOptions(); opt.ExportRange = ExportRange.SetOfViews
+        ids = List[ElementId](); ids.Add(v.Id); opt.SetViewsAndSheets(ids)
+        opt.FilePath = os.path.join(OUT, key); opt.ZoomType = ZoomFitType.FitToPage; opt.PixelSize = int(args.get("px", 1200))
+        opt.HLRandWFViewsFileType = ImageFileType.PNG; opt.ShadowViewsFileType = ImageFileType.PNG; opt.ImageResolution = ImageResolution.DPI_300
+        doc.ExportImage(opt)
+    res["warnings"] = len(doc.GetWarnings())
+finally:
+    tg.RollBack()
+bad = [t for t in res["types"] if t.get("error")]
+__output__ = {"status": "completed_unverified" if not bad else "partial", "summary": u"типов %d, ошибок %d; всё откатано" % (len(res["types"]), len(bad)), "result": res}

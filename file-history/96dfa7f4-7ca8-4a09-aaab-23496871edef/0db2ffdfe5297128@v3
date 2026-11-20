@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+# ПРИМЕНЕНИЕ правила «стекло: рейка–рейка + 2·Выступ» (без отката): загрузить профили из preload_rfas
+# и выставить «Выступ сбоку» по panel_params_json. Затем перечитать значения. Аргументы: args_file (как у пробного прогона).
+import json, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+with open(args["args_file"], encoding="utf-8-sig") as _f:
+    A = json.load(_f)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+res = {"loaded": [], "load_failed": [], "panel": []}
+DRY = bool(args.get("dry_run", False))
+tg = TransactionGroup(doc, u"Правило стекла: пазы и Выступ сбоку"); tg.Start()
+t = Transaction(doc, u"Профили: пазы и без контуров уплотнителя"); t.Start()
+for rfa in A["preload_rfas"]:
+    ok = doc.LoadFamily(rfa, LoadOpt(), clr.Reference[Family]())
+    (res["loaded"] if ok else res["load_failed"]).append(rfa.split("\\")[-1][:80])
+t.Commit()
+with open(A["panel_params_json"], encoding="utf-8-sig") as _f:
+    PP = json.load(_f)
+t = Transaction(doc, u"Выступ сбоку стекла по пазу уплотнителя"); t.Start()
+old = {}
+for it in PP:
+    p = doc.GetElement(ElementId(int(it["id"]))).LookupParameter(it["param"])
+    old[it["id"]] = round(p.AsDouble() * FT, 2)
+    p.Set(it["mm"] / FT)
+t.Commit()
+bad = 0
+for it in PP:
+    e = doc.GetElement(ElementId(int(it["id"])))
+    v = round(e.LookupParameter(it["param"]).AsDouble() * FT, 2)
+    if abs(v - it["mm"]) > 0.005:
+        bad += 1
+    res["panel"].append([it["id"], e.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()[:50], old[it["id"]], v])
+res["warnings"] = len(doc.GetWarnings())
+if DRY:
+    tg.RollBack()
+else:
+    tg.Assimilate()
+res["dry_run"] = DRY
+res["status"] = "completed_unverified" if bad == 0 and not res["load_failed"] else "partial"
+res["summary"] = u"%sзагружено %d/%d профилей, Выступ выставлен %d, расхождений %d, предупреждений %d" % (
+    u"ПРОБНЫЙ ПРОГОН (откат): " if DRY else u"", len(res["loaded"]), len(A["preload_rfas"]), len(PP), bad, res["warnings"])
+__output__ = res

@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+# Чтение: состояние ГКЛ в активном документе
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+wt = [w.Name for w in FilteredElementCollector(doc).OfClass(WallType) if u"ГКЛ" in w.Name]
+pt = [(s.Id.Value, s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()) for s in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsElementType() if u"ГКЛ" in s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()]
+sch = [v.Name for v in FilteredElementCollector(doc).OfClass(ViewSchedule) if u"ГКЛ" in v.Name]
+s0 = doc.GetElement(ElementId(pt[0][0])) if pt else None
+has = s0 is not None and s0.Family is not None
+fam_params = []
+if pt:
+    # параметры экземпляра семейства видны через FamilyManager только в семействе; проверим по наличию общего параметра в проекте
+    fam_params = [d.Name for d in [doc.GetElement(i) for i in FilteredElementCollector(doc).OfClass(SharedParameterElement).ToElementIds()] if d and d.Name.startswith(u"FT_ГКЛ")]
+__output__ = {"status": "completed_unverified", "summary": u"%s: типов стен ГКЛ %d, панелей ГКЛ %d, ведомостей ГКЛ %d" % (doc.Title[:20], len(wt), len(pt), len(sch)),
+              "walls": wt, "panels": pt, "schedules": sch, "shared_ft_gkl": fam_params}

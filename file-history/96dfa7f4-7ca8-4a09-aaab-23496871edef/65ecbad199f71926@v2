@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+# Чтение: из каких вложенных деталей собраны профили импостов (EditFamily, закрыть без сохранения).
+# Аргументы: name_filter [подстроки имени типа импоста], prefix ["М2","М3"]. Модель не меняется.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+flt = args.get("name_filter", [])
+pref = args.get("prefix", [u"М2", u"М3"])
+prof_types = {}
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    n = mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
+    if not any(n.startswith(p) for p in pref) or not any(f in n for f in flt):
+        continue
+    pp = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    sym = doc.GetElement(pp.AsElementId()) if pp else None
+    if sym is None:
+        continue
+    prof_types.setdefault(sym.Family.Id.Value, {"family": sym.Family, "types": []})["types"].append(n)
+res = []
+for k, v in prof_types.items():
+    checkpoint(v["family"].Name[:50], len(res), len(prof_types))
+    fd = doc.EditFamily(v["family"])
+    try:
+        parts = sorted(set(fi.Symbol.Family.Name for fi in FilteredElementCollector(fd).OfClass(FamilyInstance)))
+    finally:
+        fd.Close(False)
+    res.append({"profile": v["family"].Name.replace(u"BIMLIB_Профиль_", u"").replace(u"_ФристайлТехнолоджи", u""),
+                "parts": parts, "types": v["types"]})
+res.sort(key=lambda r: r["profile"])
+__output__ = {"status": "completed_unverified", "summary": u"профилей %d" % len(res), "profiles": res}

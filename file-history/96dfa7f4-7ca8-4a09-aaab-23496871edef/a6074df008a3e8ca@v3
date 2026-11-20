@@ -1,0 +1,171 @@
+# -*- coding: utf-8 -*-
+# Схемы узлов со столбами: угол 90°, произвольный угол, Т-узел.
+# Каждая схема: стена A по +X, заканчивается в точке P (столб — крайний импост A, либо внутренний импост для Т);
+# стена B начинается в P и идёт под углом angle_deg к продолжению A в сторону НАРУЖНОЙ стороны A (от фасада),
+# её начальный крайний импост удаляется (столб общий), соединения стен в P запрещены.
+# План 1:2 вокруг P (Fine, сечение 500 мм) -> PNG. commit=false -> всё откатывается.
+# Аргументы: schemes [{key, wall_type, column_type, angle_deg, tee(bool), origin_mm:[x,y]}], preload_rfas, out_dir, commit, half_mm, px
+import json, os, math, clr
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    _c = args.get("commit")
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+    if _c is not None:
+        args["commit"] = _c
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+L = 1500 / FT
+H = float(args.get("half_mm", 260)) / FT
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+vft = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+
+
+def mullion_near(w, pt, vertical=True):
+    best, bd = None, 1e9
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        bb = m.get_BoundingBox(None)
+        if bb is None:
+            continue
+        if vertical and (bb.Max.Z - bb.Min.Z) < 1.0:
+            continue
+        c = (bb.Min + bb.Max) * 0.5
+        dd = math.hypot(c.X - pt.X, c.Y - pt.Y)
+        if dd < bd:
+            best, bd = m, dd
+    return best, bd * FT
+
+
+res = {"schemes": [], "preloaded": []}
+tg = TransactionGroup(doc, u"FT: схемы узлов со столбами"); tg.Start()
+try:
+    if args.get("delete_ids") or args.get("delete_views_prefix"):
+        t = Transaction(doc, u"FT: удалить старые схемы"); t.Start()
+        dl = List[ElementId]()
+        for i in args.get("delete_ids", []):
+            if doc.GetElement(ElementId(int(i))) is not None:
+                dl.Add(ElementId(int(i)))
+        pre = args.get("delete_views_prefix")
+        if pre:
+            for v in FilteredElementCollector(doc).OfClass(ViewPlan):
+                if not v.IsTemplate and v.Name.startswith(pre):
+                    dl.Add(v.Id)
+        res["deleted"] = dl.Count
+        doc.Delete(dl)
+        t.Commit()
+    if args.get("preload_rfas"):
+        t = Transaction(doc, u"FT: профили столбов"); t.Start()
+        for rfa in args["preload_rfas"]:
+            res["preloaded"].append([os.path.basename(rfa)[:-4], bool(doc.LoadFamily(rfa, LoadOpt(), clr.Reference[Family]()))])
+        t.Commit()
+    for sc in args["schemes"]:
+        r = {"key": sc["key"]}
+        try:
+            t = Transaction(doc, u"FT: схема " + sc["key"]); t.Start()
+            ox, oy = sc["origin_mm"][0] / FT, sc["origin_mm"][1] / FT
+            P = XYZ(ox, oy, level.Elevation)
+            wt = wtypes[sc["wall_type"]]
+            height = 2700 / FT
+            tee = bool(sc.get("tee"))
+            a_start = XYZ(ox - L, oy, P.Z)
+            a_end = XYZ(ox + L, oy, P.Z) if tee else P
+            wa = Wall.Create(doc, Line.CreateBound(a_start, a_end), wt.Id, level.Id, height, 0, False, False)
+            ang = math.radians(sc["angle_deg"])
+            # наружная сторона A (неразвёрнутая, направление +X) = +Y; B уходит на +Y-сторону (от фасада A)
+            side = int(sc.get("b_side", 1))   # +1: B на наружную сторону A (от фасада); -1: на сторону фасада
+            dirB = XYZ(-math.cos(ang), side * math.sin(ang), 0)   # angle_deg — угол между A (от P назад) и B
+            WallUtils.DisallowWallJoinAtEnd(wa, 0); WallUtils.DisallowWallJoinAtEnd(wa, 1)
+            doc.Regenerate()
+            if tee:
+                cg = wa.CurtainGrid
+                cg.AddGridLine(False, P + XYZ(0, 0, 1), False)
+                doc.Regenerate()
+            ma, da = mullion_near(wa, P)
+            ma.ChangeTypeId(mtypes[sc["column_type"]].Id)
+            doc.Regenerate()
+            # геометрия столба: габарит в плане и круглая часть (универсальные столбы)
+            o2 = Options(); o2.DetailLevel = ViewDetailLevel.Fine
+            xs, ys, cyl = [], [], None
+            def walk(ge, tr):
+                global cyl
+                for g in ge:
+                    if isinstance(g, Solid) and g.Volume > 1e-9:
+                        s = SolidUtils.CreateTransformed(g, tr) if tr else g
+                        for e in s.Edges:
+                            for p in e.Tessellate():
+                                xs.append(p.X); ys.append(p.Y)
+                        for f in s.Faces:
+                            if isinstance(f, CylindricalFace):
+                                rad = f.get_Radius(0).GetLength()
+                                if rad * FT > 15 and (cyl_box[0] is None or rad > cyl_box[0][1]):
+                                    cyl_box[0] = (f.Origin, rad)
+                    elif isinstance(g, GeometryInstance):
+                        walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+            cyl_box = [None]
+            walk(ma.get_Geometry(o2), None)
+            xc = (min(xs) + max(xs)) / 2.0
+            ytop = max(ys) if side > 0 else min(ys)
+            if cyl_box[0] is not None and sc.get("radial"):
+                hub = XYZ(cyl_box[0][0].X, cyl_box[0][0].Y, P.Z); R = cyl_box[0][1]
+                b0 = hub + dirB * R
+            else:
+                hub = None; R = None
+                b0 = XYZ(xc, ytop, P.Z) if abs(sc["angle_deg"] - 90) < 1e-6 else XYZ(xc, ytop, P.Z)
+            wb = Wall.Create(doc, Line.CreateBound(b0, b0 + dirB * L), wt.Id, level.Id, height, 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(wb, 0); WallUtils.DisallowWallJoinAtEnd(wb, 1)
+            doc.Regenerate()
+            r["column_box_mm"] = [round((min(xs) - P.X) * FT, 1), round((max(xs) - P.X) * FT, 1), round((min(ys) - P.Y) * FT, 1), round((max(ys) - P.Y) * FT, 1)]
+            r["hub_mm"] = [round((hub.X - P.X) * FT, 1), round((hub.Y - P.Y) * FT, 1), round(R * FT, 1)] if hub else None
+            mb, db = mullion_near(wb, b0)
+            if mb is not None and db < 50:
+                mb.Pinned = False
+                doc.Delete(mb.Id)
+            doc.Regenerate()
+            v = ViewPlan.Create(doc, vft.Id, level.Id)
+            v.Name = u"Схема " + sc["key"]
+            v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+            vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, 500 / FT); v.SetViewRange(vr)
+            box = BoundingBoxXYZ(); box.Min = XYZ(ox - H, oy - H, -1000); box.Max = XYZ(ox + H, oy + H, 1000)
+            v.CropBox = box; v.CropBoxActive = True; v.CropBoxVisible = False
+            t.Commit()
+            r.update({"wall_a": int(wa.Id.Value), "wall_b": int(wb.Id.Value), "column": int(ma.Id.Value), "column_dist_mm": round(da, 1),
+                      "b_end_mullion_removed": mb is not None and db < 50, "view": int(v.Id.Value)})
+            o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+            o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 900))
+            o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+            o.FilePath = os.path.join(args["out_dir"], u"s_" + sc["key"])
+            doc.ExportImage(o)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)[:200]
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        res["schemes"].append(r)
+    res["warnings"] = [w.GetDescriptionText()[:120] for w in doc.GetWarnings()][:10]
+finally:
+    if commit:
+        tg.Assimilate()
+    else:
+        tg.RollBack()
+res["committed"] = commit
+__output__ = {"status": "completed_unverified", "summary": u"%s; схем: %d" % (u"применено" if commit else u"пробный прогон, откат", len(res["schemes"])), "result": res}

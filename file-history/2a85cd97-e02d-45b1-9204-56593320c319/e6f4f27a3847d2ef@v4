@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+# Партия: для каждого профиля (curves JSON) — заливка по линиям (fill_parity.py) и контур 3D-тела (body_loops_from_fill.py).
+# py -P -E batch_body.py <curves_dir> <out_dir> [--only=подстрока] [--skip=регэксп]
+# out_dir\fills\<имя>.json, out_dir\body\<имя>.json, out_dir\_report.json (пересечения, короткие отрезки, ошибки)
+import json, io, os, sys, re, subprocess
+from concurrent.futures import ThreadPoolExecutor
+CD, OD = sys.argv[1:3]
+opt = dict(a.lstrip("-").split("=", 1) for a in sys.argv[3:] if "=" in a)
+HERE = os.path.dirname(os.path.abspath(__file__))
+FP = os.path.join(HERE, "fill_parity.py"); BL = os.path.join(HERE, "body_loops_from_fill.py")
+for d in ("fills", "body", "args"):
+    os.makedirs(os.path.join(OD, d), exist_ok=True)
+names = sorted(f[:-5] for f in os.listdir(CD) if f.endswith(".json") and not f.startswith("_"))
+if opt.get("only"): names = [n for n in names if opt["only"] in n]
+if opt.get("skip"): names = [n for n in names if not re.search(opt["skip"], n)]
+
+
+def run(n):
+    cj = os.path.join(CD, n + ".json"); fj = os.path.join(OD, "fills", n + ".json"); bj = os.path.join(OD, "body", n + ".json")
+    a1 = os.path.join(OD, "args", n + ".fill.json"); a2 = os.path.join(OD, "args", n + ".body.json")
+    io.open(a1, "w", encoding="utf-8").write(json.dumps({"curves_json": cj, "out_json": fj}, ensure_ascii=False))
+    if opt.get("reuse_fills"):
+        fj = os.path.join(opt["reuse_fills"], n + ".json")
+    ba = {"fills_json": fj, "curves_json": cj, "out_json": bj, "snap_mm": 0.25, "min_seg_mm": 0.79}
+    if opt.get("shrink"): ba.update(shrink_mm=float(opt["shrink"]), px_mm=float(opt.get("px", 40)), eps_mm=float(opt.get("eps", 0.03)))
+    if opt.get("close"): ba.update(close_mm=float(opt["close"]))
+    io.open(a2, "w", encoding="utf-8").write(json.dumps(ba, ensure_ascii=False))
+    r = {"name": n}
+    if not opt.get("reuse_fills"):
+        p = subprocess.run([sys.executable, "-P", "-E", FP, a1], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if p.returncode:
+            r["error"] = "fill: " + p.stderr.strip()[-300:]; return r
+    p = subprocess.run([sys.executable, "-P", "-E", BL, a2], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if p.returncode:
+        r["error"] = "body: " + p.stderr.strip()[-300:]; return r
+    try:
+        r.update(json.loads(p.stdout.strip().splitlines()[-1]))
+    except Exception:
+        r["error"] = "body output: " + p.stdout[-200:]
+    return r
+
+
+with ThreadPoolExecutor(int(opt.get("jobs", 6))) as ex:
+    res = list(ex.map(run, names))
+io.open(os.path.join(OD, "_report.json"), "w", encoding="utf-8").write(json.dumps(res, ensure_ascii=False, indent=1))
+bad = [r for r in res if r.get("error") or r.get("intersections") or r.get("short_left")]
+print(json.dumps({"total": len(res), "ok": len(res) - len(bad), "problems": len(bad),
+                  "errors": sum(1 for r in res if r.get("error")), "with_intersections": sum(1 for r in res if r.get("intersections")),
+                  "with_short": sum(1 for r in res if r.get("short_left"))}, ensure_ascii=False))

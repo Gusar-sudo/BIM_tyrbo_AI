@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+# Чтение: входят ли панели в CurtainGrid своей стены; сколько всего таких «вне сетки» по библиотеке
+import collections
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+out = collections.Counter(); sample = []
+grid_cache = {}
+for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    h = p.Host
+    if h is None or not hasattr(h, "CurtainGrid") or h.CurtainGrid is None:
+        out["без сетки/хоста"] += 1; continue
+    if h.Id.Value not in grid_cache:
+        grid_cache[h.Id.Value] = set(i.Value for i in h.CurtainGrid.GetPanelIds())
+    if p.Id.Value in grid_cache[h.Id.Value]:
+        out["в сетке"] += 1
+    else:
+        out["ВНЕ сетки"] += 1
+        if len(sample) < 15:
+            sample.append({"id": p.Id.Value, "type": p.Name, "wall": h.Id.Value})
+__output__ = {"status": "completed_unverified", "summary": u"; ".join(u"%s: %d" % kv for kv in out.items()), "counts": dict(out), "sample": sample}

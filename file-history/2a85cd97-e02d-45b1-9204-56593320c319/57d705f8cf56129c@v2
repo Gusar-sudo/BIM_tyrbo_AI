@@ -1,0 +1,35 @@
+# -*- coding: utf-8 -*-
+# Найти зависшую транзакцию упавшего скрипта (след исключения) и откатить; закрыть семейство без сохранения
+import sys
+from Autodesk.Revit.DB import *
+app = __revit__.Application
+found = []
+def scan(tb):
+    while tb is not None:
+        fr = tb.tb_frame
+        while fr is not None:
+            for k, v in list(fr.f_locals.items()) + list(fr.f_globals.items()):
+                if isinstance(v, Transaction) and v.IsValidObject and v.HasStarted() and not v.HasEnded():
+                    if v not in found:
+                        found.append(v)
+            fr = fr.f_back
+        tb = tb.tb_next
+for name in ("last_traceback",):
+    scan(getattr(sys, name, None))
+ei = sys.exc_info()
+scan(ei[2] if ei else None)
+rolled = []
+for v in found:
+    try:
+        v.RollBack(); rolled.append(v.GetName())
+    except Exception as e:
+        rolled.append("fail " + str(e)[:80])
+st = []
+for d in list(app.Documents):
+    if d.IsFamilyDocument:
+        try:
+            d.Close(False); st.append("closed")
+        except Exception as e:
+            st.append("not closed: " + str(e)[:60])
+__output__ = {"status": "completed_unverified", "summary": u"найдено транзакций %d; %s; %s" % (len(found), rolled, st),
+              "has_last_tb": getattr(sys, "last_traceback", None) is not None}

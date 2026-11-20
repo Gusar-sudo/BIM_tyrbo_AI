@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+# Лента Дихтунгсбанд в проекте: PREP (prep_wall_band.py, через includes) — загрузка профилей и переключение краевых типов
+# на копии; затем проверка: число импостов/панелей/типов, предупреждения, изменение ширины/высоты панелей
+# (ADSK_Размер_*: у края ожидается −3 мм на сторону с лентой), профили краевых типов после.
+# Аргументы: rfa_dir, copies, dry_run (true — откат). Спецификацию (FT_Уплотнитель_*) пишет отдельно write_params_verified.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if args.get("args_file"):   # аргументы PREP файлом; поля вызова (dry_run) перекрывают файл
+    import io
+    _a = json.loads(io.open(args["args_file"], encoding="utf-8-sig").read()); _a.update(dict((k, v) for k, v in args.items() if k != "args_file")); args = _a
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+DRY = bool(args.get("dry_run", True))
+
+
+def snap():
+    pans = {}
+    for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+        w = p.LookupParameter(u"ADSK_Размер_Ширина"); h = p.LookupParameter(u"ADSK_Размер_Высота")
+        if w and h:
+            pans[p.Id.Value] = (round(w.AsDouble() * FT, 1), round(h.AsDouble() * FT, 1))
+    nm = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType().GetElementCount()
+    return pans, nm, len(doc.GetWarnings())
+
+
+p0, m0, w0 = snap()
+res = {"dry_run": DRY, "before": {"panels": len(p0), "mullions": m0, "warnings": w0}}
+tg = TransactionGroup(doc, u"FT: лента Дихтунгсбанд у стены"); tg.Start()
+try:
+    res["prep"] = PREP(doc, args)   # транзакции PREP уже зафиксированы — модель перестроена
+    p1, m1, w1 = snap()
+    res["after"] = {"panels": len(p1), "mullions": m1, "warnings": w1}
+    dist = {}
+    for k, (a, b) in p0.items():
+        if k in p1:
+            dw = round(p1[k][0] - a, 1); dh = round(p1[k][1] - b, 1)
+            dist[u"%s/%s" % (dw, dh)] = dist.get(u"%s/%s" % (dw, dh), 0) + 1
+    res["panel_size_change_w_h"] = dist
+    res["warning_texts"] = sorted(set(wr.GetDescriptionText() for wr in doc.GetWarnings()))[:10]
+finally:
+    if DRY:
+        tg.RollBack()
+    else:
+        tg.Assimilate()
+ok = res["after"]["warnings"] <= w0 and res["after"]["panels"] == len(p0) and res["after"]["mullions"] == m0 and not res["prep"]["load_fail"] and not res["prep"]["swap_fail"]
+__output__ = {"status": "completed_unverified" if ok else "partial",
+              "summary": u"%s: загружено %d, переключено типов %d, импостов %d→%d, панелей %d→%d, предупр. %d→%d" % (
+                  u"ПРОБНО (откат)" if DRY else u"ПРИМЕНЕНО", res["prep"]["loaded"], len(res["prep"]["swapped"]), m0, res["after"]["mullions"], len(p0), res["after"]["panels"], w0, res["after"]["warnings"]),
+              "result": res}

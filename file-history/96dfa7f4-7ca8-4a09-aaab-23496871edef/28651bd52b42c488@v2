@@ -1,0 +1,49 @@
+# Полный набор схем для ВСЕХ угловых и Т-типов столбов М2/М3 (левые и правые, Т сверху/снизу, 135°) — args_schemes_all.json.
+# «Левый» — вторая стена поворачивает влево (b_side=+1), «правый» — вправо (b_side=-1). Пробный прогон: commit=false.
+import json, os
+W = {
+    "M2_1": "BIMLIB_Витраж_Без разрезки_Система М2_Стойка основная_Одинарное заполнение_62мм",
+    "M2_2": "BIMLIB_Витраж_Без разрезки_Система М2_Стойка основная_Двойное заполнение_62мм",
+    "M3_1": "BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Одинарное заполнение_72мм",
+    "M3_2": "BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Двойное заполнение_72мм",
+}
+R18 = {"radial": True, "b_offset_mm": 49.4}
+R05 = {"radial": True, "b_offset_mm": 59.4}
+H18 = {"hub_from_end_mm": 49.5, "hub_R_mm": 32.6}
+H05 = {"hub_from_end_mm": 63.7, "hub_R_mm": 41.7}
+# «правый» = зеркальная раскладка: стена A приходит справа (к началу стены), B поворачивает в ту же сторону от фасада
+L, P = {"b_side": 1}, {"b_side": 1, "mirror": True}
+lay = {"1": "однослойным", "2": "двухслойным"}
+S = []
+# М2
+for c in ("1", "2"):
+    for side, ex in (("левый", L), ("правый", P)):
+        S.append(("М2 %sсл FSC17 угол 90 %s" % (c, side), "M2_" + c, "М2 FSC17 угловой с %s остеклением %s" % (lay[c], side), 90, dict(ex)))
+        S.append(("М2 %sсл FSC18 угол 90 %s" % (c, side), "M2_" + c, "М2 FSC18 угловой с %s остеклением %s" % (lay[c], side), 90, dict(ex, **R18)))
+    S.append(("М2 %sсл FSC18 угол 135 левый" % c, "M2_" + c, "М2 FSC18 угловой 135° с %s остеклением левый" % lay[c], 135, dict(L, **dict(R18, **H18))))
+S.append(("М2 2сл FSC17 Т-узел", "M2_2", "М2 FSC17 т-образный с двухслойным остеклением", 90, {"tee": True}))
+S.append(("М2 2сл FSC18 Т-узел", "M2_2", "М2 FSC18 т-образный с двухслойным остеклением", 90, dict({"tee": True}, **R18)))
+# М3
+for c in ("1", "2"):
+    for side, ex in (("левый", L), ("правый", P)):
+        S.append(("М3 %sсл FSC04 угол 90 %s" % (c, side), "M3_" + c, "М3 FSC04 угловой с %s остеклением %s" % (lay[c], side), 90, dict(ex)))
+        S.append(("М3 %sсл FSC05 угол 90 %s" % (c, side), "M3_" + c, "М3 FSC05 угловой с %s остеклением %s" % (lay[c], side), 90, dict(ex, **R05)))
+        S.append(("М3 %sсл FSC08 угол 90 %s" % (c, side), "M3_" + c, "М3 FSC08 угловой с %s остеклением %s" % (lay[c], side), 90, dict(ex)))
+    S.append(("М3 %sсл FSC05 угол 135 левый" % c, "M3_" + c, "М3 FSC05 угловой 135° с %s остеклением левый" % lay[c], 135, dict(L, **dict(R05, **H05))))
+for col, rx in (("FSC04", {}), ("FSC05", R05)):
+    S.append(("М3 2сл %s Т-узел снизу" % col, "M3_2", "М3 %s т-образный с двухслойным остеклением снизу" % col, 90, dict({"tee": True}, **rx)))
+    S.append(("М3 2сл %s Т-узел сверху" % col, "M3_2", "М3 %s т-образный с двухслойным остеклением сверху" % col, 90, dict({"tee": True, "b_side": -1}, **rx)))
+schemes = []
+for i, (k, w, c, a, ex) in enumerate(S):
+    d = {"key": "Все %02d %s" % (i + 1, k), "wall_type": W[w], "column_type": c, "angle_deg": a,
+         "origin_mm": [30000 + (i % 6) * 5000, 70000 + (i // 6) * 5000]}
+    d.update(ex)
+    schemes.append(d)
+base = r"C:\Users\user\Desktop\Фристайл\_bim"
+out = {"schemes": schemes, "preload_rfas": [],
+       "out_dir": os.path.join(base, r"test\2026-10-28_M2M3_seals\types_review\schemes_all"), "half_mm": 260, "px": 1000}
+os.makedirs(out["out_dir"], exist_ok=True)
+json.dump(out, open(os.path.join(base, r"batches\M2_C\args_schemes_all.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(len(schemes))
+for s in schemes:
+    print(s["key"], "|", s["column_type"], "|", s.get("b_side"), s.get("tee", ""))

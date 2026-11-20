@@ -1,0 +1,22 @@
+# Отрисовать окно модели DXF в PNG (тонкие линии, белый фон). Аргументы: dxf out.png x0 y0 x1 y1 [px]
+import sys
+import ezdxf
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from ezdxf.addons.drawing import RenderContext, Frontend
+from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+from ezdxf.addons.drawing.config import Configuration, LineweightPolicy, ColorPolicy, BackgroundPolicy
+src, out = sys.argv[1], sys.argv[2]
+x0, y0, x1, y1 = map(float, sys.argv[3:7])
+px = int(sys.argv[7]) if len(sys.argv) > 7 else 2400
+doc = ezdxf.readfile(src)
+msp = doc.modelspace()
+w, h = x1 - x0, y1 - y0
+fig = plt.figure(figsize=(px / 100.0, px / 100.0 * h / w), dpi=100)
+ax = fig.add_axes([0, 0, 1, 1])
+cfg = Configuration(lineweight_policy=LineweightPolicy.RELATIVE_FIXED, color_policy=ColorPolicy.BLACK, background_policy=BackgroundPolicy.WHITE, lineweight_scaling=0.3)
+Frontend(RenderContext(doc), MatplotlibBackend(ax), config=cfg).draw_layout(msp, finalize=True)
+ax.set_aspect("auto"); ax.set_xlim(x0, x1); ax.set_ylim(y0, y1); ax.axis("off")
+fig.savefig(out, dpi=100, facecolor="white")
+print(out)

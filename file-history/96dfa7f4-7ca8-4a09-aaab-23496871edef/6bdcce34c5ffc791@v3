@@ -1,0 +1,288 @@
+# -*- coding: utf-8 -*-
+# Профили стоек для ГКЛ: копии центральных профилей без витражной рейки со стороны ГКЛ.
+# Витражная рейка = замкнутый контур, касающийся крайней грани профиля (±0.3 мм), целиком по одну сторону оси,
+# высотой > 50% высоты профиля. Удаляется во вложенных семействах и в собственных линиях профиля.
+# Затем (в проекте, в группе транзакций): загрузка, новые типы импостов (дубли центральных) с FT_Витраж_Расход,
+# замер касания листа ГКЛ с новой гранью. dry_run -> откат проекта (файлы профилей остаются в out_dir).
+# Аргументы: items [{base_profile, new_profile, remove ["L"|"R"], base_type, new_type, vitrazh, adsk_name}], out_dir, dry_run,
+#            probe [{new_type, wall_type, gkl_type, glass_type, gkl_side}], probe_range
+import json, os, clr
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    _d = args.get("dry_run")
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+    if _d is not None:
+        args["dry_run"] = _d
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+DRY = bool(args.get("dry_run", True))
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def key(p):
+    return (round(p.X * FT, 2), round(p.Y * FT, 2))
+
+
+def loops_of(d, T):
+    curves = []
+    for ce in FilteredElementCollector(d).OfClass(CurveElement):
+        c = ce.GeometryCurve
+        if c is not None and c.IsBound:
+            curves.append((ce.Id, key(T.OfPoint(c.GetEndPoint(0))), key(T.OfPoint(c.GetEndPoint(1))), [T.OfPoint(q) for q in c.Tessellate()]))
+    parent = {}
+
+    def find(a):
+        while parent.setdefault(a, a) != a:
+            parent[a] = parent[parent[a]]; a = parent[a]
+        return a
+    for _, a, b, _ in curves:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+    groups = {}
+    for cid, a, b, pts in curves:
+        groups.setdefault(find(a), []).append((cid, pts))
+    out = []
+    for g in groups.values():
+        xs = [p.X * FT for _, ps in g for p in ps]; ys = [p.Y * FT for _, ps in g for p in ps]
+        out.append({"ids": [cid for cid, _ in g], "x0": min(xs), "x1": max(xs), "y0": min(ys), "y1": max(ys)})
+    return out
+
+
+def strip(d, T, remove, ext):
+    """удалить контуры витража в документе d (T — в координаты профиля). ext=(xmin,xmax,ymin,ymax) всего профиля"""
+    lps = loops_of(d, T)
+    dele = List[ElementId](); info = []
+    H = ext[3] - ext[2]
+    for lp in lps:
+        h = lp["y1"] - lp["y0"]
+        if h < 0.5 * H:
+            continue
+        if "L" in remove and abs(lp["x0"] - ext[0]) < 0.3 and lp["x1"] < 0:
+            side = "L"
+        elif "R" in remove and abs(lp["x1"] - ext[1]) < 0.3 and lp["x0"] > 0:
+            side = "R"
+        else:
+            continue
+        for i in lp["ids"]:
+            dele.Add(i)
+        info.append([side, round(lp["x0"], 1), round(lp["x1"], 1), len(lp["ids"])])
+        # заливки внутри удаляемого контура
+        for fr in FilteredElementCollector(d).OfClass(FilledRegion):
+            pts = [T.OfPoint(p) for b in fr.GetBoundaries() for c in b for p in c.Tessellate()]
+            if pts and min(p.X for p in pts) * FT >= lp["x0"] - 0.1 and max(p.X for p in pts) * FT <= lp["x1"] + 0.1:
+                dele.Add(fr.Id)
+    if dele.Count:
+        t = Transaction(d, u"Убрать витражную рейку"); t.Start(); d.Delete(dele); t.Commit()
+    return info
+
+
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+res = {"profiles": [], "types": [], "probe": []}
+rfas = []
+for it in args["items"]:
+    checkpoint(it["new_profile"][:40], len(res["profiles"]), len(args["items"]))
+    r = {"profile": it["new_profile"], "removed": []}
+    pdoc = doc.EditFamily(fams[it["base_profile"]])
+    try:
+        # габарит всего профиля (все уровни)
+        allx, ally = [], []
+        nested = list(FilteredElementCollector(pdoc).OfClass(FamilyInstance))
+        for fi in nested:
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                for lp in loops_of(nd, fi.GetTotalTransform()):
+                    allx += [lp["x0"], lp["x1"]]; ally += [lp["y0"], lp["y1"]]
+            finally:
+                nd.Close(False)
+        for lp in loops_of(pdoc, Transform.Identity):
+            allx += [lp["x0"], lp["x1"]]; ally += [lp["y0"], lp["y1"]]
+        ext = (min(allx), max(allx), min(ally), max(ally))
+        r["ext"] = [round(v, 1) for v in ext]
+        for fi in nested:
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                inf = strip(nd, fi.GetTotalTransform(), it["remove"], ext)
+                if inf:
+                    nd.LoadFamily(pdoc, LoadOpt())
+                r["removed"] += [["nested"] + x for x in inf]
+            finally:
+                nd.Close(False)
+        # новая грань со стороны ГКЛ = край тела стойки (оставшиеся вложенные контуры на всю высоту)
+        faces = {}
+        H = ext[3] - ext[2]
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                for lp in loops_of(nd, fi.GetTotalTransform()):
+                    if lp["y1"] - lp["y0"] >= 0.5 * H and lp["x0"] < 0 < lp["x1"]:
+                        faces["L"] = min(faces.get("L", 0), lp["x0"]); faces["R"] = max(faces.get("R", 0), lp["x1"])
+            finally:
+                nd.Close(False)
+        r["faces"] = dict((k, round(v, 2)) for k, v in faces.items())
+        # собственный контур профиля: вершины на крайней грани стороны ГКЛ -> на новую грань
+        moved = 0; own_err = []
+        t = Transaction(pdoc, u"Грань стойки со стороны ГКЛ"); t.Start()
+        fho = t.GetFailureHandlingOptions(); t.SetFailureHandlingOptions(fho.SetClearAfterRollback(True))
+        for ce in list(FilteredElementCollector(pdoc).OfClass(CurveElement)):
+            c = ce.GeometryCurve
+            if c is None or not isinstance(c, Line):
+                continue
+            a = c.GetEndPoint(0); b = c.GetEndPoint(1)
+            na, nb = a, b
+            for sd, xe in (("L", ext[0]), ("R", ext[1])):
+                if sd in it["remove"] and sd in faces:
+                    if abs(a.X * FT - xe) < 0.3:
+                        na = XYZ(faces[sd] / FT, a.Y, a.Z)
+                    if abs(b.X * FT - xe) < 0.3:
+                        nb = XYZ(faces[sd] / FT, b.Y, b.Z)
+            if na is not a or nb is not b:
+                try:
+                    if na.DistanceTo(nb) < 1e-6:
+                        pdoc.Delete(ce.Id)
+                    else:
+                        ce.SetGeometryCurve(Line.CreateBound(na, nb), True)
+                    moved += 1
+                except Exception as e1:
+                    own_err.append(str(e1)[:80])
+        try:
+            t.Commit()
+        except Exception as e2:
+            own_err.append(u"commit: " + str(e2)[:80])
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        r["own_moved"] = moved
+        if own_err:
+            r["own_err"] = own_err[:5]
+            raise Exception(u"контур профиля: " + own_err[0])
+        so = SaveAsOptions(); so.OverwriteExistingFile = True
+        rfa = os.path.join(OUT, it["new_profile"] + u".rfa")
+        pdoc.SaveAs(rfa, so)
+        rfas.append(rfa); r["ok"] = len(r["removed"]) > 0
+    except Exception as ex:
+        r["error"] = str(ex)[:200]
+    finally:
+        try:
+            pdoc.Close(False)
+        except Exception as exc:
+            r["close_error"] = str(exc)[:100]
+    res["profiles"].append(r)
+
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+
+
+def solids(el):
+    out = []
+
+    def wk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                wk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    o = Options(); o.DetailLevel = ViewDetailLevel.Fine
+    wk(el.get_Geometry(o), None)
+    return out
+
+
+tg = TransactionGroup(doc, u"Стойки для ГКЛ"); tg.Start()
+try:
+    t = Transaction(doc, u"Профили стоек для ГКЛ"); t.Start()
+    res["loaded"] = [bool(doc.LoadFamily(f, LoadOpt(), clr.Reference[Family]())) for f in rfas]
+    t.Commit()
+    fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+    mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+    t = Transaction(doc, u"Типы стоек для ГКЛ"); t.Start()
+    for it in args["items"]:
+        if it["new_profile"] not in fams:
+            res["types"].append([it["new_type"], u"нет профиля"]); continue
+        nt = mtypes.get(it["new_type"]) or mtypes[it["base_type"]].Duplicate(it["new_type"])
+        mtypes[it["new_type"]] = nt
+        sym = doc.GetElement(list(fams[it["new_profile"]].GetFamilySymbolIds())[0])
+        nt.get_Parameter(BuiltInParameter.MULLION_PROFILE).Set(sym.Id)
+        p = nt.LookupParameter(u"FT_Витраж_Расход")
+        if p:
+            p.Set(str(it["vitrazh"])) if p.StorageType == StorageType.String else p.Set(float(it["vitrazh"]))
+        p = nt.LookupParameter(u"ADSK_Наименование")
+        if p and it.get("adsk_name") and not p.IsReadOnly:
+            p.Set(it["adsk_name"])
+        doc.Regenerate()
+        res["types"].append([it["new_type"], round(nt.get_Parameter(BuiltInParameter.CUST_MULLION_WIDTH1).AsDouble() * FT, 1), round(nt.get_Parameter(BuiltInParameter.CUST_MULLION_WIDTH2).AsDouble() * FT, 1)])
+    t.Commit()
+    # замер касания листа ГКЛ
+    wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+    ptypes = dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s) for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels))
+    a, b, st = args.get("probe_range", [-4, 16, 1])
+    for k, pr in enumerate(args.get("probe", [])):
+        for side in pr["sides"]:
+            t = Transaction(doc, u"проба"); t.Start()
+            Pt = XYZ(MM(20000 + 3000 * len(res["probe"])), MM(460000), level.Elevation)
+            w = Wall.Create(doc, Line.CreateBound(Pt - XYZ(MM(600), 0, 0), Pt + XYZ(MM(600), 0, 0)), wtypes[pr["wall_type"]].Id, level.Id, MM(2700), 0, False, False)
+            doc.Regenerate()
+            w.CurtainGrid.AddGridLine(False, Pt + XYZ(0, 0, 1), False); doc.Regenerate()
+            m = None
+            for mid in w.CurtainGrid.GetMullionIds():
+                mm_ = doc.GetElement(mid); bb = mm_.get_BoundingBox(None)
+                if bb and (bb.Max.Z - bb.Min.Z) > 1 and abs((bb.Min.X + bb.Max.X) / 2 - Pt.X) < MM(60):
+                    m = mm_
+            m.ChangeTypeId(mtypes[pr["new_type"]].Id)
+            gk = ptypes[pr["gkl_type"]]; gl = ptypes[pr["glass_type"]]
+            for s_ in (gk, gl):
+                if not s_.IsActive:
+                    s_.Activate()
+            gp = []
+            for pid in w.CurtainGrid.GetPanelIds():
+                p = doc.GetElement(pid); bb = p.get_BoundingBox(None)
+                left = (bb.Min.X + bb.Max.X) / 2 < Pt.X
+                isg = (left and side == "left") or (not left and side == "right")
+                p.Pinned = False; p.ChangeTypeId(gk.Id if isg else gl.Id)
+                if isg:
+                    gp.append(p)
+            doc.Regenerate()
+            cs = solids(m); vp = gk.LookupParameter(u"Выступ сбоку")
+            fc = None; v = a
+            while v <= b + 1e-9:
+                vp.Set(MM(v)); doc.Regenerate()
+                tot = 0.0
+                for p in gp:
+                    for ps in solids(p):
+                        for c in cs:
+                            try:
+                                x = BooleanOperationsUtils.ExecuteBooleanOperation(c, ps, BooleanOperationsType.Intersect)
+                                if x:
+                                    tot += x.Volume
+                            except Exception:
+                                pass
+                if tot * FT ** 3 / 2700.0 > 5 and fc is None:
+                    fc = v
+                v += st
+            t.RollBack()
+            res["probe"].append([pr["new_type"], side, fc])
+    res["warnings"] = len(doc.GetWarnings())
+finally:
+    if DRY:
+        tg.RollBack()
+    else:
+        tg.Assimilate()
+res["dry_run"] = DRY
+bad = [p["profile"] for p in res["profiles"] if not p.get("ok")]
+res["status"] = "completed_unverified" if not bad else "partial"
+res["summary"] = u"%sпрофилей %d (без удалений/ошибок: %d), типов %d, замеров %d" % (u"ПРОБНЫЙ ПРОГОН (откат): " if DRY else u"", len(res["profiles"]), len(bad), len(res["types"]), len(res["probe"]))
+__output__ = res

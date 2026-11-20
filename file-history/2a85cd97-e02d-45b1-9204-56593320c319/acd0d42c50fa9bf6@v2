@@ -1,0 +1,23 @@
+# -*- coding: utf-8 -*-
+# Только чтение модели: сохранить копии семейств в папку (EditFamily -> SaveAs -> Close). Аргументы: families [имена], out_dir.
+import json, os
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+res = []
+if not os.path.isdir(args["out_dir"]):
+    os.makedirs(args["out_dir"])
+for n in args["families"]:
+    f = fams.get(n)
+    if f is None:
+        res.append([n, u"нет семейства"]); continue
+    fd = doc.EditFamily(f)
+    try:
+        p = os.path.join(args["out_dir"], n + ".rfa")
+        o = SaveAsOptions(); o.OverwriteExistingFile = True
+        fd.SaveAs(p, o)
+        res.append([n, p])
+    finally:
+        fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"сохранено копий %d (модель не менялась)" % sum(1 for r in res if r[1].endswith(".rfa")), "r": res}

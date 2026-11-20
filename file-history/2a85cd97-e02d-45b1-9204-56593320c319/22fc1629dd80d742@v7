@@ -1,0 +1,318 @@
+# -*- coding: utf-8 -*-
+# Схемы узлов со столбами: угол 90°, произвольный угол, Т-узел.
+# Каждая схема: стена A по +X, заканчивается в точке P (столб — крайний импост A, либо внутренний импост для Т);
+# стена B начинается в P и идёт под углом angle_deg к продолжению A в сторону НАРУЖНОЙ стороны A (от фасада),
+# её начальный крайний импост удаляется (столб общий), соединения стен в P запрещены.
+# План 1:2 вокруг P (Fine, сечение 500 мм) -> PNG. commit=false -> всё откатывается.
+# Аргументы: schemes [{key, wall_type, column_type, angle_deg, tee(bool), origin_mm:[x,y]}], preload_rfas, out_dir, commit, half_mm, px
+import json, os, math, clr
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    _c = args.get("commit")
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+    if _c is not None:
+        args["commit"] = _c
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+L = 1500 / FT
+H = float(args.get("half_mm", 260)) / FT
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+vft = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+
+
+def mullion_near(w, pt, vertical=True):
+    best, bd = None, 1e9
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        bb = m.get_BoundingBox(None)
+        if bb is None:
+            continue
+        if vertical and (bb.Max.Z - bb.Min.Z) < 1.0:
+            continue
+        c = (bb.Min + bb.Max) * 0.5
+        dd = math.hypot(c.X - pt.X, c.Y - pt.Y)
+        if dd < bd:
+            best, bd = m, dd
+    return best, bd * FT
+
+
+res = {"schemes": [], "preloaded": []}
+tg = TransactionGroup(doc, u"FT: схемы узлов со столбами"); tg.Start()
+try:
+    if args.get("delete_ids") or args.get("delete_views_prefix"):
+        t = Transaction(doc, u"FT: удалить старые схемы"); t.Start()
+        dl = List[ElementId]()
+        for i in args.get("delete_ids", []):
+            if doc.GetElement(ElementId(int(i))) is not None:
+                dl.Add(ElementId(int(i)))
+        pre = args.get("delete_views_prefix")
+        if pre:
+            for v in FilteredElementCollector(doc).OfClass(ViewPlan):
+                if not v.IsTemplate and v.Name.startswith(pre):
+                    dl.Add(v.Id)
+        res["deleted"] = dl.Count
+        doc.Delete(dl)
+        t.Commit()
+    if args.get("preload_rfas"):
+        t = Transaction(doc, u"FT: профили столбов"); t.Start()
+        for rfa in args["preload_rfas"]:
+            res["preloaded"].append([os.path.basename(rfa)[:-4], bool(doc.LoadFamily(rfa, LoadOpt(), clr.Reference[Family]()))])
+        t.Commit()
+    if args.get("panel_params_json"):
+        # параметры типов панелей: [{"id", "param", "mm"}]
+        with open(args["panel_params_json"], encoding="utf-8-sig") as _f:
+            PP = json.load(_f)
+        t = Transaction(doc, u"FT: выступ стекла"); t.Start()
+        res["panel_set"] = []
+        for it in PP:
+            st = doc.GetElement(ElementId(int(it["id"])))
+            p = st.LookupParameter(it["param"])
+            old = round(p.AsDouble() * FT, 2)
+            p.Set(it["mm"] / FT)
+            res["panel_set"].append([int(it["id"]), old, round(p.AsDouble() * FT, 2)])
+        t.Commit()
+    if args.get("new_mullion_types"):
+        t = Transaction(doc, u"FT: типы импостов 135°"); t.Start()
+        fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+        res["new_types"] = []
+        for nt in args["new_mullion_types"]:
+            if nt["name"] in mtypes:
+                newt = mtypes[nt["name"]]
+            else:
+                newt = mtypes[nt["base"]].Duplicate(nt["name"])
+                mtypes[nt["name"]] = newt
+            sym = doc.GetElement(list(fams[nt["profile_family"]].GetFamilySymbolIds())[0])
+            newt.get_Parameter(BuiltInParameter.MULLION_PROFILE).Set(sym.Id)
+            res["new_types"].append([nt["name"], int(newt.Id.Value)])
+        t.Commit()
+    if args.get("material_cut_rgb"):
+        # цветная схема через материалы: сплошная заливка разреза цветом {имя материала: [r,g,b]} (внутри группы — откат)
+        t = Transaction(doc, u"FT: цвет материалов"); t.Start()
+        sp = [fp for fp in FilteredElementCollector(doc).OfClass(FillPatternElement) if fp.GetFillPattern().IsSolidFill][0]
+        mats = dict((m.Name, m) for m in FilteredElementCollector(doc).OfClass(Material))
+        res["materials_set"] = []
+        for mn, c3 in args["material_cut_rgb"].items():
+            m = mats.get(mn)
+            if m is None:
+                res["materials_set"].append([mn, False]); continue
+            m.CutForegroundPatternId = sp.Id; m.CutForegroundPatternColor = Color(c3[0], c3[1], c3[2])
+            res["materials_set"].append([mn, True])
+        t.Commit()
+    for sc in args["schemes"]:
+        r = {"key": sc["key"]}
+        try:
+            t = Transaction(doc, u"FT: схема " + sc["key"]); t.Start()
+            ox, oy = sc["origin_mm"][0] / FT, sc["origin_mm"][1] / FT
+            P = XYZ(ox, oy, level.Elevation)
+            wt = wtypes[sc["wall_type"]]
+            height = 2700 / FT
+            tee = bool(sc.get("tee"))
+            mx = bool(sc.get("mirror"))   # зеркальная раскладка («правый»): A приходит справа, обе стены развёрнуты
+            a_start = XYZ(ox + L, oy, P.Z) if mx else XYZ(ox - L, oy, P.Z)
+            a_end = (XYZ(ox - L, oy, P.Z) if mx else XYZ(ox + L, oy, P.Z)) if tee else P
+            if sc.get("a_from_p"):
+                # «правый» угол: стена A НАЧИНАЕТСЯ в P и идёт по +X (без разворота), столб — её начальный крайний импост
+                a_start, a_end = P, XYZ(ox + L, oy, P.Z)
+            wa = Wall.Create(doc, Line.CreateBound(a_start, a_end), wt.Id, level.Id, height, 0, False, False)
+            if mx:
+                wa.Flip()
+            ang = math.radians(sc["angle_deg"])
+            # наружная сторона A (неразвёрнутая, направление +X) = +Y; B уходит на +Y-сторону (от фасада A)
+            side = int(sc.get("b_side", 1))   # +1: B на наружную сторону A (от фасада); -1: на сторону фасада
+            dirB = XYZ((1 if (mx or sc.get("a_from_p")) else -1) * math.cos(ang), side * math.sin(ang), 0)   # angle_deg — угол между A (от P назад) и B
+            WallUtils.DisallowWallJoinAtEnd(wa, 0); WallUtils.DisallowWallJoinAtEnd(wa, 1)
+            doc.Regenerate()
+            if tee:
+                cg = wa.CurtainGrid
+                cg.AddGridLine(False, P + XYZ(0, 0, 1), False)
+                doc.Regenerate()
+            ma, da = mullion_near(wa, P)
+            ma.ChangeTypeId(mtypes[sc["column_type"]].Id)
+            doc.Regenerate()
+            # геометрия столба: габарит в плане и круглая часть (универсальные столбы)
+            o2 = Options(); o2.DetailLevel = ViewDetailLevel.Fine
+            xs, ys, cyl = [], [], None
+            def walk(ge, tr):
+                global cyl
+                for g in ge:
+                    if isinstance(g, Solid) and g.Volume > 1e-9:
+                        s = SolidUtils.CreateTransformed(g, tr) if tr else g
+                        for e in s.Edges:
+                            for p in e.Tessellate():
+                                xs.append(p.X); ys.append(p.Y)
+                        for f in s.Faces:
+                            if isinstance(f, CylindricalFace):
+                                rad = f.get_Radius(0).GetLength()
+                                if rad * FT > 15 and (cyl_box[0] is None or rad > cyl_box[0][1]):
+                                    cyl_box[0] = (f.Origin, rad)
+                    elif isinstance(g, GeometryInstance):
+                        walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+            cyl_box = [None]
+            walk(ma.get_Geometry(o2), None)
+            xc = (min(xs) + max(xs)) / 2.0
+            ytop = max(ys) if side > 0 else min(ys)
+            boff = sc.get("b_offset_mm")   # расстояние от центра круга до наружной грани рамки B
+            if sc.get("hub_from_end_mm") is not None:
+                hx = (min(xs) + sc["hub_from_end_mm"] / FT) if sc.get("a_from_p") else (max(xs) - sc["hub_from_end_mm"] / FT)   # правый: столб в начале A
+                hub = XYZ(hx, P.Y, P.Z); R = sc["hub_R_mm"] / FT
+                b0 = hub + dirB * (boff / FT if boff else R)
+            elif sc.get("hub_from_a_mm") is not None:
+                # центр круга на заданном расстоянии от края стороны A (тело многоугольное, цилиндра нет):
+                # левый (столб в конце A): сторона A у min X; правый (a_from_p, столб в начале A): у max X
+                hx = (max(xs) - sc["hub_from_a_mm"] / FT) if sc.get("a_from_p") else (min(xs) + sc["hub_from_a_mm"] / FT)
+                hub = XYZ(hx, P.Y, P.Z); R = float(sc.get("hub_R_mm", 41.7)) / FT
+                b0 = hub + dirB * (boff / FT if boff else R)
+            elif cyl_box[0] is not None and sc.get("radial"):
+                hub = XYZ(cyl_box[0][0].X, cyl_box[0][0].Y, P.Z); R = cyl_box[0][1]
+                b0 = hub + dirB * (boff / FT if boff else R)
+            else:
+                hub = None; R = None
+                b0 = XYZ(xc, ytop, P.Z) if abs(sc["angle_deg"] - 90) < 1e-6 else XYZ(xc, ytop, P.Z)
+                if sc.get("b_axis_x_mm") is not None:   # ось стены B по X от точки P (столб несимметричен — середина габарита не ось паза)
+                    b0 = XYZ(P.X + sc["b_axis_x_mm"] / FT, ytop, P.Z)
+            # стекло B заходит в столб так же, как в стойку: начало стены B утоплено на b_inset_mm внутрь от грани
+            ins = sc.get("b_inset_mm", args.get("b_inset_mm"))
+            if ins:
+                b0 = b0 - dirB * (float(ins) / FT)
+            wb =Wall.Create(doc, Line.CreateBound(b0, b0 + dirB * L), wt.Id, level.Id, height, 0, False, False)
+            if mx or sc.get("a_from_p"):
+                wb.Flip()
+            WallUtils.DisallowWallJoinAtEnd(wb, 0); WallUtils.DisallowWallJoinAtEnd(wb, 1)
+            doc.Regenerate()
+            r["column_box_mm"] = [round((min(xs) - P.X) * FT, 1), round((max(xs) - P.X) * FT, 1), round((min(ys) - P.Y) * FT, 1), round((max(ys) - P.Y) * FT, 1)]
+            r["hub_mm"] = [round((hub.X - P.X) * FT, 1), round((hub.Y - P.Y) * FT, 1), round(R * FT, 1)] if hub else None
+            mb, db = mullion_near(wb, b0)
+            if mb is not None and db < 50:
+                mb.Pinned = False
+                doc.Delete(mb.Id)
+            doc.Regenerate()
+            # где начинается стекло B (мин. проекция геометрии панелей B на dirB от грани столба; < 0 — внутри столба)
+            face_pt = b0 + dirB * (float(ins) / FT) if ins else b0
+
+            def b_glass():
+                best = None
+                for pid in wb.CurtainGrid.GetPanelIds():
+                    pn = doc.GetElement(pid)
+                    pr = []
+                    def walkp(ge, tr):
+                        for g in ge:
+                            if isinstance(g, Solid) and g.Volume > 1e-9:
+                                for e in g.Edges:
+                                    for q in e.Tessellate():
+                                        q2 = tr.OfPoint(q) if tr else q
+                                        pr.append((q2 - face_pt).DotProduct(dirB))
+                            elif isinstance(g, GeometryInstance):
+                                walkp(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+                    walkp(pn.get_Geometry(Options()), None)
+                    if pr and (best is None or min(pr) < best):
+                        best = min(pr)
+                return best
+            try:
+                bg = b_glass()
+                r["b_glass_before_mm"] = round(bg * FT, 2) if bg is not None else None
+                if args.get("b_match_glass") and bg is not None:
+                    # стекло B заходит за грань столба на «Выступ сбоку» своей панели — как в стойку
+                    pn0 = doc.GetElement(list(wb.CurtainGrid.GetPanelIds())[0])
+                    vp = doc.GetElement(pn0.GetTypeId()).LookupParameter(u"Выступ сбоку")
+                    target = -vp.AsDouble() if vp else bg
+                    ElementTransformUtils.MoveElement(doc, wb.Id, dirB * (target - bg))
+                    doc.Regenerate()
+                    bg = b_glass()
+                r["b_glass_from_face_mm"] = round(bg * FT, 2) if bg is not None else None
+            except Exception as ex2:
+                r["b_glass_err"] = str(ex2)[:100]
+            if args.get("probe_overlap"):
+                # пересечение тел столба с телами панелей B: объём и габарит (мм от P) — где столб «закрывает» уплотнитель
+                def solids(el):
+                    out = []
+
+                    def wk(ge, tr):
+                        for g in ge:
+                            if isinstance(g, Solid) and g.Volume > 1e-9:
+                                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+                            elif isinstance(g, GeometryInstance):
+                                wk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+                    o3 = Options(); o3.DetailLevel = ViewDetailLevel.Fine
+                    wk(el.get_Geometry(o3), None)
+                    return out
+                cs = solids(ma)
+                ov = []
+                for pid in wb.CurtainGrid.GetPanelIds():
+                    for ps in solids(doc.GetElement(pid)):
+                        for c in cs:
+                            try:
+                                x = BooleanOperationsUtils.ExecuteBooleanOperation(c, ps, BooleanOperationsType.Intersect)
+                            except Exception:
+                                continue
+                            if x is not None and x.Volume > 1e-9:
+                                bb = x.GetBoundingBox(); tb = bb.Transform
+                                p1 = tb.OfPoint(bb.Min); p2 = tb.OfPoint(bb.Max)
+                                ov.append({"vol_mm3_per_m": round(x.Volume * FT ** 3 / (2.7), 0),
+                                           "x": [round((min(p1.X, p2.X) - P.X) * FT, 1), round((max(p1.X, p2.X) - P.X) * FT, 1)],
+                                           "y": [round((min(p1.Y, p2.Y) - P.Y) * FT, 1), round((max(p1.Y, p2.Y) - P.Y) * FT, 1)],
+                                           "panel_solid_x": [round((ps.GetBoundingBox().Transform.OfPoint(ps.GetBoundingBox().Min).X - P.X) * FT, 1),
+                                                             round((ps.GetBoundingBox().Transform.OfPoint(ps.GetBoundingBox().Max).X - P.X) * FT, 1)]})
+                r["overlap"] = ov
+                r["column_solids"] = len(cs)
+            v = ViewPlan.Create(doc, vft.Id, level.Id)
+            v.Name = u"Схема " + sc["key"]
+            v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+            vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, 500 / FT)
+            if args.get("view_depth_mm") is not None:   # без проекции ниже разреза (напольный профиль, нижние полосы уплотнителя)
+                dz = (500 - float(args["view_depth_mm"])) / FT
+                vr.SetOffset(PlanViewPlane.BottomClipPlane, dz); vr.SetOffset(PlanViewPlane.ViewDepthPlane, dz)
+            v.SetViewRange(vr)
+            cx, cy = (hub.X, hub.Y) if hub is not None else (ox, oy)   # центр вида — центр круга столба, если он известен
+            box = BoundingBoxXYZ(); box.Min = XYZ(cx - H, cy - H, -1000); box.Max = XYZ(cx + H, cy + H, 1000)
+            v.CropBox = box; v.CropBoxActive = True; v.CropBoxVisible = False
+            if args.get("panel_cut_rgb"):   # цветная схема: стекло в разрезе — сплошная заливка цветом
+                c3 = args["panel_cut_rgb"]
+                sp = [fp for fp in FilteredElementCollector(doc).OfClass(FillPatternElement) if fp.GetFillPattern().IsSolidFill][0]
+                og = OverrideGraphicSettings()
+                og.SetCutForegroundPatternId(sp.Id); og.SetCutForegroundPatternColor(Color(c3[0], c3[1], c3[2]))
+                og.SetSurfaceForegroundPatternId(sp.Id); og.SetSurfaceForegroundPatternColor(Color(c3[0], c3[1], c3[2]))
+                v.SetCategoryOverrides(ElementId(BuiltInCategory.OST_CurtainWallPanels), og)
+            if args.get("hide_mullions"):
+                v.SetCategoryHidden(ElementId(BuiltInCategory.OST_CurtainWallMullions), True)
+            t.Commit()
+            r.update({"wall_a": int(wa.Id.Value), "wall_b": int(wb.Id.Value), "column": int(ma.Id.Value), "column_dist_mm": round(da, 1),
+                      "b_end_mullion_removed": mb is not None and db < 50, "view": int(v.Id.Value)})
+            o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+            o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 900))
+            o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+            o.FilePath = os.path.join(args["out_dir"], u"s_" + sc["key"])
+            doc.ExportImage(o)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)[:200]
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        res["schemes"].append(r)
+    res["warnings"] = [w.GetDescriptionText()[:120] for w in doc.GetWarnings()][:10]
+finally:
+    if commit:
+        tg.Assimilate()
+    else:
+        tg.RollBack()
+res["committed"] = commit
+__output__ = {"status": "completed_unverified", "summary": u"%s; схем: %d" % (u"применено" if commit else u"пробный прогон, откат", len(res["schemes"])), "result": res}

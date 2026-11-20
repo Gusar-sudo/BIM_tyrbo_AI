@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+# Только чтение модели: выгрузить сохранённые виды «М2 разрез …» / «М2 план …» в PNG с именами для make_m2_sections_pdf.py.
+# Аргументы: out_dir, px
+import json, os, re
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+n = 0
+for v in FilteredElementCollector(doc).OfClass(View):
+    if v.IsTemplate:
+        continue
+    m1 = re.match(u"^М2 разрез (\\S+) · колонка (\\d+) · (\\S+)$", v.Name)
+    m2 = re.match(u"^М2 план (\\S+) · (\\d+) мм · ", v.Name)
+    if m1:
+        tag = u"V_%s_c%s_%s" % m1.groups()
+    elif m2:
+        cb = v.CropBox
+        cx = (cb.Min.X + cb.Max.X) / 2.0 * FT
+        tag = u"H_%s_%04d_%07d" % (m2.group(1), int(m2.group(2)), int(cx + 1000000))
+    else:
+        continue
+    o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+    ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+    o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 1100))
+    o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+    o.FilePath = os.path.join(args["out_dir"], tag)
+    doc.ExportImage(o); n += 1
+__output__ = {"status": "completed_unverified", "summary": u"выгружено видов: %d; модель не менялась" % n}

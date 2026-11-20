@@ -1,0 +1,194 @@
+# -*- coding: utf-8 -*-
+# Flex-тест витражей в проекте (ВСЁ откатывается): по каждому типу стены — секции min / typ / max (L×H, шаг стоек grid_mm,
+# ригель transom_mm при H >= transom_from_mm). Проверки по каждой секции:
+#  - импосты по местам: низ — «к полу», верх — «к потолку», край в начале стены — «к стене … правый», в конце — «… левый»,
+#    внутренние вертикальные и ригель — «центральный» (ожидания — подстроки, args.expect);
+#  - панели: тип по умолчанию, FT_Стекло_Ширина/Высота > 0 и близко к размеру панели;
+#  - предупреждения Revit по элементам секции.
+# Виды на тип стены: 3D «Низкая» и «Высокая» (тонированный с рёбрами), фасад 1:50, план 1:20 типовой секции -> PNG.
+# Аргументы: wall_types [имена], sizes [{key, length_mm, height_mm}], grid_mm (1000), transom_mm (2100), transom_from_mm (3000),
+#            out_dir, origin_mm [x, y], px (1600), views (true), batch (имя result_<batch>.json), tag_offset (0)
+import json, os
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+vft_sec = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.Section][0]
+vft_3d = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.ThreeDimensional][0]
+vft_pl = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+SIZES = args.get("sizes") or [{"key": "min", "length_mm": 1000, "height_mm": 2400}, {"key": "typ", "length_mm": 3000, "height_mm": 3000},
+                              {"key": "max", "length_mm": 6000, "height_mm": 4000}]
+GRID = float(args.get("grid_mm", 1000)); TR = float(args.get("transom_mm", 2100)); TR_FROM = float(args.get("transom_from_mm", 3000))
+EXP = args.get("expect") or {"bottom": [u"к полу"], "top": [u"к потолку"], "start": [u"к стене", u"правый"], "end": [u"к стене", u"левый"],
+                             "inner": [u"центральн"], "transom": [u"центральн"]}
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers,
+        BuiltInCategory.OST_SectionHeads, BuiltInCategory.OST_SectionBox, BuiltInCategory.OST_CLines]
+existing = set(v.Name for v in FilteredElementCollector(doc).OfClass(View))
+
+
+def uname(n):
+    k = n; i = 2
+    while k in existing:
+        k = u"%s (%d)" % (n, i); i += 1
+    existing.add(k)
+    return k
+
+
+def tidy(v):
+    for b in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(b), True)
+        except Exception:
+            pass
+
+
+def mname(m):
+    return m.Name
+
+
+def check_wall(w, P0, L, H):
+    r = {"mullions": {}, "bad": []}
+    x0, x1 = P0.X, P0.X + MM(L)
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+        if bb is None:
+            continue
+        zc = ((bb.Min.Z + bb.Max.Z) / 2 - level.Elevation) * FT; xc = (bb.Min.X + bb.Max.X) / 2
+        vert = (bb.Max.Z - bb.Min.Z) > (bb.Max.X - bb.Min.X)
+        if vert:
+            role = "start" if abs(xc - x0) < MM(60) else ("end" if abs(xc - x1) < MM(60) else "inner")
+        else:
+            role = "bottom" if zc < 100 else ("top" if zc > H - 100 else "transom")
+        n = mname(m)
+        r["mullions"].setdefault(role, set()).add(n)
+        if not all(s in n for s in EXP[role]):
+            r["bad"].append([role, n])
+    r["mullions"] = dict((k, sorted(v)) for k, v in r["mullions"].items())
+    pans = []; pbad = []
+    for pid in w.CurtainGrid.GetPanelIds():
+        p = doc.GetElement(pid)
+        bb = p.get_BoundingBox(None)
+        sw = p.LookupParameter(u"FT_Стекло_Ширина"); sh = p.LookupParameter(u"FT_Стекло_Высота")
+        # размер панели — отчётные ADSK_Размер_* (габарит раздувают скрытые тела, например ламели жалюзи)
+        aw = p.LookupParameter(u"ADSK_Размер_Ширина"); ah = p.LookupParameter(u"ADSK_Размер_Высота")
+        pw = aw.AsDouble() * FT if aw else ((bb.Max.X - bb.Min.X) * FT if bb else 0)
+        ph = ah.AsDouble() * FT if ah else ((bb.Max.Z - bb.Min.Z) * FT if bb else 0)
+        gw = sw.AsDouble() * FT if sw else None; gh = sh.AsDouble() * FT if sh else None
+        pans.append(p.Name)
+        if gw is None or gh is None:
+            continue
+        # стекло = L + 2·Добавка + Поправка: допускается от L − 10 (цельностеклянные L − 5) до L + 60
+        if gw <= 0 or gh <= 0 or not (-10 <= gw - pw <= 60) or not (-10 <= gh - ph <= 60):
+            pbad.append([p.Name, round(pw), round(ph), round(gw), round(gh)])
+    r["panels"] = sorted(set(pans)); r["panel_count"] = len(pans); r["glass_bad"] = pbad
+    return r
+
+
+def view3d(name, bb, detail, px):
+    v = View3D.CreateIsometric(doc, vft_3d.Id)
+    v.Name = uname(name)
+    v.IsSectionBoxActive = True; v.SetSectionBox(bb)
+    c = (bb.Min + bb.Max) / 2
+    f = XYZ(1, 1.4, -0.9).Normalize()
+    up = (XYZ.BasisZ - f * XYZ.BasisZ.DotProduct(f)).Normalize()
+    v.SetOrientation(ViewOrientation3D(c - f * MM(20000), up, f))
+    v.DetailLevel = detail; v.DisplayStyle = DisplayStyle.ShadingWithEdges
+    cb = v.CropBox; inv = cb.Transform.Inverse; us, vs = [], []
+    for x_ in (bb.Min.X, bb.Max.X):
+        for y_ in (bb.Min.Y, bb.Max.Y):
+            for z_ in (bb.Min.Z, bb.Max.Z):
+                q = inv.OfPoint(XYZ(x_, y_, z_)); us.append(q.X); vs.append(q.Y)
+    cb.Min = XYZ(min(us), min(vs), cb.Min.Z); cb.Max = XYZ(max(us), max(vs), cb.Max.Z)
+    v.CropBox = cb; v.CropBoxActive = True; v.CropBoxVisible = False
+    tidy(v)
+    return v
+
+
+ox, oy = [float(a) for a in args.get("origin_mm", [60000, 700000])]
+res = {"types": []}
+tg = TransactionGroup(doc, u"FT: flex-тест (откат)"); tg.Start()
+try:
+    exports = []
+    if args.get("prep") and "PREP" in globals():   # проба новых семейств: include с PREP(doc, args) (например prep_wall_band.py)
+        res["prep"] = PREP(doc, args["prep"])
+    for k, wn in enumerate(args["wall_types"]):
+        checkpoint(u"тип %s" % wn, k, len(args["wall_types"]))
+        rt = {"wall_type": wn, "sizes": []}
+        if wn not in wtypes:
+            rt["error"] = u"нет типа"; res["types"].append(rt); continue
+        Y = MM(oy + 8000 * k); xcur = MM(ox)
+        t = Transaction(doc, u"секции"); t.Start()
+        fo = t.GetFailureHandlingOptions()
+        walls = []
+        for s in SIZES:
+            L, H = float(s["length_mm"]), float(s["height_mm"])
+            P0 = XYZ(xcur, Y, level.Elevation)
+            w = Wall.Create(doc, Line.CreateBound(P0, P0 + XYZ.BasisX * MM(L)), wtypes[wn].Id, level.Id, MM(H), 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(w, 0); WallUtils.DisallowWallJoinAtEnd(w, 1)
+            doc.Regenerate()
+            n = int(round(L / GRID))
+            for i in range(1, n):
+                w.CurtainGrid.AddGridLine(False, P0 + XYZ.BasisX * MM(GRID * i) + XYZ(0, 0, 1), False)
+            if H >= TR_FROM:
+                w.CurtainGrid.AddGridLine(True, P0 + XYZ.BasisX * MM(min(GRID, L) / 2) + XYZ(0, 0, MM(TR)), False)
+            walls.append((s, w, P0, L, H))
+            xcur += MM(L + 1500)
+        st = t.Commit()
+        warn_ids = set()
+        for wr in doc.GetWarnings():
+            for i in wr.GetFailingElements():
+                warn_ids.add(i.Value)
+        for s, w, P0, L, H in walls:
+            r = check_wall(w, P0, L, H)
+            own = set([w.Id.Value] + [i.Value for i in w.CurtainGrid.GetMullionIds()] + [i.Value for i in w.CurtainGrid.GetPanelIds()])
+            r["warnings"] = len(own & warn_ids)
+            r["key"] = s["key"]; r["size"] = "%dx%d" % (L, H)
+            rt["sizes"].append(r)
+        rt["commit"] = str(st)
+        rt["pass"] = all(not r["bad"] and not r["glass_bad"] and r["warnings"] == 0 for r in rt["sizes"])
+        if args.get("views", True):
+            t = Transaction(doc, u"виды"); t.Start()
+            xa = walls[0][2].X; xb = walls[-1][2].X + MM(walls[-1][3])
+            hmax = max(x[4] for x in walls)
+            bb = BoundingBoxXYZ(); bb.Min = XYZ(xa - MM(300), Y - MM(400), level.Elevation - MM(100)); bb.Max = XYZ(xb + MM(300), Y + MM(400), level.Elevation + MM(hmax + 200))
+            tag = u"%02d" % (k + 1 + int(args.get("tag_offset", 0)))   # сквозная нумерация между партиями
+            v1 = view3d(u"FT flex %s 3D низкая" % tag, bb, ViewDetailLevel.Coarse, 0)
+            v2 = view3d(u"FT flex %s 3D высокая" % tag, bb, ViewDetailLevel.Fine, 0)
+            tr = Transform.Identity
+            tr.Origin = XYZ((xa + xb) / 2, Y - MM(400), level.Elevation)
+            tr.BasisX = XYZ.BasisX; tr.BasisY = XYZ.BasisZ; tr.BasisZ = XYZ(0, -1, 0)
+            sb = BoundingBoxXYZ(); sb.Transform = tr
+            sb.Min = XYZ(-(xb - xa) / 2 - MM(300), MM(-300), MM(-800)); sb.Max = XYZ((xb - xa) / 2 + MM(300), MM(hmax + 300), 0)
+            v3 = ViewSection.CreateSection(doc, vft_sec.Id, sb); v3.Name = uname(u"FT flex %s фасад" % tag)
+            v3.Scale = 50; v3.DetailLevel = ViewDetailLevel.Fine; tidy(v3)
+            v4 = ViewPlan.Create(doc, vft_pl.Id, level.Id); v4.Name = uname(u"FT flex %s план типовой" % tag)
+            v4.Scale = 20; v4.DetailLevel = ViewDetailLevel.Fine
+            s_, w_, P_, L_, H_ = walls[1] if len(walls) > 1 else walls[0]
+            cb = v4.CropBox
+            cb.Min = XYZ(P_.X - MM(250), Y - MM(250), cb.Min.Z); cb.Max = XYZ(P_.X + MM(L_ + 250), Y + MM(250), cb.Max.Z)
+            v4.CropBox = cb; v4.CropBoxActive = True; v4.CropBoxVisible = False; tidy(v4)
+            t.Commit()
+            for v, suf in ((v1, u"1_3D_низкая"), (v2, u"2_3D_высокая"), (v3, u"3_фасад"), (v4, u"4_план")):
+                exports.append((v, u"%s_%s" % (tag, suf)))
+        res["types"].append(rt)
+    for v, key in exports:
+        checkpoint(u"экспорт %s" % key, 0, 0)
+        opt = ImageExportOptions(); opt.ExportRange = ExportRange.SetOfViews
+        ids = List[ElementId](); ids.Add(v.Id); opt.SetViewsAndSheets(ids)
+        opt.FilePath = os.path.join(OUT, key); opt.ZoomType = ZoomFitType.FitToPage; opt.PixelSize = int(args.get("px", 1600))
+        opt.HLRandWFViewsFileType = ImageFileType.PNG; opt.ShadowViewsFileType = ImageFileType.PNG; opt.ImageResolution = ImageResolution.DPI_150
+        doc.ExportImage(opt)
+finally:
+    tg.RollBack()
+with open(os.path.join(OUT, u"result_%s.json" % args.get("batch", "1")), "w", encoding="utf-8") as f:
+    json.dump(res, f, ensure_ascii=False, indent=1)
+npass = sum(1 for t in res["types"] if t.get("pass"))
+__output__ = {"status": "completed_unverified", "summary": u"типов %d, PASS %d; всё откатано" % (len(res["types"]), npass), "result": res}

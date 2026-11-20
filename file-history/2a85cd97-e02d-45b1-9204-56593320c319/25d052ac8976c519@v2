@@ -1,0 +1,20 @@
+﻿param([string]$JobId, [int]$WaitSec = 0)
+# Ждёт окончания задания horizun (до WaitSec) и печатает итог стоек ГКЛ
+$f = "C:\Users\user\.horizun\jobs\$JobId.jsonl"
+$deadline = (Get-Date).AddSeconds($WaitSec)
+do {
+    $t = (Get-Content $f -Raw -Encoding utf8) -replace '\\"', '"'
+    if ($t -match '"event":"finish"') { break }
+    Start-Sleep 10
+} while ((Get-Date) -lt $deadline)
+if ($t -notmatch '"event":"finish"') { "ЕЩЁ ИДЁТ"; [regex]::Matches($t, '"label":"[^"]*"') | Select-Object -Last 1 | ForEach-Object { $_.Value }; return }
+[regex]::Match($t, '"summary":"[^"]*"').Value
+[regex]::Matches($t, '\{"ok":[^{}]*?"profile":"[^"]*"\}|\{[^{}]*"error":"[^"]*"[^{}]*\}') | ForEach-Object {
+    $v = $_.Value
+    $p = [regex]::Match($v, '"profile":"BIMLIB_Профиль_([^"]*)_ФристайлТехнолоджи"').Groups[1].Value
+    $faces = [regex]::Match($v, '"faces":\{[^}]*\}').Value
+    $err = [regex]::Match($v, '"(error|own_err)":[^,]*').Value
+    "$p | $faces | $err"
+}
+[regex]::Match($t, '"types":\[\[.*?\]\]').Value
+[regex]::Match($t, '"probe":\[\[.*?\]\]').Value

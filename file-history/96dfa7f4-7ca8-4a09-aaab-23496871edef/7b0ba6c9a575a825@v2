@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+# ПРОБА (без сохранения): сдвиг профиля уплотнителя по контуру КАЖДОГО стекла в семействе панели,
+# варианты PROFILE_ANGLE / PROFILE_FLIPPED_HOR; габарит относительно стекла. Транзакция откатывается.
+# Аргументы: families, profile_rfa, variants: [[angle_deg, flipped]]
+import json, math, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+outs = []
+for famname in args["families"]:
+    fam = [f for f in FilteredElementCollector(doc).OfClass(Family) if f.Name == famname][0]
+    fdoc = doc.EditFamily(fam)
+    try:
+        t = Transaction(fdoc, u"проба"); t.Start()
+        pf = clr.Reference[Family]()
+        fdoc.LoadFamily(args["profile_rfa"], pf)
+        sym = fdoc.GetElement(list(pf.Value.GetFamilySymbolIds())[0])
+        glasses = [e for e in FilteredElementCollector(fdoc).OfClass(Extrusion)
+                   if e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).AsElementId() != ElementId.InvalidElementId
+                   and u"Стекло" in fdoc.GetElement(e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).AsElementId()).Name]
+        fmp = fdoc.FamilyManager
+        H = fmp.CurrentType.AsDouble([p for p in fmp.Parameters if p.Definition.Name == u"ADSK_Размер_Толщина"][0]) / 2
+        for gi, glass in enumerate(glasses):
+            gb = glass.get_BoundingBox(None)
+            face_y = gb.Min.Y if abs(gb.Min.Y + H) < abs(gb.Max.Y - H) else gb.Max.Y
+            rp = [r for r in FilteredElementCollector(fdoc).OfClass(ReferencePlane) if abs(abs(r.Normal.Y) - 1) < 1e-6 and abs(r.BubbleEnd.Y - face_y) < 1e-4]
+            sp = SketchPlane.Create(fdoc, rp[0].Id) if rp else SketchPlane.Create(fdoc, Plane.CreateByNormalAndOrigin(XYZ.BasisY, XYZ(0, face_y, 0)))
+            x0, x1, z0, z1 = gb.Min.X, gb.Max.X, gb.Min.Z, gb.Max.Z
+            P = [XYZ(x0, face_y, z0), XYZ(x1, face_y, z0), XYZ(x1, face_y, z1), XYZ(x0, face_y, z1)]
+            sgn = 1 if face_y < 0 else -1
+            for ang, flp in args["variants"]:
+                ca = CurveArray()
+                for k in range(4):
+                    ca.Append(Line.CreateBound(P[k], P[(k + 1) % 4]))
+                sw = fdoc.FamilyCreate.NewSweep(True, ca, sp, app.Create.NewFamilySymbolProfile(sym), 0, ProfilePlaneLocation.Start)
+                sw.get_Parameter(BuiltInParameter.PROFILE_ANGLE).Set(math.radians(ang))
+                sw.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR).Set(1 if flp else 0)
+                fdoc.Regenerate()
+                bb = sw.get_BoundingBox(None)
+                outs.append({"family": famname[-30:], "glass": gi + 1, "face_y": round(face_y * FT, 1), "rp_face": bool(rp), "angle": ang, "flip": flp,
+                             "inset_x": [round((bb.Min.X - x0) * FT, 2), round((x1 - bb.Max.X) * FT, 2)],
+                             "inset_z": [round((bb.Min.Z - z0) * FT, 2), round((z1 - bb.Max.Z) * FT, 2)],
+                             "depth": sorted([round((bb.Min.Y - face_y) * FT * sgn, 2), round((bb.Max.Y - face_y) * FT * sgn, 2)])})
+                fdoc.Delete(sw.Id)
+        t.RollBack()
+    finally:
+        fdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"проба, без сохранения", "rows": outs}

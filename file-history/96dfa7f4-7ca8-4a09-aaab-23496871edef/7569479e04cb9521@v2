@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+# Перенести вершины силуэта профиля по таблице moves ([x,y,nx,ny] мм) в .rfa-файлах (открыть -> правка -> сохранить).
+# Аргументы: jobs [{rfa, profile}], moves_json (slot_moves.json), tol_mm. Проект НЕ меняется.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    with open(args["args_file"], encoding="utf-8") as _f:
+        args.update(json.load(_f))
+app = __revit__.Application
+FT = 304.8
+TOL = float(args.get("tol_mm", 0.06))
+with open(args["moves_json"], encoding="utf-8") as f:
+    MV = json.load(f)
+res = []
+for job in args["jobs"]:
+    mv = MV[job["profile"]]["moves"]
+    r = {"profile": job["profile"][:50], "moved_ends": 0, "lines": 0, "ok": False}
+
+    def tgt(p):
+        for x, y, nx, ny in mv:
+            if abs(p.X * FT - x) <= TOL and abs(p.Y * FT - y) <= TOL:
+                return XYZ(nx / FT, ny / FT, p.Z), True
+        return p, False
+    fdoc = app.OpenDocumentFile(job["rfa"])
+    try:
+        t = Transaction(fdoc, u"силуэт: паз под уплотнитель"); t.Start()
+        for ce in FilteredElementCollector(fdoc).OfClass(CurveElement):
+            c = ce.GeometryCurve
+            if not isinstance(c, Line):
+                continue
+            a, ma = tgt(c.GetEndPoint(0)); b, mb = tgt(c.GetEndPoint(1))
+            if ma or mb:
+                ce.SetGeometryCurve(Line.CreateBound(a, b), True)
+                r["lines"] += 1; r["moved_ends"] += int(ma) + int(mb)
+        t.Commit()
+        fdoc.Save()
+        r["ok"] = r["moved_ends"] == 2 * len(mv)
+        r["expected_ends"] = 2 * len(mv)
+    except Exception as ex:
+        r["error"] = str(ex)[:200]
+    finally:
+        fdoc.Close(False)
+    res.append(r)
+__output__ = {"status": "completed_unverified" if all(x["ok"] for x in res) else "partial",
+              "summary": u"профилей: %d, все концы совпали: %d; проект не изменён" % (len(res), sum(1 for x in res if x["ok"])), "results": res}

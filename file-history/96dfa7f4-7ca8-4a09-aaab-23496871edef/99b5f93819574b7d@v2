@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+# Чтение: типы панелей по именам (имя типа + семейство) и значение параметра; семейства профилей — есть ли в проекте.
+# Аргументы: names [имена типов], param, families [имена семейств]. Модель не меняется.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+byname = {}
+for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels):
+    byname.setdefault(s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), []).append(s)
+rows = []
+for n in args["names"]:
+    for s in byname.get(n, []):
+        p = s.LookupParameter(args["param"])
+        rows.append({"id": int(s.Id.Value), "name": n, "family": s.FamilyName[:50], "mm": round(p.AsDouble() * FT, 2) if p else None})
+    if n not in byname:
+        rows.append({"name": n, "missing": True})
+fams = set(f.Name for f in FilteredElementCollector(doc).OfClass(Family))
+missing_f = [f for f in args.get("families", []) if f not in fams]
+__output__ = {"status": "completed_unverified", "summary": u"типов найдено %d, семейств нет %d" % (sum(1 for r in rows if "id" in r), len(missing_f)),
+              "doc": doc.Title, "rows": rows, "missing_families": missing_f, "warnings": len(doc.GetWarnings())}

@@ -1,0 +1,75 @@
+"""Партия C: пакетная подготовка силуэтов профилей по jobs_*.json + картинки «было/станет» + сводная картинка.
+py -P -E build_batch.py jobs_fsc21.json before_fsc21_9.json
+"""
+import json, math, subprocess, sys
+from pathlib import Path
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+HERE = Path(__file__).parent
+DXF = HERE.parent.parent / "dxf"
+jobs = json.load(open(HERE / sys.argv[1], encoding="utf-8-sig"))
+before = {p["symbol_id"]: p for p in json.load(open(HERE / sys.argv[2], encoding="utf-8-sig"))["profiles"]}
+
+
+def chain(segs, tol=0.05):
+    """Отрезки -> замкнутые контуры."""
+    segs = [((s[0], s[1]), (s[2], s[3])) for s in segs]
+    loops = []
+    while segs:
+        a, b = segs.pop(0); loop = [a, b]
+        while True:
+            for i, (p, q) in enumerate(segs):
+                if math.dist(p, loop[-1]) < tol: loop.append(q); segs.pop(i); break
+                if math.dist(q, loop[-1]) < tol: loop.append(p); segs.pop(i); break
+            else:
+                break
+        if math.dist(loop[0], loop[-1]) < tol: loop.pop()
+        loops.append([list(p) for p in loop])
+    return loops
+
+
+summary = []
+for j in jobs:
+    name = j["name"]
+    out_json = HERE / f"FSC21_{name}.json"
+    was_json = HERE / f"FSC21_{name}_было.json"
+    cmd = [sys.executable, "-P", "-E", str(HERE / "profile_from_dxf.py"), str(DXF / (j["dxf"] + ".dxf")),
+           j["win"], j["ctr"], j["cham"], str(out_json), str(HERE / "img" / f"FSC21_{name}_силуэт.png")] + j["flags"]
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+    if r.returncode:
+        summary.append({"name": name, "error": r.stderr.strip()[-300:]}); print("ОШИБКА", name, r.stderr[-300:]); continue
+    res = json.loads(r.stdout.strip().splitlines()[-1])
+    b = before[j["symbol_id"]]
+    json.dump({"source": "семейство в модели до партии C", "loops": chain(b["segs"])}, open(was_json, "w", encoding="utf-8"), ensure_ascii=False)
+    bw = round(b["bbox_mm"][2] - b["bbox_mm"][0], 2); bh = round(b["bbox_mm"][3] - b["bbox_mm"][1], 2)
+    nw, nh = res["outer_size_mm"]
+    title = f"FSC21 {name}: {bw}×{bh} → {nw}×{nh} мм"
+    subprocess.run([sys.executable, "-P", "-E", str(HERE / "compare_png.py"), str(out_json), str(was_json),
+                    str(HERE / "img" / f"FSC21_{name}_было_стало.png"), title, "DWG «" + j["dxf"] + "»"], check=True,
+                   capture_output=True)
+    summary.append({"name": name, "symbol_id": j["symbol_id"], "node": j["node"], "dxf": j["dxf"],
+                    "old_lines": b["lines"], "old_bbox": b["bbox_mm"], "new_bbox": res["outer_bbox_mm"],
+                    "new_size": res["outer_size_mm"], "loops": res["vertices"], "dropped": res["holes_dropped_area_mm2"],
+                    "min_seg": res["min_segment_mm"], "used_by": [u["type"] for u in b["used_by"]]})
+    print(f"{name:36} было {bw}×{bh} ({b['lines']} лин.) → {nw}×{nh}, контуров {len(res['vertices'])}, отброшено {res['holes_dropped_area_mm2']}")
+json.dump(summary, open(HERE / "batch_fsc21_summary.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+# сводная картинка: все 9 «станет»
+ok = [s for s in summary if "error" not in s]
+fig, axs = plt.subplots(2, (len(ok) + 1) // 2, figsize=(3.2 * ((len(ok) + 1) // 2), 9))
+for ax, s in zip(axs.ravel(), ok):
+    for i, l in enumerate(json.load(open(HERE / f"FSC21_{s['name']}.json", encoding="utf-8"))["loops"]):
+        xs = [p[0] for p in l] + [l[0][0]]; ys = [p[1] for p in l] + [l[0][1]]
+        ax.fill(xs, ys, color="tab:blue" if i == 0 else "white", alpha=0.35 if i == 0 else 1, zorder=1 if i == 0 else 2)
+        ax.plot(xs, ys, color="k", lw=0.6, zorder=5)
+    for i, l in enumerate(json.load(open(HERE / f"FSC21_{s['name']}_было.json", encoding="utf-8"))["loops"]):
+        xs = [p[0] for p in l] + [l[0][0]]; ys = [p[1] for p in l] + [l[0][1]]
+        ax.plot(xs, ys, color="red", lw=0.5, ls="--", zorder=6)
+    ax.set_aspect("equal"); ax.set_xlim(-20, 20); ax.set_ylim(-35, 35); ax.grid(lw=0.2)
+    ax.set_title(s["name"], fontsize=7)
+for ax in axs.ravel()[len(ok):]:
+    ax.axis("off")
+fig.suptitle("FSC21: синее — новый контур по DWG, красный пунктир — было в модели", fontsize=10)
+fig.savefig(HERE / "img" / "FSC21_9_сводка.png", dpi=150, bbox_inches="tight")
+print("сводка:", HERE / "img" / "FSC21_9_сводка.png")

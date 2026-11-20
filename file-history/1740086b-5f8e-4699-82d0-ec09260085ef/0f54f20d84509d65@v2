@@ -1,0 +1,22 @@
+import sys, os
+from PIL import Image
+
+src = sys.argv[1]
+out = sys.argv[2]
+os.makedirs(out, exist_ok=True)
+emdr = Image.open(os.path.join(src, "1.jpg")).convert("RGB")
+cover = Image.open(os.path.join(src, "2.jpg")).convert("RGB")
+
+crops = {
+    "logo.png": (cover, (498, 28, 832, 362)),
+    "qr_telegram.png": (emdr, (52, 1192, 424, 1590)),
+    "qr_photo.png": (emdr, (930, 1192, 1304, 1594)),
+    "wc_blue.png": (cover, (12, 790, 258, 1460)),
+    "wc_orange.png": (cover, (1086, 790, 1340, 1460)),
+}
+for name, (img, box) in crops.items():
+    c = img.crop(box)
+    if name.startswith("wc_"):
+        c = c.resize((c.width * 2, c.height * 2), Image.LANCZOS)
+    c.save(os.path.join(out, name))
+    print(name, c.size)

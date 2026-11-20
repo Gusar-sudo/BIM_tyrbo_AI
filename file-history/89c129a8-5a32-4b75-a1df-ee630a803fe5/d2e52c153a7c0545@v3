@@ -1,0 +1,49 @@
+﻿# Сборка комплекта skill «Фристайл BIM»: плагин Claude Code + .skill-файлы для claude.ai.
+# Источник — личные skill в %USERPROFILE%\.claude\skills. Только локальные файлы, без сети.
+param(
+  [string]$Version = "1.0.0",
+  [string]$SkillCreator = ""
+)
+$ErrorActionPreference = "Stop"
+$src   = Join-Path $env:USERPROFILE ".claude\skills"
+$root  = $PSScriptRoot
+$plug  = Join-Path $root "fst-bim"
+$dist  = Join-Path $root "dist"
+$names = @(
+  "fst-pipeline", "fst-docs-intake", "fst-dwg-reader", "fst-curtainwall-author", "fst-family-audit", "fst-tz-gate",
+  "fst-shared-params", "fst-project-test", "fst-spec-price", "fst-visual-review", "fst-bimlib-release",
+  "fetch-checklist-audit", "partition-family-author"
+)
+
+# 1. Плагин: .claude-plugin/plugin.json + skills/<имя>
+if (Test-Path $plug) { Remove-Item -LiteralPath $plug -Recurse -Force -Confirm:$false }
+New-Item -ItemType Directory -Force (Join-Path $plug ".claude-plugin"), (Join-Path $plug "skills") | Out-Null
+foreach ($n in $names) {
+  $from = Join-Path $src $n
+  if (-not (Test-Path (Join-Path $from "SKILL.md"))) { throw "нет skill: $n" }
+  Copy-Item -LiteralPath $from -Destination (Join-Path $plug "skills") -Recurse -Force
+  Get-ChildItem -LiteralPath (Join-Path $plug "skills\$n") -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force -Confirm:$false
+}
+$plugin = [ordered]@{
+  name = "fst-bim"; version = $Version
+  description = "BIM-библиотека «Фристайл Технолоджи» по методологии fetchBIM: документы → аудит → ТЗ → параметры → сборка → тест → спецификация → визуальная приёмка → выпуск bimlib."
+  author = [ordered]@{ name = "BIM-отдел Фристайл Технолоджи" }
+}
+$noBom = New-Object System.Text.UTF8Encoding($false)
+[IO.File]::WriteAllText((Join-Path $plug ".claude-plugin\plugin.json"), ($plugin | ConvertTo-Json -Depth 4), $noBom)
+
+# 2. Локальный маркетплейс рядом с плагином (для /plugin marketplace add <эта папка>)
+New-Item -ItemType Directory -Force (Join-Path $root ".claude-plugin") | Out-Null
+$market = [ordered]@{
+  name = "fst-bim-local"
+  owner = [ordered]@{ name = "BIM-отдел Фристайл Технолоджи" }
+  plugins = @([ordered]@{ name = "fst-bim"; source = "./fst-bim"; description = $plugin.description; version = $Version })
+}
+[IO.File]::WriteAllText((Join-Path $root ".claude-plugin\marketplace.json"), ($market | ConvertTo-Json -Depth 5), $noBom)
+
+# 3. Проверка и .skill-файлы для claude.ai (pack_skills.py — только стандартная библиотека Python)
+$env:PYTHONUTF8 = 1
+if (Test-Path $dist) { Remove-Item -LiteralPath $dist -Recurse -Force -Confirm:$false }
+py -P -E (Join-Path $root "pack_skills.py") (Join-Path $plug "skills") $dist
+if ($LASTEXITCODE -ne 0) { throw "проверка skill не прошла — см. FAIL выше" }
+"plugin: $plug  ($($names.Count) skills, v$Version)"

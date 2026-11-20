@@ -1,0 +1,24 @@
+<section id="contacts" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:row;align-items:center;gap:64px">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<img src="/_blob/e5830ca5669b9e98c43b8c4435dbf99c" alt="Логотип Aroma psychology by Beleninova" style="width:180px;height:180px;object-fit:contain">
+<h2 style="font-size:68px;font-weight:800;line-height:1.1;color:#2B2B2E">Елена Беленинова</h2>
+<p style="font-size:38px;font-weight:700;line-height:1.3;color:#1F5560">Психолог, EMDR-терапевт, аромапсихолог</p>
+<div data-text style="font-size:36px;line-height:1.5;color:#2B2B2E">
+<p><b>Канал:</b> @beleninovaelena</p>
+<p><b>Дипломы:</b> @Elenabeleninovadiplomy</p>
+<p><b>Отзывы:</b> @otzyvy_elenabeleninova</p>
+</div>
+</div>
+<div style="display:flex;gap:40px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+<img src="/_blob/09451fa0273f2df86649227f5562e775" alt="QR-код телеграм-канала @beleninovaelena" style="width:420px;height:450px;object-fit:contain">
+<p style="font-size:38px;font-weight:800;text-align:center;color:#1F5560">Телеграм-канал</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+<img src="/_blob/dd39694ac9441fdae7518a1b7be19bf3" alt="QR-код личного аккаунта Елены Белениновой в Telegram" style="width:420px;height:452px;object-fit:contain">
+<p style="font-size:38px;font-weight:800;text-align:center;color:#1F5560">Личный аккаунт</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:56px;width:1664px;font-size:34px;font-weight:700;color:#3F3B36">Наведите камеру на QR-код · стенд 15–16</p>
+<aside>Этот слайд держать на экране во время вопросов и после выступления, чтобы люди успели отсканировать QR-коды.</aside>
+</section>

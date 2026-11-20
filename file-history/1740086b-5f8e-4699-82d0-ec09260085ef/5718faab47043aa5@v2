@@ -1,0 +1,11 @@
+<section id="requests" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-size:72px;font-weight:800;line-height:1.1;color:#2B2B2E">С чем приходят</h2>
+<div style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;gap:28px;align-items:center"><x-shape kind="ellipse" style="width:32px;height:32px;background:#C9622A"></x-shape><p style="font-size:38px"><b>Тревога и навязчивые мысли</b> — когда что-то крутится в голове</p></div>
+<div style="display:flex;gap:28px;align-items:center"><x-shape kind="ellipse" style="width:32px;height:32px;background:#E0A43A"></x-shape><p style="font-size:38px"><b>Выгорание и истощение</b> — сил нет, а причину не назвать</p></div>
+<div style="display:flex;gap:28px;align-items:center"><x-shape kind="ellipse" style="width:32px;height:32px;background:#7E4F9A"></x-shape><p style="font-size:38px"><b>Страхи в работе</b> — подвести, не успеть, быть обманутым</p></div>
+<div style="display:flex;gap:28px;align-items:center"><x-shape kind="ellipse" style="width:32px;height:32px;background:#B59A7A"></x-shape><p style="font-size:38px"><b>Острый стресс</b> — конфликт, потеря, громкий провал</p></div>
+<div style="display:flex;gap:28px;align-items:center"><x-shape kind="ellipse" style="width:32px;height:32px;background:#B8392A"></x-shape><p style="font-size:38px"><b>Тело</b> — зажимы, плохой сон, фоновое напряжение</p></div>
+</div>
+<aside>9:30–11:00. «Чаще всего EMDR связывают с последствиями серьёзных травм, но запросов гораздо больше». Пройтись по списку, не читая дословно. Если не успеваете, назвать три пункта.</aside>
+</section>

@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "schema.md задаёт пределы модуля 600 и 1200 мм с шагом 50 мм и пределы высоты 2400 и 3600 мм в параметрах MIN_/MAX_ (и шаге INC_ или эквиваленте).", "passed": true, "evidence": "Строки 81–85: MIN_ModuleWidth 600, INC_ModuleWidth 50, MIN_Height 2400, MAX_Height 3600 (MAX_ModuleWidth 1200 в той же таблице)."},
+    {"text": "schema.md содержит формулу ACTUAL_ для высоты, которая зажимает введённое значение между MIN_ и MAX_ и округляет до шага.", "passed": true, "evidence": "Строка 165: ACTUAL_Height = if(ENTER_Height < MIN_Height, MIN_Height, if(ENTER_Height > MAX_Height, MAX_Height, round(ENTER_Height / INC_Height) * INC_Height))."},
+    {"text": "schema.md указывает, что дверь — общее (shared) вложенное семейство, идущее отдельной строкой спецификации.", "passed": true, "evidence": "Строка 30: «Дверь: общее (shared) вложенное семейство категории «Двери» (чек-лист №41), чтобы шло отдельной строкой»."},
+    {"text": "Артикулы и цены не выдуманы: в schema.md они оставлены пустыми или вынесены в список вопросов производителю.", "passed": true, "evidence": "INFO_ProductCode — «уточнить»; INFO_ListPrice — формула от INFO_PricePerM2 без значения, способ расчёта цены вынесен в вопрос (строка 263)."},
+    {"text": "В прогоне нет вызовов инструментов horizun-revit.", "passed": true, "evidence": "Отчёт агента: Read, Glob, Write, Edit."},
+    {"text": "Формулы в schema.md не используют операторы >= и <= (вместо них not()) и не склеивают текст из параметров; если в схеме есть массив модулей, его количество защищено от значений меньше 2.", "passed": true, "evidence": "В формулах только not(): CHK_Height = and(not(ENTER_Height < MIN_Height), …); ≥/≤ встречаются лишь в пояснительном тексте; CHK_Status — вложенные if со строками, без склейки; Arr_X = if(ACTUAL_X < 2, 2, ACTUAL_X)."},
+    {"text": "schema.md содержит параметры-проверки со статусом вида «OK / ОШИБКА» и разбивку длины на модули с раздачей остатка по шагу 50 мм (часть модулей на 50 мм шире), а не только округление ширины модуля.", "passed": true, "evidence": "Строки 200–206: ACTUAL_ModuleBase / ACTUAL_ModuleWideCount / ACTUAL_ModuleWide = база + INC / ACTUAL_Remainder; строки 280–284: CHK_Status «OK» или «ОШИБКА: …» с причиной."}
+  ]
+}

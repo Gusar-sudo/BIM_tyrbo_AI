@@ -1,0 +1,113 @@
+# -*- coding: utf-8 -*-
+# Партия B (переделка) + М1: размеры стекла формулами в семействах панелей, признак типа FT_Система_М1.
+#  FT_Система_М1 (тип, Да/Нет, параметр семейства, по умолчанию Нет). Да -> нет уплотнителя FS.C-U и размера стекла
+#    (М1: стекло в П-профиле на клиновидном уплотнителе, правила стекла в альбоме нет).
+#  FT_Стекло_Ширина/Высота (экземпляр) = if(М1, 0, rounddown((ADSK_Размер_… - 5 мм) / 1 мм) * 1 мм)
+#  FT_Стекло_Уплотнитель_Артикул (тип) = if(М1, "", по толщине U5/U6/U8/U10)
+#  FT_Стекло_Уплотнитель_Длина (экземпляр) = if(М1, 0, 2*(W+H)*линий)
+#  В семействе m1_family создаётся тип "<m1_source_type> (М1)" с FT_Система_М1 = Да.
+# Берёт загруженные в проект семейства -> EditFamily -> SaveAs в out_dir. Модель проекта НЕ меняется.
+# Аргументы: spf, out_dir, families: [...], m1_family, m1_source_type
+import json
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+app = doc.Application
+M1 = u"FT_Система_М1"
+OLD_FLAG = u"FT_Стекло_Считать"
+F_ART = u'if(FT_Система_М1, "", if(Толщина стекла < 5.5 мм, "FS.C-U5", if(Толщина стекла < 7 мм, "FS.C-U6", if(Толщина стекла < 9 мм, "FS.C-U8", "FS.C-U10"))))'
+FORMULAS = [
+    (u"FT_Стекло_Ширина", u"if(FT_Система_М1, 0 мм, rounddown((ADSK_Размер_Ширина - 5 мм) / 1 мм) * 1 мм)", True),
+    (u"FT_Стекло_Высота", u"if(FT_Система_М1, 0 мм, rounddown((ADSK_Размер_Высота - 5 мм) / 1 мм) * 1 мм)", True),
+]
+F_LEN = u"if(FT_Система_М1, 0 мм, 2 * (ADSK_Размер_Ширина + ADSK_Размер_Высота) * FT_Стекло_Уплотнитель_Линий)"
+
+
+def fparam(fm, name):
+    for p in fm.Parameters:
+        if p.Definition.Name == name:
+            return p
+    return None
+
+
+fams = {}
+for f in FilteredElementCollector(doc).OfClass(Family):
+    fams[f.Name] = f
+
+old_spf = app.SharedParametersFilename
+results = []
+try:
+    app.SharedParametersFilename = args["spf"]
+    defs = {}
+    for g in app.OpenSharedParameterFile().Groups:
+        for d in g.Definitions:
+            defs[d.Name] = d
+    for name in args["families"]:
+        r = {"family": name, "ok": False}
+        fam = fams.get(name)
+        if fam is None:
+            r["error"] = u"семейство не найдено в проекте"; results.append(r); continue
+        fdoc = doc.EditFamily(fam)
+        try:
+            fm = fdoc.FamilyManager
+            t = Transaction(fdoc, u"FT: стекло формулой, признак М1")
+            t.Start()
+            added = []
+            pm = fparam(fm, M1)
+            if pm is None:
+                pm = fm.AddParameter(M1, GroupTypeId.Data, SpecTypeId.Boolean.YesNo, False)
+                added.append(M1)
+            for tp in list(fm.Types):
+                fm.CurrentType = tp
+                fm.Set(pm, 0)
+            for pn, fx, inst in FORMULAS:
+                p = fparam(fm, pn)
+                if p is None:
+                    p = fm.AddParameter(defs[pn], GroupTypeId.Geometry, inst)
+                    added.append(pn)
+                fm.SetFormula(p, fx)
+            fm.SetFormula(fparam(fm, u"FT_Стекло_Уплотнитель_Артикул"), F_ART)
+            fm.SetFormula(fparam(fm, u"FT_Стекло_Уплотнитель_Длина"), F_LEN)
+            po = fparam(fm, OLD_FLAG)
+            if po is not None:
+                fm.RemoveParameter(po); r["removed"] = OLD_FLAG
+            created = None
+            if name == args.get("m1_family"):
+                src = [x for x in fm.Types if x.Name == args["m1_source_type"]]
+                nn = args["m1_source_type"] + u" (М1)"
+                if src and not any(x.Name == nn for x in fm.Types):
+                    fm.CurrentType = src[0]
+                    nt = fm.NewType(nn)
+                    fm.CurrentType = nt
+                    fm.Set(pm, 1)
+                    created = nn
+                elif not src:
+                    r["warn"] = u"исходный тип для М1 не найден"
+            fdoc.Regenerate()
+            pa = fparam(fm, u"FT_Стекло_Уплотнитель_Артикул")
+            check = []
+            for tp in fm.Types:
+                if tp.Name.endswith(u"(М1)") or tp.Name == args.get("m1_source_type"):
+                    fm.CurrentType = tp
+                    fdoc.Regenerate()
+                    check.append({"type": tp.Name, "m1": tp.AsInteger(pm), "article": tp.AsString(pa)})
+            r.update({"added": added, "m1_type_created": created, "types": fm.Types.Size, "check": check,
+                      "formulas": {"art": pa.Formula, "len": fparam(fm, u"FT_Стекло_Уплотнитель_Длина").Formula,
+                                   "w": fparam(fm, u"FT_Стекло_Ширина").Formula},
+                      "m1_is_instance": pm.IsInstance})
+            t.Commit()
+            opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+            r["out_rfa"] = args["out_dir"] + u"\\" + name + u".rfa"
+            fdoc.SaveAs(r["out_rfa"], opts)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)
+        finally:
+            fdoc.Close(False)
+        results.append(r)
+finally:
+    app.SharedParametersFilename = old_spf
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Файлов семейств панелей: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

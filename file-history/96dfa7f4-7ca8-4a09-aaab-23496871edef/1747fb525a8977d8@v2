@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+# Локально: листы схем с глухой панелью ГКЛ (техтетрадь М3 + альбом М2) для scheme_sheets.py
+import json
+T = r"C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops"
+A = r"C:\Users\user\Desktop\Фристайл\_bim\review\album_m2_crops"
+G62 = u"Глухая панель ГКЛ 12,5 с утеплителем 62 мм"
+G72 = u"Глухая панель ГКЛ 12,5 с утеплителем 72 мм"
+W3_2 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Двойное заполнение_72мм"
+W3_1 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Одинарное заполнение_72мм"
+WN2 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка узкая_Двойное заполнение_72мм"
+WN1 = u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка узкая_Одинарное заполнение_72мм"
+W2 = u"BIMLIB_Витраж_Без разрезки_Система М2_Стойка основная_Двойное заполнение_62мм"
+P6 = u"Двуслойная стеклянная панель 72 мм (стекло 6 мм)"
+P61 = u"Однослойная стеклянная панель 72 мм (стекло 6 мм)"
+P5_62 = u"Двуслойная стеклянная панель 62 мм"
+RT = [{"label": u"Как в тетради", "mx": True, "rot": 180}, {"label": u"Зеркальная", "mx": False}, {"label": u"Повёрнута на 30°", "mx": True, "rot": 210}]
+TEE = lambda dn, up: [{"label": u"Как в тетради (B вниз)", "b_side": -1, "column_type": dn}, {"label": u"Зеркальная (B вверх)", "b_side": 1, "column_type": up},
+                      {"label": u"Повёрнута на 30°", "b_side": -1, "column_type": dn, "rot": 30}]
+NOTE = u"Глухая панель ГКЛ 12,5 с утеплителем (новое семейство, пробный прогон)."
+
+
+def S(key, title, kind, crop, src=u"Техническая тетрадь FS.Model3 2018", **kw):
+    d = {"key": key, "title": title, "kind": kind, "crop_png": crop, "scale": 1, "half_mm": 60, "source": src, "note": NOTE}
+    d.update(kw)
+    return d
+
+
+F04 = u"М3 FSC04 т-образный с двухслойным остеклением "
+schemes = [
+    S("1.1.05", u"Стойка FS.C-01, стекло + гипсовинил", "inline", T + r"\1.1.05.png", wall_type=W3_2,
+      mullion_type=u"М3 FSC01 центральный с двухслойным остеклением", panel_left=P6, panel_right=G72),
+    S("1.1.09", u"Узкая стойка FS.C-09, стекло + гипсовинил", "inline", T + r"\1.1.09.png", wall_type=WN2,
+      mullion_type=u"М3 FSC09 центральный с двухслойным остеклением", panel_left=P6, panel_right=G72),
+    S("1.1.13", u"Стойка FS.C-01, одинарный витраж + гипсовинил", "inline", T + r"\1.1.13.png", wall_type=W3_1,
+      mullion_type=u"М3 FSC01 центральный с однослойным остеклением", panel_left=P61, panel_right=G72),
+    S("1.1.14", u"Узкая стойка FS.C-09, одинарный витраж + гипсовинил", "inline", T + r"\1.1.14.png", wall_type=WN1,
+      mullion_type=u"М3 FSC09 центральный с однослойным остеклением", panel_left=P61, panel_right=G72),
+    S("2.1.03", u"Угол на столбе FS.C-04, сторона B — гипсовинил", "corner", T + r"\2.1.03.png", wall_type=W3_2, panel=P6, panel_b=G72, half_mm=95,
+      column_type=u"М3 FSC04 угловой с двухслойным остеклением левый", column_type_mirror=u"М3 FSC04 угловой с двухслойным остеклением правый", variants=RT),
+    S("2.2.01", u"Т-узел FS.C-04, сторона B — гипсовинил", "tee", T + r"\2.2.01.png", wall_type=W3_2, panel=P6, panel_b=G72, half_mm=95,
+      column_type=F04 + u"сверху", variants=TEE(F04 + u"сверху", F04 + u"снизу")),
+    S(u"М2-Т9-1", u"Стойка основная FS.C-21, ГКЛ + стекло (табл.9 п.1)", "inline", A + r"\image78.png", src=u"Альбом технических решений М2", wall_type=W2,
+      mullion_type=u"М2 FSC21 центральный с двухслойным остеклением", panel_left=G62, panel_right=P5_62,
+      variants=[{"label": u"Как в альбоме", "mx": False}, {"label": u"Зеркальная", "mx": True}, {"label": u"Повёрнута на 30°", "mx": False, "rot": 30}]),
+    S(u"М2-Т9-3", u"Стойка усиленная FS.C-22, ГКЛ + стекло (табл.9 п.3)", "inline", A + r"\image80.png", src=u"Альбом технических решений М2", wall_type=W2,
+      mullion_type=u"М2 FSC22 центральный с двухслойным остеклением", panel_left=G62, panel_right=P5_62,
+      variants=[{"label": u"Как в альбоме", "mx": False}, {"label": u"Зеркальная", "mx": True}, {"label": u"Повёрнута на 30°", "mx": False, "rot": 30}]),
+]
+tp = []
+for ty, v in ((G62, 16), (G72, 15)):
+    for p in (u"Выступ сбоку", u"Выступ сверху", u"Выступ снизу"):
+        tp.append({"type": ty, "param": p, "mm": v})
+json.dump({"schemes": schemes, "out_dir": r"C:\Users\user\Desktop\Фристайл\_bim\review\schemes_gkl", "pdf_name": u"ГКЛ_схема-модель",
+           "origin_mm": [20000, 380000], "step_mm": 4000,
+           "preload_rfas": [r"C:\Users\user\Desktop\Фристайл\_bim\work\2026\families\gkl_2026-11-03\BIMLIB_ПанельВитража_Глухая_ФристайлТехнолоджи.rfa"],
+           "type_params": tp},
+          open(r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\args_schemes_gkl.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(len(schemes))

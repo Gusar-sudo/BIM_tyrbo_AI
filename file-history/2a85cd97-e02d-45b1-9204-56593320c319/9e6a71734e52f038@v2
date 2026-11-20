@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+# Освободить висящую транзакцию (сборка мусора -> Dispose -> откат) и закрыть семейство без сохранения
+import System
+from Autodesk.Revit.DB import *
+app = __revit__.Application
+for i in range(3):
+    System.GC.Collect(); System.GC.WaitForPendingFinalizers()
+st = []
+for d in list(app.Documents):
+    if d.IsFamilyDocument:
+        mod = d.IsModifiable
+        try:
+            d.Close(False); st.append([d.Title if False else "closed", mod])
+        except Exception as e:
+            st.append(["failed", mod, str(e)[:100]])
+__output__ = {"status": "completed_unverified", "summary": str(st), "state": st}

@@ -1,0 +1,63 @@
+# -*- coding: utf-8 -*-
+# Перенос в библиотеку: загрузить профили 135° и создать типы импостов «угловой 135°» (копии «угловой … левый»
+# с заменой профиля). Проверка: число импостов/панелей/предупреждений до и после, типы и их профили.
+# commit=false -> откат (пробный прогон). Аргументы: args_file (args_schemes_135.json: preload_rfas, new_mullion_types), commit
+import json, os, clr
+from Autodesk.Revit.DB import *
+a0 = json.loads(HORIZUN_ARGS_JSON)
+commit = bool(a0.get("commit", False))
+with open(a0["args_file"], encoding="utf-8-sig") as f:
+    args = json.load(f)
+doc = __revit__.ActiveUIDocument.Document
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def counts():
+    return {"mullions": FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType().GetElementCount(),
+            "panels": FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType().GetElementCount(),
+            "warnings": len(doc.GetWarnings())}
+
+
+res = {"before": counts(), "loaded": [], "types": []}
+tg = TransactionGroup(doc, u"FT: столбы 135° (профили и типы)"); tg.Start()
+try:
+    t = Transaction(doc, u"FT: столбы 135°"); t.Start()
+    for rfa in args["preload_rfas"]:
+        res["loaded"].append([os.path.basename(rfa)[:-4], bool(doc.LoadFamily(rfa, LoadOpt(), clr.Reference[Family]()))])
+    mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+    fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+    for nt in args["new_mullion_types"]:
+        r = {"name": nt["name"], "base_found": nt["base"] in mtypes}
+        if nt["name"] in mtypes:
+            newt = mtypes[nt["name"]]; r["existed"] = True
+        else:
+            newt = mtypes[nt["base"]].Duplicate(nt["name"])
+        sym = doc.GetElement(list(fams[nt["profile_family"]].GetFamilySymbolIds())[0])
+        newt.get_Parameter(BuiltInParameter.MULLION_PROFILE).Set(sym.Id)
+        r["id"] = int(newt.Id.Value)
+        r["profile"] = doc.GetElement(newt.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId()).Family.Name
+        r["article"] = None
+        for pn in (u"ADSK_Обозначение", u"ADSK_Наименование", u"ADSK_Марка"):
+            p = newt.LookupParameter(pn)
+            if p and p.AsString():
+                r[pn] = p.AsString()
+        res["types"].append(r)
+    t.Commit()
+    res["after"] = counts()
+finally:
+    if commit:
+        tg.Assimilate()
+    else:
+        tg.RollBack()
+res["committed"] = commit
+__output__ = {"status": "completed_unverified", "summary": u"%s: типов %d" % (u"применено" if commit else u"пробный прогон, откат", len(res["types"])), "result": res}

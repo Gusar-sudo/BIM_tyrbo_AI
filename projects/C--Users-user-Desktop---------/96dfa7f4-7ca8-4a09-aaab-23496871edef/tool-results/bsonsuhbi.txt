@@ -1,0 +1,2083 @@
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At line:2 char:110
++ ... t -First 1; $im=[System.Drawing.Image]::FromFile($f.FullName); $w=$x1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+New-Object : Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:188
++ ... x1-$x0; $h=$y1-$y0; $b=New-Object System.Drawing.Bitmap $w,$h; $g=[Sy ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodInvocationException
+    + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+Exception calling "FromImage" with "1" argument(s): "Value cannot be null.
+Parameter name: image"
+At line:2 char:228
++ ... ing.Bitmap $w,$h; $g=[System.Drawing.Graphics]::FromImage($b); $g.Cle ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:273
++ ... hics]::FromImage($b); $g.Clear([System.Drawing.Color]::White); $g.Dra ...
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:314
++ ... r]::White); $g.DrawImage($im,(New-Object System.Drawing.Rectangle 0,0 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:470
++ ... System.Drawing.GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dis ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:495
++ ... .GraphicsUnit]::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dis ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:509
++ ... ::Pixel); $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Di ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+You cannot call a method on a null-valued expression.
+At line:2 char:523
++ ...  $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose() }
++                                                           ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.03.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.06.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.07.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.08.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.10.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.11.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.12.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\1.1.15.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\2.1.02.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\2.1.04.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\2.2.01.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\2.2.02.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\2.2.03.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Фристайл\_bim\review\tetrad_crops\2.4.01.png"
+At line:8 char:319
++ ... ++){ $im=[System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png"); ...
++                                                     ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At line:8 char:384
++ ... loor($i/2)*550; $sc=[math]::Min(890/$im.Width,520/$im.Height); $g.Dra ...
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Parameter is not valid."
+At line:8 char:431
++ ... im.Height); $g.DrawImage($im,$x,$y+25,[int]($im.Width*$sc),[int]($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+ok

@@ -1,0 +1,21 @@
+import sys
+import ezdxf
+
+out = sys.argv[1]
+doc = ezdxf.new("R2018", setup=True)
+doc.header["$INSUNITS"] = 4  # мм
+msp = doc.modelspace()
+blk = doc.blocks.new("ARTICLE")
+blk.add_attdef("ART", (0, 0), dxfattribs={"height": 3})
+msp.add_lwpolyline([(0, 0), (1000, 0), (1000, 2100), (0, 2100)], close=True)
+msp.add_text("Полотно Simple Vitrage M", dxfattribs={"height": 25}).set_placement((0, 2200))
+msp.add_mtext("Профиль FS.C-21 вес 0,565 кг/м", dxfattribs={"char_height": 20}).set_location((0, -100))
+dim = msp.add_linear_dim(base=(0, -50), p1=(0, 0), p2=(1000, 0), dimstyle="EZDXF")
+dim.render()
+ins = msp.add_blockref("ARTICLE", (500, 1000))
+ins.add_auto_attribs({"ART": "FS.C-28"})
+lay = doc.layouts.new("Лист 1")
+lay.page_setup(size=(297, 210), margins=(10, 10, 10, 10), units="mm")
+lay.add_text("Методичка: лист 1, отверстие ∅22", dxfattribs={"height": 5}).set_placement((20, 20))
+doc.saveas(out)
+print("ok", out)

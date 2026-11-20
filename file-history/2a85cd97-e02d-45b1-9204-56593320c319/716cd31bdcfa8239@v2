@@ -1,0 +1,112 @@
+# -*- coding: utf-8 -*-
+# Только чтение: горизонтальное сечение узла у импоста (стойка/столб + соседние панели) на высоте z_mm от низа стены.
+# Режет все тела (с вложенными) плоскостью, отдаёт контуры в мм в координатах импоста (X — вдоль стены, Y — поперёк)
+# с материалом и семейством. Для цветных картинок узлов (выбор палитры, проба «было/стало»).
+# Аргументы: wall (имя или id), mullion_type_like (подстрока имени типа/семейства), z_mm (по умолчанию 1000), radius_mm (150), out_json.
+import json, io, re, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+R = args.get("radius_mm", 150) / FT
+like = args.get("mullion_type_like", u"")
+walls = [w for w in FilteredElementCollector(doc).OfClass(Wall) if w.CurtainGrid is not None]
+wsel = args.get("wall")
+if wsel:
+    walls = [w for w in walls if str(w.Id.Value) == str(wsel) or w.Name == wsel or
+             (w.LookupParameter(u"Комментарии") and w.LookupParameter(u"Комментарии").AsString() == wsel)]
+mul = None
+for w in walls:
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        nm = (m.Symbol.FamilyName + u" " + m.Name).lower()
+        if all(k in nm for k in like.lower().split()) and m.LocationCurve is not None and abs(m.LocationCurve.Direction.Z) > 0.9:
+            mul, wall = m, w
+            break
+    if mul:
+        break
+if mul is None:
+    __output__ = {"error": "mullion not found", "walls": len(walls)}
+else:
+    lc = wall.Location.Curve
+    d = lc.Direction; d = XYZ(d.X, d.Y, 0).Normalize(); n = XYZ(-d.Y, d.X, 0)
+    p0 = mul.LocationCurve.GetEndPoint(0)
+    zz = [mul.LocationCurve.GetEndPoint(0).Z, mul.LocationCurve.GetEndPoint(1).Z]
+    z = min(zz) + min(args.get("z_mm", 1000) / FT, (max(zz) - min(zz)) / 2)
+    org = XYZ(p0.X, p0.Y, z)
+    pl = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, org)
+    pl2 = Plane.CreateByNormalAndOrigin(XYZ.BasisZ.Negate(), XYZ(org.X, org.Y, org.Z - 0.5 / FT))
+
+    def to2(p):
+        v = p - org
+        return [round(v.DotProduct(d) * FT, 3), round(v.DotProduct(n) * FT, 3)]
+
+    items = []
+    stat = {"solids": 0, "z_out": 0, "far": 0, "cut_err": 0, "no_face": 0}
+
+    def walk(g, owner, depth=0):
+        for o in g:
+            if isinstance(o, Solid) and o.Volume > 1e-12 and o.Faces.Size:
+                stat["solids"] += 1
+                bb = o.GetBoundingBox(); tr = bb.Transform
+                lo = tr.OfPoint(bb.Min); hi = tr.OfPoint(bb.Max)
+                if min(lo.Z, hi.Z) > z or max(lo.Z, hi.Z) < z:
+                    stat["z_out"] += 1
+                    continue
+                c = (lo + hi) / 2
+                if abs((c - org).DotProduct(d)) > R + abs((hi - lo).DotProduct(d)) / 2:
+                    stat["far"] += 1
+                    continue
+                try:
+                    s = BooleanOperationsUtils.CutWithHalfSpace(o, pl)
+                except Exception:
+                    stat["cut_err"] += 1
+                    continue
+                if s is None:
+                    stat["cut_err"] += 1
+                    continue
+                got = False
+                for f in s.Faces:
+                    if not isinstance(f, PlanarFace) or abs(f.FaceNormal.Z) < 0.99:
+                        continue
+                    try:
+                        zf = f.Evaluate(UV(0, 0)).Z if False else f.Origin.Z
+                        vz = [v.Z for v in f.Triangulate().Vertices]
+                        if max(abs(q - z) for q in vz) > 1e-4:
+                            continue
+                    except Exception:
+                        continue
+                    got = True
+                    mat = doc.GetElement(f.MaterialElementId)
+                    if mat is None:
+                        for f0 in o.Faces:
+                            mat = doc.GetElement(f0.MaterialElementId)
+                            if mat is not None:
+                                break
+                    loops = []
+                    for cl in f.GetEdgesAsCurveLoops():
+                        pts = []
+                        for cv in cl:
+                            for p in cv.Tessellate()[:-1]:
+                                pts.append(to2(p))
+                        loops.append(pts)
+                    items.append({"owner": owner, "mat": mat.Name if mat else u"", "loops": loops})
+                if not got:
+                    stat["no_face"] += 1
+            elif isinstance(o, GeometryInstance):
+                walk(o.GetInstanceGeometry(), owner, depth + 1)
+
+    walk(mul.get_Geometry(opt), u"M:" + mul.Symbol.FamilyName)
+    for pid in wall.CurtainGrid.GetPanelIds():
+        p = doc.GetElement(pid)
+        g = p.get_Geometry(opt)
+        if g:
+            walk(g, u"P:" + (p.Symbol.FamilyName if hasattr(p, "Symbol") and p.Symbol else p.Name))
+    res = {"wall": wall.Name, "wall_id": int(wall.Id.Value), "mullion": mul.Symbol.FamilyName + u" : " + mul.Name, "z_mm": args.get("z_mm", 1000), "items": items}
+    if args.get("out_json"):
+        io.open(args["out_json"], "w", encoding="utf-8").write(json.dumps(res, ensure_ascii=False))
+    mats = {}
+    for it in items:
+        mats[it["owner"] + u" | " + it["mat"]] = mats.get(it["owner"] + u" | " + it["mat"], 0) + 1
+    __output__ = {"wall": res["wall"], "mullion": res["mullion"], "faces": len(items), "by_material": mats, "stat": stat, "z_ft": z}

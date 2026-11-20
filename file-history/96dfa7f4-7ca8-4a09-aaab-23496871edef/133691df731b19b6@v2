@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+# Только чтение. Наружная сторона стены (где стрелки разворота) = слева от направления линии стены (Z x dir),
+# у развёрнутой — наоборот. Для каждой стены: где стекло однослойной панели и куда выступают столбы/угловые
+# относительно НАРУЖНОЙ стороны (+ = наружу). Аргументы: wall_ids
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+def solids(el):
+    out = []
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    ge = el.get_Geometry(opt)
+    if ge:
+        walk(ge, None)
+    return out
+
+
+def mat_of(s):
+    for f in s.Faces:
+        m = doc.GetElement(f.MaterialElementId)
+        if m is not None:
+            return m.Name
+    return ""
+
+
+def span(sols, o, n, flt=None):
+    lo, hi = 1e9, -1e9
+    for s in sols:
+        if flt and not flt(mat_of(s)):
+            continue
+        for e in s.Edges:
+            for p in e.Tessellate():
+                d = (p - o).DotProduct(n) * FT
+                lo = min(lo, d); hi = max(hi, d)
+    return None if lo > hi else [round(lo, 1), round(hi, 1)]
+
+
+res = []
+for wid in args["wall_ids"]:
+    w = doc.GetElement(ElementId(int(wid)))
+    c = w.Location.Curve
+    o = c.Evaluate(0.5, True)
+    d = c.ComputeDerivatives(0.5, True).BasisX.Normalize()
+    ext = XYZ.BasisZ.CrossProduct(d).Normalize()
+    if w.Flipped:
+        ext = ext.Negate()
+    r = {"wall": int(wid), "type": w.WallType.Name, "flipped": w.Flipped,
+         "dir": [round(d.X, 2), round(d.Y, 2)], "exterior": [round(ext.X, 2), round(ext.Y, 2)],
+         "orientation_api": [round(w.Orientation.X, 2), round(w.Orientation.Y, 2)], "glass": None, "cols": {}}
+    for pid in w.CurtainGrid.GetPanelIds():
+        g = span(solids(doc.GetElement(pid)), o, ext, lambda nm: u"тек" in nm.lower() or "glass" in nm.lower())
+        if g:
+            r["glass"] = g; break
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        if m.Name in r["cols"]:
+            continue
+        sp = span(solids(m), o, ext)
+        if sp and abs(sp[0] + sp[1]) > 5:   # только несимметричные (столбы, угловые)
+            r["cols"][m.Name] = sp
+    res.append(r)
+__output__ = {"status": "completed_unverified", "summary": "read-only; + = наружная сторона", "walls": res}

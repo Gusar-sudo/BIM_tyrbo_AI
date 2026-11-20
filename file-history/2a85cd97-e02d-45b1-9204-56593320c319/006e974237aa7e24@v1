@@ -1,0 +1,205 @@
+<title>Приёмка М2/М3 · 09.11</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Лист приёмки: «чертёжный» лист — сетка миллиметровки в шапке, карточки типов как штампы, вопросы внизу */
+:root{
+  --paper:#f6f8f9; --sheet:#ffffff; --ink:#1b2a33; --muted:#5d6f7a; --rule:#d5dee3;
+  --steel:#2f6f8f; --steel-soft:#e3eef3; --ok:#2e7d4f; --ok-soft:#e3f2e8; --warn:#b5651d; --warn-soft:#fbeedd; --bad:#b23a3a; --bad-soft:#f8e3e3;
+  --grid:rgba(47,111,143,.07);
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#12181c; --sheet:#182128; --ink:#e3ebef; --muted:#93a6b0; --rule:#2c3a42;
+  --steel:#6fb2cf; --steel-soft:#1d3340; --ok:#6cc690; --ok-soft:#1b3326; --warn:#e0a060; --warn-soft:#3a2a18; --bad:#e58080; --bad-soft:#3a1f1f;
+  --grid:rgba(111,178,207,.07); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#12181c; --sheet:#182128; --ink:#e3ebef; --muted:#93a6b0; --rule:#2c3a42;
+  --steel:#6fb2cf; --steel-soft:#1d3340; --ok:#6cc690; --ok-soft:#1b3326; --warn:#e0a060; --warn-soft:#3a2a18; --bad:#e58080; --bad-soft:#3a1f1f;
+  --grid:rgba(111,178,207,.07); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+header{padding-block:28px 20px;border-bottom:1px solid var(--rule);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:10px 10px}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.1;margin:10px 0 8px;font-weight:700;text-wrap:balance}
+h2{font-size:21px;margin:0;text-wrap:balance}
+h3{font-size:16px;margin:0;font-weight:600;overflow-wrap:anywhere}
+.lead{max-width:68ch;color:var(--muted);margin:0}
+.light{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:14px;background:var(--steel-soft);color:var(--ink)}
+.pill b{font-family:var(--f-mono);font-weight:500}
+.pill.ok{background:var(--ok-soft)} .pill.ok::before,.pill.q::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.pill.q{background:var(--warn-soft)} .pill.q::before{background:var(--warn)}
+.fp{font:12px var(--f-mono);color:var(--muted);margin-top:14px;overflow-wrap:anywhere}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:6px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:var(--sheet)}
+.chip:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.group{display:flex;flex-direction:column;gap:14px}
+.ghead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.ghead .eyebrow{color:var(--steel)}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chead{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:start}
+.tag{font:500 13px/1 var(--f-mono);color:var(--steel);border:1px solid var(--steel);border-radius:4px;padding:5px 7px}
+.meta{grid-column:2;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted)}
+.meta span b{color:var(--ink);font-weight:500}
+.views{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure button{all:unset;cursor:zoom-in;display:block;background:#fff;border:1px solid var(--rule);border-radius:6px;aspect-ratio:4/3;overflow:hidden;max-width:100%}
+figure button:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+figure img{width:100%;height:100%;object-fit:contain;display:block}
+figcaption{font-size:12px;color:var(--muted);line-height:1.35}
+figure.album button{border-style:dashed;border-color:var(--warn)}
+figure.album figcaption{color:var(--warn)}
+.note{font-size:13px;color:var(--muted);background:var(--steel-soft);border-radius:6px;padding:8px 12px}
+.qs{display:flex;flex-direction:column;gap:12px}
+.q{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.q p{margin:0;max-width:75ch}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:inherit;font-size:14px;padding:6px 14px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"].yes{background:var(--ok);border-color:var(--ok);color:var(--sheet)}
+.seg button[aria-pressed="true"].no{background:var(--bad);border-color:var(--bad);color:var(--sheet)}
+textarea{font:inherit;font-size:14px;width:100%;min-height:58px;resize:vertical;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink)}
+.decide{background:var(--sheet);border:2px solid var(--ink);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.big{display:flex;flex-wrap:wrap;gap:10px}
+.big button{font:600 15px var(--f-body);padding:10px 22px;border-radius:6px;border:2px solid var(--ok);background:var(--sheet);color:var(--ok);cursor:pointer}
+.big button.ret{border-color:var(--bad);color:var(--bad)}
+.big button[aria-pressed="true"]{background:var(--ok);color:var(--sheet)}
+.big button.ret[aria-pressed="true"]{background:var(--bad);color:var(--sheet)}
+.save{font:600 15px var(--f-body);padding:10px 22px;border-radius:6px;border:0;background:var(--steel);color:var(--sheet);cursor:pointer;align-self:flex-start}
+.save:disabled{opacity:.5;cursor:default}
+.status{font-size:14px;color:var(--muted)}
+.status.err{color:var(--bad)}
+dialog{border:0;padding:0;background:transparent;max-width:min(96vw,1400px);max-height:94vh}
+dialog::backdrop{background:rgba(10,16,20,.8)}
+dialog img{max-width:min(96vw,1400px);max-height:88vh;background:#fff;border-radius:6px;display:block}
+dialog p{color:#fff;margin:8px 0 0;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--steel)}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Фристайл Технолоджи · визуальная приёмка · пакет 2026-11-09</div>
+  <h1>Витражи М2 и М3 после flex-теста и переименования</h1>
+  <p class="lead">Числа машина уже проверила. Вам остаётся посмотреть глазами: похожи ли стойки и нащельники на альбом, нормально ли выглядят края у стены, жалюзи и стены на трёх размерах. Ответьте на 5 вопросов внизу и примите или верните пакет.</p>
+  <div class="light" id="light"></div>
+  <div class="fp" id="fp"></div>
+</header>
+
+<section class="bar" aria-label="Фильтр" id="filters"></section>
+<div id="types" class="wrap" style="gap:28px"></div>
+
+<section class="group" id="extra"></section>
+
+<section class="group" aria-labelledby="qh">
+  <div class="ghead"><span class="eyebrow">Ваш взгляд</span><h2 id="qh">Вопросы</h2></div>
+  <div class="qs" id="qs"></div>
+  <div class="decide">
+    <h2>Решение по пакету</h2>
+    <div class="big">
+      <button id="d-accept" type="button" aria-pressed="false">Принять</button>
+      <button id="d-return" class="ret" type="button" aria-pressed="false">Вернуть на доработку</button>
+    </div>
+    <label for="d-comment" class="status">Комментарий (при «Вернуть» обязателен)</label>
+    <textarea id="d-comment" placeholder="Что поправить: номер типа, вид, что не так"></textarea>
+    <button id="d-save" class="save" type="button">Сохранить решение</button>
+    <div class="status" id="d-status">Загружаю сохранённое решение…</div>
+  </div>
+</section>
+</div>
+
+<dialog id="lb"><img id="lb-img" alt=""><p id="lb-cap"></p></dialog>
+
+<script>
+(async function(){
+  const $ = s => document.querySelector(s);
+  const el = (t, a, ...kids) => { const e = document.createElement(t); if (a) for (const k in a) { if (k === "text") e.textContent = a[k]; else e.setAttribute(k, a[k]); } kids.forEach(c => c && e.append(c)); return e; };
+  let data;
+  try { data = await (await fetch("data.json")).json(); } catch (e) { $("#types").textContent = "Не удалось загрузить данные пакета (data.json)."; return; }
+  const C = data.checks;
+  const lights = [
+    ["ok", "Аудит библиотеки: проверок", C.audit_library.checks, "предупреждений " + C.audit_library.warnings],
+    ["ok", "Flex-тест: типов PASS", C.flex.pass + " из " + C.flex.types, C.flex.sections + " стен, предупреждений " + C.flex.warnings],
+    ["ok", "Жалюзи: тел за панелью", C.blinds.outside_panel, ""],
+    ["ok", "Переименовано типов", C.rename.types, "ошибок " + C.rename.errors],
+    ["q", "На ваш взгляд — вопросов", data.questions.length, ""]];
+  lights.forEach(([cls, t, v, s]) => $("#light").append(el("span", {class: "pill " + cls}, el("span", {text: t}), el("b", {text: String(v)}), s ? el("span", {text: "· " + s}) : null)));
+  $("#fp").textContent = "Отпечаток пакета: " + data.fingerprint + " · модель: " + data.meta.model + ", сохранена " + data.meta.saved;
+
+  // группы
+  const groups = []; data.types.forEach(t => { const k = t.system + " · " + t.stand + " · " + t.cover; let g = groups.find(x => x.k === k); if (!g) groups.push(g = {k, sys: t.system, stand: t.stand, cover: t.cover, items: []}); g.items.push(t); });
+  const filt = ["Все", "М2", "М3"]; let cur = "Все";
+  filt.forEach(f => { const b = el("button", {class: "chip", type: "button", "aria-pressed": String(f === cur), text: f}); b.onclick = () => { cur = f; document.querySelectorAll("#filters .chip").forEach(c => c.setAttribute("aria-pressed", String(c.textContent === f))); document.querySelectorAll(".group[data-sys]").forEach(g => g.hidden = !(f === "Все" || g.dataset.sys === f)); }; $("#filters").append(b); });
+
+  const lb = $("#lb");
+  const fig = (src, cap, cls) => { if (!src) return null; const b = el("button", {type: "button", "aria-label": "Увеличить: " + cap}, el("img", {src, alt: cap, loading: "lazy"})); b.onclick = () => { $("#lb-img").src = src; $("#lb-cap").textContent = cap; lb.showModal(); }; return el("figure", cls ? {class: cls} : null, b, el("figcaption", {text: cap})); };
+  lb.addEventListener("click", () => lb.close());
+
+  groups.forEach(g => {
+    const sec = el("section", {class: "group", "data-sys": g.sys});
+    sec.append(el("div", {class: "ghead"}, el("span", {class: "eyebrow", text: g.sys}), el("h2", {text: g.stand.replace(/ FS\.C.*$/, "") + " · нащельник " + g.cover.split(" / ")[0]})));
+    g.items.forEach(t => {
+      const c = el("article", {class: "card", id: "t" + t.tag});
+      c.append(el("div", {class: "chead"}, el("span", {class: "tag", text: t.tag}), el("h3", {text: "BIMLIB_Витраж_Без разрезки_Система " + t.name}),
+        el("div", {class: "meta"}, el("span", null, "Стойка ", el("b", {text: t.stand})), el("span", null, "Нащельник ", el("b", {text: t.cover})), el("span", null, "Заполнение ", el("b", {text: t.fill})))));
+      const v = el("div", {class: "views"});
+      const fg = /Цельностекл/.test(t.fill);
+      [fig(t.nodes.center, fg ? "Стык стёкол посередине (стойки нет), план 1:2" : "Средняя стойка, план 1:2, «Высокая»"),fig(t.center_ref, "Альбом: средняя стойка", "album"),
+       fig(t.nodes.edge, "Край у стены, план 1:2 (стена не показана)"), fig(t.edge_ref, "Альбом: примыкание к стене", "album"),
+       fig(t.flex.f3d, "3D «Высокая»: 1000×2400 · 3000×3000 · 6000×4000"), fig(t.flex.c3d, "3D «Низкая»"), fig(t.flex.fac, "Фасад 1:50, те же три размера")].forEach(x => x && v.append(x));
+      c.append(v);
+      if (fg) c.append(el("div", {class: "note", text: "У цельностеклянного заполнения средних стоек нет: стёкла стыкуются друг с другом, поэтому показан только край."}));
+      if (t.tag === "03") c.append(el("div", {class: "note", text: "Исправлено 09.11: края были «к полу/к потолку», теперь «к стене … правый/левый» на тех же профилях."}));
+      sec.append(c);
+    });
+    $("#types").append(sec);
+  });
+
+  data.extra.forEach(e => { const s = $("#extra"); s.append(el("div", {class: "ghead"}, el("span", {class: "eyebrow", text: "Опция панели"}), el("h2", {text: e.title}))); const v = el("div", {class: "views"}); e.items.forEach(i => v.append(fig(i.img, i.cap))); s.append(el("div", {class: "card"}, v)); });
+
+  // вопросы
+  const state = {answers: {}, decision: null, comment: ""};
+  data.questions.forEach((q, i) => {
+    const yes = el("button", {type: "button", class: "yes", "aria-pressed": "false", text: "Да"}); const no = el("button", {type: "button", class: "no", "aria-pressed": "false", text: "Нет"});
+    const ta = el("textarea", {id: "c-" + q.id, placeholder: "Комментарий (если «Нет» — что не так и в каком типе)"});
+    const set = v => { state.answers[q.id] = Object.assign(state.answers[q.id] || {}, {v}); yes.setAttribute("aria-pressed", String(v === "yes")); no.setAttribute("aria-pressed", String(v === "no")); };
+    yes.onclick = () => set("yes"); no.onclick = () => set("no");
+    ta.oninput = () => { state.answers[q.id] = Object.assign(state.answers[q.id] || {}, {c: ta.value}); };
+    q._set = set; q._ta = ta;
+    $("#qs").append(el("div", {class: "q"}, el("p", null, el("b", {text: (i + 1) + ". "}), document.createTextNode(q.text)), el("div", {class: "seg"}, yes, no), ta));
+  });
+  const setD = v => { state.decision = v; $("#d-accept").setAttribute("aria-pressed", String(v === "accept")); $("#d-return").setAttribute("aria-pressed", String(v === "return")); };
+  $("#d-accept").onclick = () => setD("accept"); $("#d-return").onclick = () => setD("return");
+  $("#d-comment").oninput = e => state.comment = e.target.value;
+
+  // хранение решения
+  const st = $("#d-status"); const btn = $("#d-save");
+  let db = null, user = null;
+  const timer = setTimeout(() => { if (!db) st.textContent = "Сохранение недоступно в этом просмотре. Решение можно написать в чат."; }, 10000);
+  try { db = await claude.use("db"); user = await claude.use("user"); } catch (e) { db = null; }
+  clearTimeout(timer);
+  if (!db) { st.textContent = "Сохранение недоступно в этом просмотре (нужен вход). Решение можно написать в чат."; btn.disabled = true; return; }
+  const ref = db.doc("review/decision");
+  try {
+    const snap = await ref.get(); const d = snap && (snap.data ? snap.data() : snap);
+    if (d && d.fingerprint) {
+      Object.entries(d.answers || {}).forEach(([k, a]) => { const q = data.questions.find(x => x.id === k); if (!q) return; if (a.v) q._set(a.v); if (a.c) { q._ta.value = a.c; state.answers[k] = Object.assign(state.answers[k] || {}, {c: a.c}); } });
+      if (d.decision) setD(d.decision); if (d.comment) { $("#d-comment").value = d.comment; state.comment = d.comment; }
+      st.textContent = "Сохранено " + new Date(d.at).toLocaleString("ru-RU") + (d.fingerprint !== data.fingerprint ? " — для ДРУГОГО пакета, решение надо обновить" : "");
+    } else st.textContent = "Решение ещё не сохранено.";
+  } catch (e) { st.textContent = "Не удалось прочитать сохранённое решение: " + (e && e.message || e); }
+  btn.onclick = async () => {
+    if (!state.decision) { st.className = "status err"; st.textContent = "Выберите «Принять» или «Вернуть на доработку»."; return; }
+    if (state.decision === "return" && !state.comment.trim()) { st.className = "status err"; st.textContent = "При «Вернуть» напишите, что поправить."; return; }
+    btn.disabled = true; st.className = "status"; st.textContent = "Сохраняю…";
+    try {
+      const by = user && user.id ? await user.id() : null;
+      await ref.set({decision: state.decision, comment: state.comment, answers: state.answers, fingerprint: data.fingerprint, by, at: new Date().toISOString()});
+      st.textContent = "Сохранено " + new Date().toLocaleString("ru-RU") + ". Claude прочитает решение.";
+    } catch (e) { st.className = "status err"; st.textContent = "Не сохранилось: " + (e && (e.code || e.message) || e) + ". Можно написать решение в чат."; }
+    btn.disabled = false;
+  };
+})();
+</script>

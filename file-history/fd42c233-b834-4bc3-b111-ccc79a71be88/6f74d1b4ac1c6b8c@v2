@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: apply-params-dry-run
+expected_outcome: |
+  Сначала horizun_health и проверка, что активен нужный .rfa. Затем horizun_family_apply
+  с dry_run=true (add_shared_params, spf_path, тип Default), показ плана изменений и запрос
+  подтверждения. Без подтверждения пользователя запись не применяется.

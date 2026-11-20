@@ -1,0 +1,20 @@
+import json, math, sys
+H = json.load(open(sys.argv[1], encoding="utf-8"))["segs"]
+ends = []
+for s in H:
+    if s[0] == "L":
+        ends.append(((s[1], s[2]), (s[3], s[4])))
+    else:
+        ends.append(((s[1], s[2]), (s[5], s[6])))
+# gaps: for each endpoint, nearest other endpoint
+pts = [p for e in ends for p in e]
+gaps = []
+for i, p in enumerate(pts):
+    best = min(math.hypot(p[0]-q[0], p[1]-q[1]) for j, q in enumerate(pts) if j // 2 != i // 2)
+    gaps.append(best)
+print("segs", len(H), "max nearest gap", max(gaps), "n gaps>0.05", sum(1 for g in gaps if g > 0.05))
+for i, g in enumerate(gaps):
+    if g > 0.05:
+        print(i // 2, H[i // 2][0], [round(v, 3) for v in pts[i]], round(g, 3))
+xs=[p[0] for p in pts]; ys=[p[1] for p in pts]
+print("bbox", min(xs), min(ys), max(xs), max(ys))

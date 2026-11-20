@@ -1,0 +1,65 @@
+# -*- coding: utf-8 -*-
+# Развернуть силуэт семейства профиля импоста на 180° вокруг оси импоста (начало координат профиля).
+# Нужно для однослойных столбов: уплотнитель был с противоположной от стекла стороны.
+# EditFamily -> RotateElements (все линии и области) -> SaveAs в out_dir. Проект НЕ меняется.
+# Аргументы: symbol_ids: [...], out_dir
+import json, math
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+
+
+def bbox(fdoc):
+    xs, ys = [], []
+    for ce in FilteredElementCollector(fdoc).OfClass(CurveElement):
+        c = ce.GeometryCurve
+        for p in (c.GetEndPoint(0), c.GetEndPoint(1)):
+            xs.append(p.X * FT); ys.append(p.Y * FT)
+    return [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)] if xs else None
+
+
+results = []
+for sid in args["symbol_ids"]:
+    sym = doc.GetElement(ElementId(int(sid)))
+    fam = sym.Family
+    r = {"symbol_id": int(sid), "family": fam.Name, "ok": False}
+    fdoc = doc.EditFamily(fam)
+    try:
+        ids = List[ElementId]()
+        n_curves = 0
+        n_fill = 0
+        only_inst = bool(args.get("only_instances", False))
+        if not only_inst:
+            for ce in FilteredElementCollector(fdoc).OfClass(CurveElement):
+                ids.Add(ce.Id); n_curves += 1
+            for fr in FilteredElementCollector(fdoc).OfClass(FilledRegion):
+                ids.Add(fr.Id); n_fill += 1
+        # вложенные 2D-элементы узлов (BIMLIB_ЭлементыУзлов_*) — именно они рисуют подробное сечение и уплотнитель
+        r["nested"] = []
+        for fi in FilteredElementCollector(fdoc).OfClass(FamilyInstance):
+            ids.Add(fi.Id)
+            r["nested"].append({"family": fi.Symbol.Family.Name, "facing_before": [round(fi.FacingOrientation.X, 3), round(fi.FacingOrientation.Y, 3)]})
+        r["bbox_before"] = bbox(fdoc)
+        t = Transaction(fdoc, u"Профиль: разворот 180°")
+        t.Start()
+        axis = Line.CreateBound(XYZ(0, 0, 0), XYZ(0, 0, 1))
+        ElementTransformUtils.RotateElements(fdoc, ids, axis, math.pi)
+        fdoc.Regenerate()
+        t.Commit()
+        r.update({"curves": n_curves, "filled_regions": n_fill, "bbox_after": bbox(fdoc),
+                  "nested_facing_after": [[round(fi.FacingOrientation.X, 3), round(fi.FacingOrientation.Y, 3)] for fi in FilteredElementCollector(fdoc).OfClass(FamilyInstance)]})
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["out_rfa"] = args["out_dir"] + u"\\" + fam.Name + u".rfa"
+        fdoc.SaveAs(r["out_rfa"], opts)
+        r["ok"] = True
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        fdoc.Close(False)
+    results.append(r)
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Профилей развернуто и сохранено: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

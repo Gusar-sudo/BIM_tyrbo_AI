@@ -1,0 +1,36 @@
+# -*- coding: utf-8 -*-
+# Только чтение: контур профиля центральной стойки — пересечения горизонтальных линий y=const с контуром (x),
+# габарит, профиль по типу импоста.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+mts = dict((Element.Name.GetValue(m), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+out = {}
+for tn in args["types"]:
+    m = mts[tn]; sym = doc.GetElement(m.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId())
+    fam = sym.Family
+    pd = doc.EditFamily(fam)
+    try:
+        segs = []
+        for c in FilteredElementCollector(pd).OfClass(CurveElement):
+            if c.GeometryCurve is None or c.GetType().Name not in ("DetailLine", "DetailArc", "DetailCurve", "DetailNurbSpline"):
+                continue
+            ps = [(q.X * FT, q.Y * FT) for q in c.GeometryCurve.Tessellate()]
+            segs += [(ps[i], ps[i + 1]) for i in range(len(ps) - 1)]
+        xs = [p[0] for s in segs for p in s]; ys = [p[1] for s in segs for p in s]
+        r = {"family": fam.Name, "bbox": [round(min(xs), 2), round(max(xs), 2), round(min(ys), 2), round(max(ys), 2)], "cuts": {}}
+        for y in args.get("ys", [0, 25, 28, 30, -25, -28, -30]):
+            hits = []
+            for (a, b) in segs:
+                if (a[1] - y) * (b[1] - y) < 0 or (abs(a[1] - y) < 1e-6 and abs(b[1] - y) > 1e-6):
+                    if abs(b[1] - a[1]) < 1e-9:
+                        continue
+                    t = (y - a[1]) / (b[1] - a[1]); hits.append(round(a[0] + t * (b[0] - a[0]), 2))
+            r["cuts"][str(y)] = sorted(set(hits))
+        r["offset_mm"] = round(m.LookupParameter(u"Смещение").AsDouble() * FT, 2) if m.LookupParameter(u"Смещение") else None
+        out[tn] = r
+    finally:
+        pd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"профилей %d (только чтение)" % len(out), "r": out}

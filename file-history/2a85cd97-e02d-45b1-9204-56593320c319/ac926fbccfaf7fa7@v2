@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+# Чтение с откатом: попадают ли «потерянные» панели в новую пустую спецификацию панелей; свойства хоста
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+ids = [3395048, 3434964, 3368025, 3426336]
+res = {}
+t = Transaction(doc, "probe"); t.Start()
+vs = ViewSchedule.CreateSchedule(doc, ElementId(BuiltInCategory.OST_CurtainWallPanels))
+doc.Regenerate()
+s = set(e.Id.Value for e in FilteredElementCollector(doc, vs.Id).WhereElementIsNotElementType())
+res["fresh_total"] = len(s); res["fresh_has"] = [i in s for i in ids]
+res["fresh_phase"] = vs.get_Parameter(BuiltInParameter.VIEW_PHASE).AsValueString()
+t.RollBack()
+for i in ids:
+    p = doc.GetElement(ElementId(i)); h = p.Host
+    res[str(i)] = {"cat": p.Category.Name, "cls": p.GetType().Name, "phase_id": p.CreatedPhaseId.Value,
+                   "host_phase_id": h.CreatedPhaseId.Value, "host_opt": h.DesignOption.Name if h.DesignOption else None,
+                   "level": p.LevelId.Value, "host_level": h.LevelId.Value,
+                   "host_wall_type": h.WallType.Name, "host_width_m": round(h.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH).AsDouble()*0.3048, 3)}
+res["phases"] = [(ph.Id.Value, ph.Name) for ph in doc.Phases]
+__output__ = {"status": "completed_unverified", "summary": "probe fresh", "res": res}

@@ -1,0 +1,125 @@
+# -*- coding: utf-8 -*-
+# Лента «Дихтунгсбанд» (альбом М2/М3, табл. 10: прокладка 50×3 мм между каркасом и стеной/полом/потолком) в графику
+# краевого профиля: серая сплошная заливка band_t × band_w во ВЛОЖЕННОМ «Элементы узлов» у грани профиля со стороны стены.
+# Сторона стены: «Правый» (начало стены, низ) — минимальный x собственного контура; «Левый» (конец, верх) — максимальный x.
+# Собственный контур (3D-тело) не меняется. Сохраняет КОПИИ .rfa в out_dir; проект не меняется.
+# Аргументы: profiles [{name, side: "min"|"max"}] (side можно не задавать — по «Правый/Левый/Нижний/Верхний» в имени),
+#            out_dir, band_t_mm (3), band_w_mm (50), fill_rgb [150,150,150]
+import json, os
+from Autodesk.Revit.DB import *
+from System.Collections.Generic import List
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+BT = float(args.get("band_t_mm", 3)); BW = float(args.get("band_w_mm", 50))
+RGB = args.get("fill_rgb", [150, 150, 150])
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+
+
+class _LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True
+        return True
+
+    def OnSharedFamilyFound(self, a, b, src, c):
+        src.Value = FamilySource.Family; c.Value = True
+        return True
+
+
+def side_of(name):
+    if u"Левый" in name or u"Верхний" in name:
+        return "max"
+    return "min"
+
+
+def solid_fill(d):
+    for fp in FilteredElementCollector(d).OfClass(FillPatternElement):
+        p = fp.GetFillPattern()
+        if p.IsSolidFill and p.Target == FillPatternTarget.Drafting:
+            return fp.Id
+    return None
+
+
+def band_type(d):
+    for ft in FilteredElementCollector(d).OfClass(FilledRegionType):
+        if ft.Name == u"FT_Дихтунгсбанд":
+            return ft
+    base = list(FilteredElementCollector(d).OfClass(FilledRegionType))
+    if not base:
+        return None
+    nt = base[0].Duplicate(u"FT_Дихтунгсбанд")
+    sid = solid_fill(d)
+    if sid:
+        nt.ForegroundPatternId = sid
+    nt.ForegroundPatternColor = Color(RGB[0], RGB[1], RGB[2])
+    try:
+        nt.BackgroundPatternId = ElementId.InvalidElementId
+    except Exception:
+        pass
+    return nt
+
+
+res = []
+for p in args["profiles"]:
+    name = p["name"]; r = {"profile": name}
+    side = p.get("side") or side_of(name)
+    pdoc = doc.EditFamily(fams[name]); nd = None; t = None
+    try:
+        xs = []; ys = []
+        for ce in FilteredElementCollector(pdoc).OfClass(CurveElement):
+            c = ce.GeometryCurve
+            if c is None:
+                continue
+            for q in (c.GetEndPoint(0), c.GetEndPoint(1)):
+                xs.append(q.X); ys.append(q.Y)
+        xf = min(xs) if side == "min" else max(xs)
+        yc = (min(ys) + max(ys)) / 2
+        x0, x1 = (xf - MM(BT), xf) if side == "min" else (xf, xf + MM(BT))
+        r.update(side=side, face_mm=round(xf * FT, 2), y_mid_mm=round(yc * FT, 2))
+        insts = list(FilteredElementCollector(pdoc).OfClass(FamilyInstance))
+        if not insts:
+            r["error"] = u"нет вложенного"; res.append(r); continue
+        fi = insts[0]
+        inv = fi.GetTransform().Inverse
+        nd = pdoc.EditFamily(fi.Symbol.Family)
+        view = [v for v in FilteredElementCollector(nd).OfClass(View) if not v.IsTemplate and v.ViewType in (ViewType.FloorPlan, ViewType.DraftingView, ViewType.Detail, ViewType.EngineeringPlan)]
+        view = view[0] if view else [v for v in FilteredElementCollector(nd).OfClass(View) if not v.IsTemplate][0]
+        old = [fr.Id for fr in FilteredElementCollector(nd).OfClass(FilledRegion) if nd.GetElement(fr.GetTypeId()).Name == u"FT_Дихтунгсбанд"]
+        t = Transaction(nd, u"FT: Дихтунгсбанд"); t.Start()
+        if old:
+            nd.Delete(List[ElementId](old))
+        bt = band_type(nd)
+        pts = [XYZ(x0, yc - MM(BW / 2), 0), XYZ(x1, yc - MM(BW / 2), 0), XYZ(x1, yc + MM(BW / 2), 0), XYZ(x0, yc + MM(BW / 2), 0)]
+        pts = [inv.OfPoint(q) for q in pts]
+        pts = [XYZ(q.X, q.Y, 0) for q in pts]
+        loop = CurveLoop()
+        for i in range(4):
+            loop.Append(Line.CreateBound(pts[i], pts[(i + 1) % 4]))
+        loops = List[CurveLoop](); loops.Add(loop)
+        fr = FilledRegion.Create(nd, bt.Id, view.Id, loops)
+        st = t.Commit(); t = None
+        bb = fr.get_BoundingBox(view)
+        r["nested"] = fi.Symbol.Family.Name
+        r["band_nested_bb_mm"] = [round(bb.Min.X * FT, 2), round(bb.Max.X * FT, 2), round(bb.Min.Y * FT, 2), round(bb.Max.Y * FT, 2)] if bb else None
+        r["replaced_old"] = len(old); r["commit"] = str(st)
+        nd.LoadFamily(pdoc, _LO())
+        nd.Close(False); nd = None
+        so = SaveAsOptions(); so.OverwriteExistingFile = True
+        out = os.path.join(OUT, name + ".rfa")
+        pdoc.SaveAs(out, so)
+        r["rfa"] = out
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        if t is not None and t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        if nd is not None:
+            nd.Close(False)
+        pdoc.Close(False)
+    res.append(r)
+bad = [x for x in res if x.get("error")]
+__output__ = {"status": "completed_unverified" if not bad else "partial", "summary": u"профилей %d, ошибок %d; копии в %s, проект не менялся" % (len(res), len(bad), OUT), "result": res}

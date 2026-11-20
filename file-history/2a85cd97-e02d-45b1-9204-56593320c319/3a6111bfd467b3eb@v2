@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+# Только чтение: сечения собственного контура профиля (3D-тело) и вложенной графики горизонталями y = const.
+# Аргументы: mullion_types [имена], ys [мм]. Документы семейств закрываются без сохранения.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+mts = dict((Element.Name.GetValue(m), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+
+
+def cuts(segs, y):
+    hits = []
+    for (a, b) in segs:
+        if (a[1] - y) * (b[1] - y) < 0 and abs(b[1] - a[1]) > 1e-9:
+            t = (y - a[1]) / (b[1] - a[1]); hits.append(round(a[0] + t * (b[0] - a[0]), 2))
+    return sorted(set(hits))
+
+
+def segs_of(curves, tr=None):
+    out = []
+    for g in curves:
+        ps = g.Tessellate()
+        ps = [(tr.OfPoint(q) if tr else q) for q in ps]
+        ps = [(p.X * FT, p.Y * FT) for p in ps]
+        out += [(ps[i], ps[i + 1]) for i in range(len(ps) - 1)]
+    return out
+
+
+out = {}
+for n in args["mullion_types"]:
+    m = mts.get(n)
+    if m is None:
+        out[n] = u"нет типа"; continue
+    pe = doc.GetElement(m.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId())
+    pd = doc.EditFamily(pe.Family)
+    r = {"family": pe.Family.Name.replace(u"BIMLIB_Профиль_", u"").replace(u"_ФристайлТехнолоджи", u"")}
+    try:
+        own = [c.GeometryCurve for c in FilteredElementCollector(pd).OfClass(CurveElement) if c.GeometryCurve is not None and c.GetType().Name in ("DetailLine", "DetailCurve", "DetailArc")]
+        so = segs_of(own)
+        r["own"] = dict((str(y), cuts(so, y)) for y in args["ys"])
+        xs = [p[0] for s in so for p in s]; ys = [p[1] for s in so for p in s]
+        r["own_bbox"] = [round(min(xs), 2), round(max(xs), 2), round(min(ys), 2), round(max(ys), 2)]
+        fis = list(FilteredElementCollector(pd).OfClass(FamilyInstance))
+        if fis:
+            fi = fis[0]; tr = fi.GetTotalTransform(); nd = pd.EditFamily(fi.Symbol.Family)
+            try:
+                sn = segs_of([c.GeometryCurve for c in FilteredElementCollector(nd).OfClass(CurveElement) if c.GeometryCurve is not None], tr)
+                r["nested"] = dict((str(y), cuts(sn, y)) for y in args["ys"])
+            finally:
+                nd.Close(False)
+    finally:
+        pd.Close(False)
+    out[n] = r
+__output__ = {"status": "completed_unverified", "summary": u"только чтение, профилей %d" % len(out), "r": out}

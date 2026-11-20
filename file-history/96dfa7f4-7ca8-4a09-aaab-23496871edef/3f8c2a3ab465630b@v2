@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+# Только чтение: вложенный 2D-элемент узла внутри семейства профиля — чем нарисован уплотнитель
+# (FilledRegion: тип, образец заливки, габарит контура). Без сохранения.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+out = []
+for sid in args["symbol_ids"]:
+    sym = doc.GetElement(ElementId(int(sid)))
+    pdoc = doc.EditFamily(sym.Family)
+    try:
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            ndoc = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                cls = {}
+                for e in FilteredElementCollector(ndoc).WhereElementIsNotElementType():
+                    n = e.GetType().Name
+                    if n in ("Element", "GraphicsStyle", "Material", "AppearanceAssetElement", "LoadCase", "LoadNature", "LinePatternElement"):
+                        continue
+                    cls[n] = cls.get(n, 0) + 1
+                regions = []
+                for fr in FilteredElementCollector(ndoc).OfClass(FilledRegion):
+                    ft = ndoc.GetElement(fr.GetTypeId())
+                    xs, ys = [], []
+                    for loop in fr.GetBoundaries():
+                        for c in loop:
+                            for p in (c.GetEndPoint(0), c.GetEndPoint(1)):
+                                xs.append(p.X * FT); ys.append(p.Y * FT)
+                    regions.append({"id": int(fr.Id.Value), "type": ft.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() if ft else None,
+                                    "bbox": [round(min(xs), 1), round(min(ys), 1), round(max(xs), 1), round(max(ys), 1)] if xs else None})
+                out.append({"profile": sym.Family.Name, "nested": fi.Symbol.Family.Name, "category": ndoc.OwnerFamily.FamilyCategory.Name,
+                            "classes": cls, "filled_regions": regions})
+            finally:
+                ndoc.Close(False)
+    finally:
+        pdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": "read-only", "items": out}
