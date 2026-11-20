@@ -1,0 +1,48 @@
+# -*- coding: utf-8 -*-
+# Только чтение: размеры с метками, опорные плоскости, формулы, тела (какие параметры видимости/материала),
+# и к чему привязаны размеры «Выступ*» (элементы ссылок).
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+out = {}
+for n in args["families"]:
+    fd = doc.EditFamily(fams[n])
+    try:
+        fm = fd.FamilyManager
+        r = {"formulas": {}, "dims": [], "refplanes": [], "solids": []}
+        for p in fm.Parameters:
+            if p.Formula:
+                r["formulas"][p.Definition.Name] = p.Formula
+        for rp in FilteredElementCollector(fd).OfClass(ReferencePlane):
+            r["refplanes"].append([rp.Name, int(rp.Id.Value), [round(rp.Normal.X, 2), round(rp.Normal.Y, 2), round(rp.Normal.Z, 2)], round(rp.BubbleEnd.DotProduct(rp.Normal) * FT, 2)])
+        for d in FilteredElementCollector(fd).OfClass(Dimension):
+            try:
+                lab = d.FamilyLabel.Definition.Name if d.FamilyLabel else None
+            except Exception:
+                lab = None
+            refs = []
+            for i in range(d.References.Size):
+                rf = d.References.get_Item(i); e = fd.GetElement(rf.ElementId)
+                refs.append([e.GetType().Name, (e.Name if hasattr(e, "Name") else ""), int(rf.ElementId.Value)])
+            v = None
+            try:
+                v = round(d.Value * FT, 2) if d.Value is not None else None
+            except Exception:
+                pass
+            if lab or args.get("all_dims"):
+                r["dims"].append({"label": lab, "value": v, "view": fd.GetElement(d.OwnerViewId).Name if d.OwnerViewId != ElementId.InvalidElementId else None, "refs": refs, "id": int(d.Id.Value)})
+        for cls in (Extrusion, Sweep, Blend, SweptBlend, Revolution):
+            for e in FilteredElementCollector(fd).OfClass(cls):
+                vis = e.get_Parameter(BuiltInParameter.IS_VISIBLE_PARAM); fv = fm.GetAssociatedFamilyParameter(vis) if vis else None
+                mp = e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM); fmat = fm.GetAssociatedFamilyParameter(mp) if mp else None
+                bb = e.get_BoundingBox(None)
+                r["solids"].append([cls.__name__, int(e.Id.Value), fv.Definition.Name if fv else None, fmat.Definition.Name if fmat else None,
+                                    [round(bb.Min.X * FT, 1), round(bb.Max.X * FT, 1), round(bb.Min.Y * FT, 1), round(bb.Max.Y * FT, 1), round(bb.Min.Z * FT, 1), round(bb.Max.Z * FT, 1)] if bb else None])
+        r["current_type"] = fm.CurrentType.Name
+        out[n] = r
+    finally:
+        fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"семейств %d (только чтение)" % len(out), "r": out}

@@ -1,0 +1,43 @@
+param([string]$Path, [int]$MaxChars = 60000)
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead($Path)
+try {
+    $ext = [IO.Path]::GetExtension($Path).ToLower()
+    $sb = New-Object System.Text.StringBuilder
+    if ($ext -eq '.docx') {
+        $e = $zip.GetEntry('word/document.xml')
+        $r = New-Object IO.StreamReader($e.Open(), [Text.Encoding]::UTF8)
+        $xml = $r.ReadToEnd(); $r.Close()
+        $xml = $xml -replace '</w:p>', "`n" -replace '<w:tab/>', "`t" -replace '</w:tc>', ' | '
+        $txt = [regex]::Replace($xml, '<[^>]+>', '')
+        [void]$sb.Append([System.Net.WebUtility]::HtmlDecode($txt))
+        $imgs = ($zip.Entries | Where-Object { $_.FullName -like 'word/media/*' }).Count
+        [void]$sb.Append("`n[images in docx: $imgs]")
+    } elseif ($ext -eq '.xlsx') {
+        $shared = @()
+        $se = $zip.GetEntry('xl/sharedStrings.xml')
+        if ($se) {
+            $r = New-Object IO.StreamReader($se.Open(), [Text.Encoding]::UTF8); $sx = $r.ReadToEnd(); $r.Close()
+            foreach ($m in [regex]::Matches($sx, '<si>(.*?)</si>', 'Singleline')) { $shared += [System.Net.WebUtility]::HtmlDecode(([regex]::Replace($m.Groups[1].Value, '<[^>]+>', ''))) }
+        }
+        foreach ($sheet in ($zip.Entries | Where-Object { $_.FullName -like 'xl/worksheets/sheet*.xml' })) {
+            [void]$sb.Append("=== $($sheet.FullName) ===`n")
+            $r = New-Object IO.StreamReader($sheet.Open(), [Text.Encoding]::UTF8); $wx = $r.ReadToEnd(); $r.Close()
+            foreach ($row in [regex]::Matches($wx, '<row[^>]*>(.*?)</row>', 'Singleline')) {
+                $cells = @()
+                foreach ($c in [regex]::Matches($row.Groups[1].Value, '<c ([^>]*?)(?:/>|>(.*?)</c>)', 'Singleline')) {
+                    $attrs = $c.Groups[1].Value; $inner = $c.Groups[2].Value
+                    $v = ([regex]::Match($inner, '<v>(.*?)</v>')).Groups[1].Value
+                    if ($attrs -match 't="s"' -and $v -ne '') { $v = $shared[[int]$v] }
+                    elseif ($attrs -match 't="inlineStr"') { $v = [regex]::Replace($inner, '<[^>]+>', '') }
+                    $cells += $v
+                }
+                [void]$sb.Append(($cells -join ' | ') + "`n")
+            }
+        }
+    }
+    $out = $sb.ToString()
+    if ($out.Length -gt $MaxChars) { $out = $out.Substring(0, $MaxChars) + "`n...[truncated, total $($sb.Length) chars]" }
+    [Console]::OutputEncoding = [Text.Encoding]::UTF8
+    $out
+} finally { $zip.Dispose() }

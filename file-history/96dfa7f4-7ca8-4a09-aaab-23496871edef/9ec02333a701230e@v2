@@ -1,0 +1,38 @@
+import re
+import sys
+
+import ezdxf
+from ezdxf.tools.text import plain_mtext
+
+dxf, codes = sys.argv[1], sys.argv[2].split(",")
+doc = ezdxf.readfile(dxf)
+msp = doc.modelspace()
+items = []  # (x, y, text)
+for e in msp:
+    t = e.dxftype()
+    try:
+        if t == "MTEXT":
+            s, p = e.plain_text(), e.dxf.insert
+        elif t == "TEXT":
+            s, p = e.dxf.text, e.dxf.insert
+        elif t == "MULTILEADER":
+            s = plain_mtext(e.get_mtext_content() or "")
+            p = e.context.mtext.insert if e.context.mtext else None
+        else:
+            continue
+    except Exception:
+        continue
+    if s and p is not None:
+        items.append((p.x, p.y, " ".join(s.split())))
+sys.stdout.reconfigure(encoding="utf-8")
+for code in codes:
+    hits = [it for it in items if re.search(re.escape(code) + r"\b", it[2])]
+    print(f"### {code}: {len(hits)} вхождений")
+    for x, y, s in hits[:4]:
+        print(f"  at ({x:.0f}, {y:.0f}): {s[:90]}")
+        near = sorted((abs(ix - x) + abs(iy - y), ix, iy, it) for ix, iy, it in items
+                      if abs(ix - x) < 1500 and abs(iy - y) < 1100 and it != s)
+        titles = [it for d, ix, iy, it in near if re.search(r"Полотно|Установка|Рама|Концепт|Concept|Loft|Лофт", it)]
+        nums = [it for d, ix, iy, it in near if re.fullmatch(r"\d{1,2}", it)]
+        print("    рядом заголовки:", " | ".join(dict.fromkeys(t[:60] for t in titles[:6])))
+        print("    номера листов рядом:", nums[:5])

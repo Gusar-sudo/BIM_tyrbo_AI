@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+# Только чтение: у импостов-стыков (имя типа содержит key) — где кончаются стёкла соседних панелей.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+key = args.get("key", u"УП-008")
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine; opt.ComputeReferences = False
+
+
+def solids(e):
+    out = []
+    def walk(g, tr):
+        for o in g:
+            if isinstance(o, Solid) and o.Volume > 1e-9:
+                out.append((o, tr))
+            elif isinstance(o, GeometryInstance):
+                walk(o.GetInstanceGeometry(), tr)
+    ge = e.get_Geometry(opt)
+    if ge:
+        walk(ge, None)
+    return [s for s, _ in out]
+
+
+def pv(e, n):
+    p = e.LookupParameter(n)
+    if p is None:
+        return None
+    if p.StorageType == StorageType.Double:
+        return round(p.AsDouble() * FT, 2)
+    return p.AsValueString() or p.AsString()
+
+
+rows = []
+walls = [w for w in FilteredElementCollector(doc).OfClass(Wall) if w.CurtainGrid is not None]
+for w in walls:
+    if len(rows) >= args.get("limit", 6):
+        break
+    cg = w.CurtainGrid
+    ms = [doc.GetElement(i) for i in cg.GetMullionIds()]
+    hit = [m for m in ms if key in m.Name]
+    if not hit:
+        continue
+    lc = w.Location.Curve; o = lc.GetEndPoint(0); d = (lc.GetEndPoint(1) - o).Normalize(); nrm = XYZ(-d.Y, d.X, 0)
+    loc = lambda p: ((p - o).DotProduct(d) * FT, (p - o).DotProduct(nrm) * FT)
+    m = hit[0]
+    mb = m.get_BoundingBox(None)
+    mu = sorted([loc(mb.Min)[0], loc(mb.Max)[0]])
+    mc = (mu[0] + mu[1]) / 2
+    glass = []
+    for pid in cg.GetPanelIds():
+        pn = doc.GetElement(pid)
+        for s in solids(pn):
+            us = []
+            for ed in s.Edges:
+                for q in ed.Tessellate():
+                    us.append(loc(q))
+            xs = [a for a, b in us]; ys = [b for a, b in us]
+            if min(xs) - 60 < mc < max(xs) + 60:
+                glass.append({"panel": pn.Name, "x": [round(min(xs), 2), round(max(xs), 2)], "y": [round(min(ys), 2), round(max(ys), 2)]})
+    pn0 = None
+    for pid in cg.GetPanelIds():
+        pn0 = doc.GetElement(pid)
+        if hasattr(pn0, "Symbol"):
+            break
+    st = pn0.Symbol if pn0 is not None and hasattr(pn0, "Symbol") else None
+    rows.append({"wall": w.Name, "wall_id": int(w.Id.Value), "mullion": m.Name, "mullion_x": [round(mu[0], 2), round(mu[1], 2)],
+                 "mullion_type_w1": pv(m.MullionType, u"Ширина по стороне 1"), "mullion_type_w2": pv(m.MullionType, u"Ширина по стороне 2"),
+                 "panel_type": st.Name if st else None,
+                 "panel_params": dict((n, pv(st, n)) for n in (u"Выступ сбоку", u"FT_Стекло_Добавка", u"Толщина стекла")) if st else None,
+                 "panel_inst": dict((n, pv(pn0, n)) for n in (u"ADSK_Размер_Ширина", u"FT_Стекло_Ширина")) if pn0 else None,
+                 "solids_near": sorted(glass, key=lambda g: g["x"][0])[:12]})
+__output__ = {"status": "completed_unverified", "summary": u"стыков %d (только чтение)" % len(rows), "rows": rows}

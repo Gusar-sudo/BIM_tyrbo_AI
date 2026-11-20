@@ -1,0 +1,210 @@
+# -*- coding: utf-8 -*-
+# Фасад и вертикальные разрезы перегородки (высота ~3000) для проверки стыков нащельников.
+# На каждую перегородку — лист A3: фасад 1:20 + разрез по стеклу 1:20 + 8 узлов 1:5:
+#   фасад у крайней и средней стойки вверху/внизу, разрез по стеклу верх/низ, разрез вдоль стены по оси средней стойки верх/низ.
+# Пол и потолок — плиты (серые в разрезе). PDF + PNG листов. ВСЁ откатывается (модель не меняется).
+# Аргументы: args_file -> {items:[{key, title, wall_type, length_mm, height_mm, grid_mm:[...]}], out_dir, pdf_name, origin_mm}
+import json, os, math
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+vft_sec = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.Section][0]
+ttype = FilteredElementCollector(doc).OfClass(TextNoteType).FirstElementId()
+ftype = [t for t in FilteredElementCollector(doc).OfClass(FloorType) if not t.IsFoundationSlab][0]
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_GenericAnnotation, BuiltInCategory.OST_CLines,
+        BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers,
+        BuiltInCategory.OST_SectionHeads, BuiltInCategory.OST_CalloutHeads, BuiltInCategory.OST_ReferenceViewer]
+D = float(args.get("detail_half_mm", 60)); DS = int(args.get("detail_scale", 2))
+# тип видового экрана без названия
+vp_type = None
+_solid = [f for f in FilteredElementCollector(doc).OfClass(FillPatternElement) if f.GetFillPattern().IsSolidFill]
+existing = set(v.Name for v in FilteredElementCollector(doc).OfClass(View))
+
+
+def uname(n):
+    k = n; i = 2
+    while k in existing:
+        k = u"%s (%d)" % (n, i); i += 1
+    existing.add(k)
+    return k
+
+
+def tidy(v, ctx):
+    for bic in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(bic), True)
+        except Exception:
+            pass
+    if _solid:
+        ogs = OverrideGraphicSettings()
+        ogs.SetCutForegroundPatternId(_solid[0].Id); ogs.SetCutForegroundPatternColor(Color(200, 200, 200))
+        ogs.SetSurfaceForegroundPatternId(_solid[0].Id); ogs.SetSurfaceForegroundPatternColor(Color(225, 225, 225))
+        for i in ctx:
+            v.SetElementOverrides(i, ogs)
+
+
+def section(name, origin, bx, by, bz, xmin, xmax, ymin, ymax, zfar, znear, scale, ctx):
+    """вид-разрез: bx — вправо на виде, by — вверх, bz — на зрителя; плоскость сечения на znear (мм), дальняя граница zfar"""
+    tr = Transform.Identity
+    tr.Origin = origin; tr.BasisX = bx; tr.BasisY = by; tr.BasisZ = bz
+    box = BoundingBoxXYZ(); box.Transform = tr
+    box.Min = XYZ(MM(xmin), MM(ymin), MM(zfar)); box.Max = XYZ(MM(xmax), MM(ymax), MM(znear))
+    v = ViewSection.CreateSection(doc, vft_sec.Id, box)
+    v.Scale = scale; v.DetailLevel = ViewDetailLevel.Fine
+    if scale <= 5:
+        # метка этого узла не видна на фасаде/разрезе 1:20
+        p = v.get_Parameter(BuiltInParameter.SECTION_COARSER_SCALE_PULLDOWN_METRIC)
+        if p and not p.IsReadOnly:
+            p.Set(5)
+    v.Name = uname(name)
+    tidy(v, ctx)
+    return v
+
+
+res = {"sheets": []}
+sheet_ids = List[ElementId]()
+tg = TransactionGroup(doc, u"FT: фасад и разрезы перегородок (откат)"); tg.Start()
+try:
+    ox = float(args.get("origin_mm", [60000, 380000])[0]); oy = float(args.get("origin_mm", [60000, 380000])[1])
+    for k, it in enumerate(args["items"]):
+        r = {"key": it["key"]}
+        t = Transaction(doc, u"перегородка"); t.Start()
+        try:
+            Lm = float(it.get("length_mm", 2000)); Hm = float(it.get("height_mm", 3000))
+            P0 = XYZ(MM(ox), MM(oy + 4000 * k), level.Elevation)
+            d = XYZ.BasisX; n = XYZ.BasisY
+            w = Wall.Create(doc, Line.CreateBound(P0, P0 + d * MM(Lm)), wtypes[it["wall_type"]].Id, level.Id, MM(Hm), 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(w, 0); WallUtils.DisallowWallJoinAtEnd(w, 1)
+            doc.Regenerate()
+            for g in it.get("grid_mm", [Lm / 2]):
+                w.CurtainGrid.AddGridLine(False, P0 + d * MM(g) + XYZ(0, 0, 1), False)
+            doc.Regenerate()
+            # пол и потолок: плиты 600 мм шириной, на 300 мм длиннее перегородки с каждой стороны
+            slab = ftype.get_Parameter(BuiltInParameter.FLOOR_ATTR_DEFAULT_THICKNESS_PARAM).AsDouble()
+            ctx = []
+            for zoff in (0.0, MM(Hm) + slab):
+                a = P0 - d * MM(300) - n * MM(300); b = P0 + d * MM(Lm + 300) + n * MM(300)
+                pts = [XYZ(a.X, a.Y, level.Elevation), XYZ(b.X, a.Y, level.Elevation), XYZ(b.X, b.Y, level.Elevation), XYZ(a.X, b.Y, level.Elevation)]
+                loop = CurveLoop()
+                for i in range(4):
+                    loop.Append(Line.CreateBound(pts[i], pts[(i + 1) % 4]))
+                ll = List[CurveLoop](); ll.Add(loop)
+                fl = Floor.Create(doc, ll, ftype.Id, level.Id)
+                fl.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(zoff)
+                ctx.append(fl.Id)
+            doc.Regenerate()
+            # вертикальные импосты (крайние и средние) и типы горизонтальных
+            vert, hor = [], {}
+            for mid in w.CurtainGrid.GetMullionIds():
+                m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+                if bb is None:
+                    continue
+                if bb.Max.Z - bb.Min.Z > MM(1000):
+                    vert.append(((bb.Min.X + bb.Max.X) / 2 - P0.X) * FT)
+                else:
+                    hor[u"верх" if (bb.Min.Z - level.Elevation) * FT > Hm / 2 else u"низ"] = m.Name
+            vert.sort()
+            r["vertical_mm"] = [round(x, 1) for x in vert]; r["horizontal"] = hor
+            r["mullion_types"] = sorted(set(doc.GetElement(i).Name for i in w.CurtainGrid.GetMullionIds()))
+            xs_end = vert[0] if vert else 0.0
+            xs_mid = min(vert, key=lambda x: abs(x - Lm / 2)) if vert else Lm / 2
+            x_glass = (vert[0] + xs_mid) / 2 if len(vert) > 1 else Lm / 4
+            ztop = level.Elevation + MM(Hm); zbot = level.Elevation
+            views = []
+            # фасад 1:20 (смотрим со стороны -n)
+            mid = P0 + d * MM(Lm / 2)
+            views.append((u"Фасад 1:20", section(u"%s фасад" % it["key"], XYZ(mid.X, mid.Y, zbot + MM(Hm / 2)), d, XYZ.BasisZ, -n,
+                                                -Lm / 2 - 150, Lm / 2 + 150, -Hm / 2 - 250, Hm / 2 + 250, -150, 150, 20, ctx), "big"))
+            # разрез по стеклу 1:20 (поперёк стены)
+            gx = P0 + d * MM(x_glass)
+            views.append((u"Разрез по стеклу 1:20", section(u"%s разрез по стеклу" % it["key"], XYZ(gx.X, gx.Y, zbot + MM(Hm / 2)), n, XYZ.BasisZ, n.CrossProduct(XYZ.BasisZ),
+                                                          -250, 250, -Hm / 2 - 250, Hm / 2 + 250, -400, 0, 20, ctx), "tall"))
+            det = []
+            for lab, xx in ((u"крайняя стойка", xs_end), (u"средняя стойка", xs_mid)):
+                for zl, zz in ((u"верх", ztop), (u"низ", zbot)):
+                    c = P0 + d * MM(xx)
+                    det.append((u"Фасад: %s, %s" % (lab, zl), section(u"%s фасад %s %s" % (it["key"], lab, zl), XYZ(c.X, c.Y, zz), d, XYZ.BasisZ, -n,
+                                                                      -D, D, -D, D, -150, 150, DS, ctx)))
+            for zl, zz in ((u"верх", ztop), (u"низ", zbot)):
+                det.append((u"Разрез по стеклу, %s" % zl, section(u"%s разрез стекло %s" % (it["key"], zl), XYZ(gx.X, gx.Y, zz), n, XYZ.BasisZ, n.CrossProduct(XYZ.BasisZ),
+                                                                 -D, D, -D, D, -400, 0, DS, ctx)))
+            cm = P0 + d * MM(xs_mid)
+            for zl, zz in ((u"верх", ztop), (u"низ", zbot)):
+                det.append((u"Разрез вдоль стены по оси стойки, %s" % zl, section(u"%s разрез по стойке %s" % (it["key"], zl), XYZ(cm.X, cm.Y, zz), d, XYZ.BasisZ, -n,
+                                                                                 -D, D, -D, D, -400, 0, DS, ctx)))
+            doc.Regenerate()
+            # лист A3 без рамки
+            sh = ViewSheet.Create(doc, ElementId.InvalidElementId)
+            nm = u"%s %s" % (it["key"], it.get("title", u""))
+            for ch in u':{}[]|;<>?`~\\':
+                nm = nm.replace(ch, u" ")
+            sh.Name = nm[:60]; sh.SheetNumber = u"ФР-" + it["key"]
+            TextNote.Create(doc, sh.Id, XYZ(MM(5), MM(294), 0),
+                            u"%s  %s.   Перегородка %d × %d мм, тип стены: %s.\nВертикальные: %s.   Верх: %s.   Низ: %s.   Модель не менялась (откат)." % (
+                                it["key"], it.get("title", u""), Lm, Hm, it["wall_type"], u", ".join(sorted(set(r["mullion_types"]) - set(hor.values()))) or u"-",
+                                hor.get(u"верх", u"-"), hor.get(u"низ", u"-")), ttype)
+            vps = []
+            vps.append(Viewport.Create(doc, sh.Id, views[0][1].Id, XYZ(MM(62), MM(140), 0)))
+            TextNote.Create(doc, sh.Id, XYZ(MM(5), MM(276), 0), views[0][0], ttype)
+            vps.append(Viewport.Create(doc, sh.Id, views[1][1].Id, XYZ(MM(140), MM(140), 0)))
+            TextNote.Create(doc, sh.Id, XYZ(MM(122), MM(276), 0), views[1][0], ttype)
+            cell = 2.0 * D / DS + 8
+            for j, (lab, v) in enumerate(det):
+                cx = MM(170 + (cell + 2) * (j % 4) + cell / 2); cy = MM(268 - (cell + 22) * (j // 4) - cell / 2 - 8)
+                vps.append(Viewport.Create(doc, sh.Id, v.Id, XYZ(cx, cy, 0)))
+                TextNote.Create(doc, sh.Id, XYZ(cx - MM(cell / 2), cy + MM(cell / 2 + 7), 0), u"%s\n1:%d" % (lab, DS), ttype)
+            # без заголовков видовых экранов
+            if vp_type is None and vps:
+                base_t = doc.GetElement(vps[0].GetTypeId())
+                vp_type = base_t.Duplicate(u"FT без названия %d" % len(existing))
+                prm = vp_type.get_Parameter(BuiltInParameter.VIEWPORT_ATTR_SHOW_LABEL)
+                if prm:
+                    prm.Set(0)
+            for vp in vps:
+                try:
+                    vp.ChangeTypeId(vp_type.Id)
+                except Exception:
+                    pass
+            t.Commit()
+            sheet_ids.Add(sh.Id)
+            e = ImageExportOptions(); e.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(sh.Id); e.SetViewsAndSheets(ids)
+            e.ZoomType = ZoomFitType.FitToPage; e.PixelSize = int(args.get("px", 4200))
+            e.ImageResolution = ImageResolution.DPI_300; e.HLRandWFViewsFileType = ImageFileType.PNG
+            e.FilePath = os.path.join(OUT, u"sheet_" + it["key"])
+            doc.ExportImage(e)
+            r["ok"] = True
+        except Exception as ex:
+            r["error"] = str(ex)[:300]
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        res["sheets"].append(r)
+    if sheet_ids.Count:
+        o = PDFExportOptions()
+        o.FileName = args.get("pdf_name", u"фасад_разрезы")
+        o.Combine = True
+        o.PaperFormat = ExportPaperFormat.ISO_A3
+        o.PaperOrientation = PageOrientationType.Landscape
+        o.ZoomType = ZoomType.FitToPage
+        o.HideCropBoundaries = True; o.HideScopeBoxes = True; o.HideReferencePlane = True
+        res["pdf_ok"] = bool(doc.Export(OUT, sheet_ids, o))
+        res["pdf"] = os.path.join(OUT, o.FileName + u".pdf")
+    res["warnings"] = len(doc.GetWarnings())
+finally:
+    tg.RollBack()
+bad = [s["key"] for s in res["sheets"] if "error" in s]
+res["status"] = "completed_unverified" if not bad else "partial"
+res["summary"] = u"листов %d, ошибок %d, PDF %s; всё откатано" % (sheet_ids.Count, len(bad), res.get("pdf_ok"))
+__output__ = res

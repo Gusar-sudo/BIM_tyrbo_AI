@@ -1,0 +1,14 @@
+{
+ "out_dir": "C:\\Users\\user\\Desktop\\Фристайл\\_bim\\work\\2026\\families\\up008_v2_2026-11-11",
+ "panel_family": "BIMLIB_ПанельВитража_Двухслойная_ФристайлТехнолоджи",
+ "skip_panel": true,
+ "up_base_profile": "BIMLIB_Профиль_М2_FSC21_СтойкаНеоблицованная_ФристайлТехнолоджи",
+ "up_width_mm": 2,
+ "up_depth_mm": 7,
+ "up_inset_mm": 0.5,
+ "up008": [
+  {"save_as": "BIMLIB_Профиль_УП-008_Межстекольный62_ФристайлТехнолоджи", "outer_mm": 30.6},
+  {"save_as": "BIMLIB_Профиль_УП-008_Межстекольный72_ФристайлТехнолоджи", "outer_mm": 35.7}
+ ],
+ "edges": []
+}

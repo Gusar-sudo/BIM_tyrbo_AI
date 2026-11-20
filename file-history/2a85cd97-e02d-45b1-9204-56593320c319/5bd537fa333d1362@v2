@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+# Чтение: разница параметров экземпляра двух панелей одного типа (потерянная vs нормальная)
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+def dump(i):
+    p = doc.GetElement(ElementId(i)); d = {}
+    for q in p.Parameters:
+        try:
+            v = q.AsValueString() if q.StorageType in (StorageType.Double, StorageType.Integer) else (q.AsString() if q.StorageType == StorageType.String else q.AsElementId().Value)
+        except Exception:
+            v = "?"
+        d[q.Definition.Name] = v
+    return d
+a = dump(3434964); b = dump(3426336)
+diff = {k: [a.get(k), b.get(k)] for k in sorted(set(a) | set(b)) if a.get(k) != b.get(k)}
+p = doc.GetElement(ElementId(3434964))
+g = p.get_Geometry(Options())
+n = 0
+if g:
+    for o in g:
+        n += 1
+__output__ = {"status": "completed_unverified", "summary": u"различий %d; объектов геометрии у потерянной: %d" % (len(diff), n), "diff": diff}

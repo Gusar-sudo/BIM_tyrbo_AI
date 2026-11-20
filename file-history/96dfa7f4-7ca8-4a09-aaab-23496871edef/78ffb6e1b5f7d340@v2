@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+# Только чтение: все витражи документа — развёрнута ли стена и с какой стороны стекло однослойной панели
+# («наружная» = сторона wall.Orientation, где стрелки разворота Revit). Двуслойные — стекло с обеих сторон.
+import json
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+def glass_center(p, o, n):
+    vals = []
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                s = SolidUtils.CreateTransformed(g, tr) if tr else g
+                isg = False
+                for f in s.Faces:
+                    m = doc.GetElement(f.MaterialElementId)
+                    if m is not None and (u"тек" in m.Name.lower() or "glass" in m.Name.lower()):
+                        isg = True; break
+                if isg:
+                    c = s.ComputeCentroid()
+                    vals.append((c - o).DotProduct(n) * FT)
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    walk(p.get_Geometry(opt), None)
+    return vals
+
+
+rows = []
+for w in FilteredElementCollector(doc).OfClass(Wall):
+    if w.CurtainGrid is None:
+        continue
+    lc = w.Location.Curve
+    o = lc.Evaluate(0.5, True); n = w.Orientation
+    side = None; ptype = None
+    for pid in w.CurtainGrid.GetPanelIds():
+        p = doc.GetElement(pid)
+        if not isinstance(p, Panel):
+            continue
+        g = glass_center(p, o, n)
+        if g:
+            ptype = p.Name
+            if len(g) == 1:
+                side = u"наружная" if g[0] > 0.5 else (u"внутренняя" if g[0] < -0.5 else u"по оси")
+            else:
+                side = u"обе (%d слоя)" % len(g)
+            break
+    rows.append({"id": int(w.Id.Value), "type": w.WallType.Name, "flipped": w.Flipped, "glass_side": side, "panel": ptype})
+rows.sort(key=lambda r: r["type"])
+__output__ = {"status": "completed_unverified", "summary": "%d витражей" % len(rows), "walls": rows}

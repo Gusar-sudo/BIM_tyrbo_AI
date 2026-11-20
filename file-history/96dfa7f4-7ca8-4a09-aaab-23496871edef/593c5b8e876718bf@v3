@@ -1,0 +1,133 @@
+# -*- coding: utf-8 -*-
+# Исправление «лишнего уплотнителя»:
+# 1) загрузить профили импостов без нарисованного U5 (args_strip: items[].rfa);
+# 2) цельностеклянная стена на широкой стойке FSC139: отдельный тип панели (копия цельностеклянной) с заходом стекла
+#    в импост 14 мм («Выступ сбоку/сверху/снизу»), назначить в тип стены и всем панелям стен этого типа.
+# Проверка: импосты/панели/предупреждения до и после, заход стекла в торцевой импост по стенам, PNG видов.
+# commit=false -> откат всей группы. Аргументы: args_strip, panel_src, panel_new, protrude_mm, wall_type, check_walls, view_ids, out_dir, commit
+import json, os, clr
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def counts():
+    return {"mullions": FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType().GetElementCount(),
+            "panels": FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType().GetElementCount(),
+            "warnings": len(doc.GetWarnings())}
+
+
+def solids(el):
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                yield SolidUtils.CreateTransformed(g, tr) if tr else g
+            elif isinstance(g, GeometryInstance):
+                for x in walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform):
+                    yield x
+    ge = el.get_Geometry(opt)
+    return list(walk(ge, None)) if ge else []
+
+
+def glass_entry(wid):
+    w = doc.GetElement(ElementId(int(wid))); c = w.Location.Curve; a = c.GetEndPoint(0); d = (c.GetEndPoint(1) - a).Normalize()
+    first = None
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid); bb = m.get_BoundingBox(None)
+        if bb.Max.Z - bb.Min.Z < 1:
+            continue
+        s = ((bb.Min + bb.Max) * 0.5 - a).DotProduct(d)
+        if first is None or s < first[0]:
+            first = (s, m)
+    mmax = max((p - a).DotProduct(d) * FT for s in solids(first[1]) for e in s.Edges for p in e.Tessellate())
+    gmin = None
+    for pid in w.CurtainGrid.GetPanelIds():
+        for s in solids(doc.GetElement(pid)):
+            try:
+                mat = doc.GetElement(list(s.Faces)[0].MaterialElementId)
+            except Exception:
+                mat = None
+            if mat is None or u"Стекло" not in mat.Name:
+                continue
+            v = min((p - a).DotProduct(d) * FT for e in s.Edges for p in e.Tessellate())
+            gmin = v if gmin is None else min(gmin, v)
+    return round(mmax - gmin, 1) if gmin is not None else None
+
+
+res = {"before": counts(), "entry_before": {}, "entry_after": {}, "errors": []}
+if not args.get("check_walls"):
+    # по умолчанию — все стены цельностеклянного типа FSC139 в документе
+    _wt = [x for x in FilteredElementCollector(doc).OfClass(WallType) if x.Name == args["wall_type"]]
+    args["check_walls"] = [int(w.Id.Value) for w in FilteredElementCollector(doc).OfClass(Wall) if _wt and w.GetTypeId() == _wt[0].Id][:10]
+res["checked_walls"] = list(args["check_walls"])
+for wid in args["check_walls"]:
+    res["entry_before"][str(wid)] = glass_entry(wid)
+tg = TransactionGroup(doc, u"FT: убрать лишний уплотнитель"); tg.Start()
+try:
+    with open(args["args_strip"], encoding="utf-8") as f:
+        items = json.load(f)["items"]
+    t = Transaction(doc, u"FT: профили без нарисованного уплотнителя"); t.Start()
+    loaded = 0
+    for it in items:
+        if doc.LoadFamily(it["rfa"], LoadOpt(), clr.Reference[Family]()):
+            loaded += 1
+    t.Commit()
+    res["profiles_loaded"] = [loaded, len(items)]
+    t = Transaction(doc, u"FT: панель цельностеклянная для FSC139"); t.Start()
+    ptypes = [s for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels)]
+    byname = dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s) for s in ptypes)
+    new = byname.get(args["panel_new"]) or byname[args["panel_src"]].Duplicate(args["panel_new"])
+    for pn in (u"Выступ сбоку", u"Выступ сверху", u"Выступ снизу"):
+        new.LookupParameter(pn).Set(float(args["protrude_mm"]) / FT)
+    wt = [x for x in FilteredElementCollector(doc).OfClass(WallType) if x.Name == args["wall_type"]][0]
+    wt.get_Parameter(BuiltInParameter.AUTO_PANEL_WALL).Set(new.Id)
+    changed = 0
+    for w in FilteredElementCollector(doc).OfClass(Wall):
+        if w.GetTypeId() != wt.Id or w.CurtainGrid is None:
+            continue
+        for pid in w.CurtainGrid.GetPanelIds():
+            p = doc.GetElement(pid)
+            if isinstance(p, Panel) and p.GetTypeId() != new.Id and p.Symbol.Family.Id == new.Family.Id:
+                p.Pinned = False
+                p.ChangeTypeId(new.Id); changed += 1
+    t.Commit()
+    res["panel_type"] = [new.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), int(new.Id.Value)]
+    res["panels_changed"] = changed
+    for wid in args["check_walls"]:
+        res["entry_after"][str(wid)] = glass_entry(wid)
+    res["after"] = counts()
+    res["new_warnings"] = [x.GetDescriptionText()[:120] for x in doc.GetWarnings()][:8]
+    for vid in args.get("view_ids", []):
+        v = doc.GetElement(ElementId(int(vid)))
+        o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+        ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+        o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = 1100; o.ImageResolution = ImageResolution.DPI_300
+        o.HLRandWFViewsFileType = ImageFileType.PNG
+        o.FilePath = os.path.join(args["out_dir"], u"fix_%d" % int(vid))
+        doc.ExportImage(o)
+except Exception as ex:
+    res["errors"].append(str(ex)[:300])
+finally:
+    if commit and not res["errors"]:
+        tg.Assimilate()
+    else:
+        tg.RollBack()
+res["committed"] = commit and not res["errors"]
+__output__ = {"status": "completed_unverified" if not res["errors"] else "failed",
+              "summary": u"%s; профилей %s, панелей сменено %s" % (u"применено" if res["committed"] else u"откат", res.get("profiles_loaded"), res.get("panels_changed")),
+              "result": res}

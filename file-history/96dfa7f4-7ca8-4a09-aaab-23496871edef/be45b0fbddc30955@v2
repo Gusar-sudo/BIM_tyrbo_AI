@@ -1,0 +1,250 @@
+<title>Приёмка М2 Фристайл</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Лист приёмки: узкая колонка документа, карточки только для вопросов, полоса-«светофор» сверху */
+:root{
+  --bg:#f3f5f6; --paper:#ffffff; --fg:#1b2329; --muted:#5d6b75; --line:#d7dee3;
+  --accent:#1f6f8b; --accent-ink:#ffffff; --ok:#2e7d4f; --warn:#a66a00; --bad:#b3362c; --chip:#e7eef1;
+  --font-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171b; --paper:#1a2126; --fg:#e4eaee; --muted:#9aa8b2; --line:#2c363d;
+  --accent:#5fb3d0; --accent-ink:#0d1a20; --ok:#5cc28a; --warn:#e0a640; --bad:#ef7b70; --chip:#243038; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171b; --paper:#1a2126; --fg:#e4eaee; --muted:#9aa8b2; --line:#2c363d;
+  --accent:#5fb3d0; --accent-ink:#0d1a20; --ok:#5cc28a; --warn:#e0a640; --bad:#ef7b70; --chip:#243038; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+h1{font-size:1.65rem;font-weight:700;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;font-weight:600;margin:0 0 10px;text-wrap:balance}
+.meta{color:var(--muted);font-size:.85rem;display:flex;flex-wrap:wrap;gap:6px 18px}
+.mono{font-family:var(--font-mono);font-size:.82rem}
+.light{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.light div{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.light b{display:block;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.light span{color:var(--muted);font-size:.84rem}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.note{background:var(--chip);border-radius:8px;padding:12px 14px;font-size:.9rem}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+figure{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:8px;overflow:hidden;min-width:0}
+figure img{display:block;width:100%;height:190px;object-fit:contain;background:#fff}
+figcaption{padding:8px 10px;font-size:.84rem}
+figcaption small{display:block;color:var(--muted)}
+.tablebox{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:.8rem;letter-spacing:.02em}
+tr:last-child td{border-bottom:0}
+.q{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:10px}
+.q .head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.q .id{font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:600}
+.q .why{color:var(--muted);font-size:.88rem}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.9rem}
+.opts input{accent-color:var(--accent)}
+.opts label:has(input:checked){border-color:var(--accent);background:var(--chip)}
+textarea{width:100%;box-sizing:border-box;min-height:56px;font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border-radius:8px;padding:8px 16px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+button.return{background:transparent;color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,textarea:focus-visible,.opts label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.saved{font-size:.84rem;color:var(--muted)}
+.final{background:var(--paper);border:2px solid var(--accent);border-radius:10px;padding:18px;display:grid;gap:12px}
+.err{color:var(--bad);font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>Приёмка: система М2 «Фристайл Технолоджи»</h1>
+    <div class="meta">
+      <span>Витражи и импосты FSC · библиотека bimlib</span>
+      <span>Revit 2026.4, копия файла 2017</span>
+      <span>26.10.2026</span>
+      <span class="mono">отпечаток fdddd03b6924</span>
+    </div>
+  </header>
+
+  <section class="light" aria-label="Итог автоматических проверок">
+    <div><b class="ok">324 / 324</b><span>ссылки на артикулы подтверждены альбомом М2</span></div>
+    <div><b class="ok">0</b><span>предупреждений Revit, импортированного CAD нет</span></div>
+    <div><b>88 · 236</b><span>типов импостов · экземпляров, прочитаны все</span></div>
+    <div><b class="warn">5</b><span>вопросов, на которые нужен ваш взгляд</span></div>
+  </section>
+
+  <p class="note">Модель ещё не менялась: это приёмка «как есть» перед пересборкой. Цифры проверены автоматически; ниже только то, что машина решить не может. Картинки взяты из комплекта bimlib (<span class="mono">models_pictures</span>) и показывают ту же модель; свежий экспорт видов из Revit будет в пакете после пересборки.</p>
+
+  <section>
+    <h2>Витражи М2</h2>
+    <div class="gallery">
+      <figure><img src="img/m2-1.jpg" alt="Витраж М2 двухслойный"><figcaption>Двухслойное остекление<small>стойка основная, 62 мм в имени типа</small></figcaption></figure>
+      <figure><img src="img/m2-2.jpg" alt="Витраж М2 однослойный"><figcaption>Однослойное остекление<small>витраж FS.C-140</small></figcaption></figure>
+      <figure><img src="img/m2-3.jpg" alt="Витраж М2 двухслойный цельностеклянный"><figcaption>Двухслойное цельностеклянное<small>витраж FS.C-157</small></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Сборки импостов FSC</h2>
+    <div class="gallery">
+      <figure><img src="img/m2-4.jpg" alt="Сборка FSC21"><figcaption>FSC21 · стойка основная FS.C-21<small>25 типов · 88 шт. · 98,05 м</small></figcaption></figure>
+      <figure><img src="img/m2-5.jpg" alt="Сборка FSC21, 3D"><figcaption>FSC21 · 3D<small>нащельник FS.C-28 / FS.C-29, уплотнитель FS.C-U5</small></figcaption></figure>
+      <figure><img src="img/m2-6.jpg" alt="Сборка FSC139"><figcaption>FSC139 · стойка широкая FS.C-139<small>20 типов · 72 шт. · 70,85 м</small></figcaption></figure>
+      <figure><img src="img/m2-7.jpg" alt="Сборка FSC22"><figcaption>FSC22 · стойка усиленная FS.C-22<small>20 типов · 42 шт. · 40,03 м</small></figcaption></figure>
+      <figure><img src="img/m2-8.jpg" alt="Сборка FSC17"><figcaption>FSC17 · столб три грани FS.C-17<small>13 типов · 23 шт. · 27,06 м</small></figcaption></figure>
+      <figure><img src="img/m2-9.jpg" alt="Сборка FSC18"><figcaption>FSC18 · столб универсальный FS.C-18<small>6 типов · 7 шт. · 14 м</small></figcaption></figure>
+      <figure><img src="img/m2-10.jpg" alt="Сборка FSC144"><figcaption>FSC144 · ригель FS.C-144<small>4 типа · 4 шт. · 4 м</small></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Что проверено автоматически</h2>
+    <div class="tablebox"><table>
+      <thead><tr><th>Проверка</th><th>Итог</th><th>Основание</th></tr></thead>
+      <tbody>
+        <tr><td>Пары FT_*_Артикул / FT_*_Расход у всех типов</td><td class="ok">88 из 88</td><td>параметры типов</td></tr>
+        <tr><td>Артикулы по таблицам альбома М2</td><td class="ok">314</td><td>profiles.csv</td></tr>
+        <tr><td>Артикул FS.C-29 (нащельник узкий примыкание)</td><td class="ok">10 ссылок</td><td>альбом М2, текст к рис., строки 975, 978</td></tr>
+        <tr><td>Имена параметров без лишних пробелов</td><td class="ok">да</td><td>пробел — опечатка в инструкции 2021</td></tr>
+        <tr><td>ADSK_Завод-изготовитель</td><td class="ok">ООО «Фристайл Технолоджи»</td><td>у всех типов</td></tr>
+        <tr><td>ADSK_Масса, ADSK_Обозначение</td><td class="warn">пусто у 88 из 88</td><td>вопрос Q3</td></tr>
+        <tr><td>Размер стекла по формулам альбома</td><td class="warn">в модели нет параметра</td><td>вопрос Q4</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section style="display:grid;gap:14px" aria-label="Вопросы">
+    <h2>Ваши решения</h2>
+    <p id="dbstate" class="saved">Подключение к хранилищу ответов…</p>
+    <div id="questions" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section class="final" aria-label="Итоговое решение">
+    <h2 style="margin:0">Итог по пакету</h2>
+    <p class="why" style="margin:0;color:var(--muted)">«Принять» означает: состояние М2 зафиксировано, ответы выше становятся заданием на пересборку. «Вернуть» — с комментарием, что не так.</p>
+    <label for="final-comment" class="saved">Комментарий (обязателен при «Вернуть»)</label>
+    <textarea id="final-comment"></textarea>
+    <div class="row">
+      <button id="btn-accept">Принять</button>
+      <button id="btn-return" class="return">Вернуть</button>
+      <span id="final-msg" class="saved"></span>
+    </div>
+    <p id="final-err" class="err" hidden></p>
+  </section>
+</div>
+
+<script>
+const FINGERPRINT = "fdddd03b69246662913a6fcd8eb32a5f85e05d6d18222c635c5fc8cb36a28c23";
+const QUESTIONS = [
+  {id:"Q1", text:"Импосты в модели показаны прямоугольником, а не реальным сечением профиля. Этого достаточно для библиотеки?",
+   why:"Импосты — типы системного семейства «Прямоугольный импост». Посмотрите сборки FSC выше.",
+   opts:["Достаточно","Нужен реальный профиль на детальном виде","Обсудить"]},
+  {id:"Q2", text:"Толщина стоек М2 в модели: 62 / 64 / 64,6 / 65 мм. Какая верная?",
+   why:"В имени витража 62 мм, в альбоме М2 «толщина перегородки 65 мм». 2 типа — 62, 24 — 64, 19 — 64,6, 24 — 65 мм.",
+   opts:["62 мм","65 мм","Разная по ситуациям — так и надо","Уточню у производства"]},
+  {id:"Q3", text:"ADSK_Масса и ADSK_Обозначение пустые у всех 88 типов. Заполнять?",
+   why:"Масса может считаться как вес 1 п.м. из альбома × длина; обозначение — из альбома.",
+   opts:["Заполнить из альбома","Оставить пустыми — по расчёту производства"]},
+  {id:"Q4", text:"Добавить в новую версию параметр «размер стекла к заказу» по формулам альбома?",
+   why:"Сейчас размера стекла в модели нет. Пример, рис. 45: между стойками основными l = L1 − 5 мм.",
+   opts:["Добавить","Не нужно"]},
+  {id:"Q5", text:"Логотип LOGO сделан семейством «в контексте». Оставить в библиотеке?",
+   why:"Такие семейства не попадают в спецификации и пересчитываются при каждом изменении.",
+   opts:["Оставить","Убрать"]}
+];
+const answers = {};
+let db = null, me = null, writable = true;
+const $ = s => document.querySelector(s);
+
+function renderQuestions(){
+  const box = $("#questions");
+  const draft = {};
+  for (const q of QUESTIONS){
+    const pick = box.querySelector('input[name="' + q.id + '"]:checked');
+    const ta = document.getElementById(q.id + "-comment");
+    if (pick || (ta && ta.value)) draft[q.id] = {answer: pick ? pick.value : null, comment: ta ? ta.value : ""};
+  }
+  box.textContent = "";
+  for (const q of QUESTIONS){
+    const saved = draft[q.id] && draft[q.id].answer ? draft[q.id] : answers[q.id];
+    const card = document.createElement("div"); card.className = "q";
+    const head = document.createElement("div"); head.className = "head";
+    const id = document.createElement("span"); id.className = "id"; id.textContent = q.id;
+    const t = document.createElement("strong"); t.textContent = q.text;
+    head.append(id, t);
+    const why = document.createElement("div"); why.className = "why"; why.textContent = q.why;
+    const opts = document.createElement("div"); opts.className = "opts"; opts.setAttribute("role","radiogroup");
+    q.opts.forEach((o, i) => {
+      const lab = document.createElement("label");
+      const inp = document.createElement("input"); inp.type = "radio"; inp.name = q.id; inp.value = o; inp.id = q.id + "-" + i;
+      if (saved && saved.answer === o) inp.checked = true;
+      lab.append(inp, document.createTextNode(o)); opts.append(lab);
+    });
+    const ta = document.createElement("textarea"); ta.id = q.id + "-comment"; ta.placeholder = "Комментарий (необязательно)";
+    if (saved && saved.comment) ta.value = saved.comment;
+    const row = document.createElement("div"); row.className = "row";
+    const btn = document.createElement("button"); btn.className = "ghost"; btn.textContent = "Сохранить ответ";
+    btn.disabled = !db || !writable;
+    const msg = document.createElement("span"); msg.className = "saved";
+    if (draft[q.id] && draft[q.id].comment && !ta.value) ta.value = draft[q.id].comment;
+    const stored = answers[q.id];
+    if (stored) msg.textContent = "Сохранено " + new Date(stored.at).toLocaleString("ru-RU") + (stored.fingerprint !== FINGERPRINT ? " · к другому пакету" : "");
+    btn.addEventListener("click", async () => {
+      const pick = card.querySelector("input:checked");
+      if (!pick){ msg.textContent = "Выберите вариант"; return; }
+      btn.disabled = true; msg.textContent = "Сохраняю…";
+      try {
+        await db.doc("decisions/" + q.id).set({answer: pick.value, comment: ta.value.trim(), by: me, at: new Date().toISOString(), fingerprint: FINGERPRINT});
+        msg.textContent = "Сохранено";
+      } catch(e){ msg.textContent = "Не сохранилось: " + (e && e.code === "invalid_argument" ? "нет прав на запись" : "попробуйте ещё раз"); }
+      btn.disabled = false;
+    });
+    row.append(btn, msg);
+    card.append(head, why, opts, ta, row); box.append(card);
+  }
+}
+
+function renderFinal(){
+  const f = answers.package;
+  const msg = $("#final-msg");
+  if (f){
+    msg.textContent = (f.decision === "accept" ? "Принято " : "Возвращено ") + new Date(f.at).toLocaleString("ru-RU") + (f.fingerprint !== FINGERPRINT ? " (к другому пакету — решение недействительно)" : "");
+    if (f.comment && !$("#final-comment").value) $("#final-comment").value = f.comment;
+  }
+  $("#btn-accept").disabled = $("#btn-return").disabled = !db || !writable;
+}
+
+async function decide(kind){
+  const err = $("#final-err"); err.hidden = true;
+  const comment = $("#final-comment").value.trim();
+  if (kind === "return" && !comment){ err.textContent = "Напишите, что вернуть на доработку."; err.hidden = false; return; }
+  const missing = QUESTIONS.filter(q => !answers[q.id] || answers[q.id].fingerprint !== FINGERPRINT).map(q => q.id);
+  if (kind === "accept" && missing.length){ err.textContent = "Сначала ответьте на вопросы: " + missing.join(", ") + "."; err.hidden = false; return; }
+  try {
+    await db.doc("decisions/package").set({decision: kind, comment, by: me, at: new Date().toISOString(), fingerprint: FINGERPRINT});
+  } catch(e){ err.textContent = "Решение не сохранилось. Проверьте доступ и попробуйте ещё раз."; err.hidden = false; }
+}
+$("#btn-accept").addEventListener("click", () => decide("accept"));
+$("#btn-return").addEventListener("click", () => decide("return"));
+
+renderQuestions(); renderFinal();
+
+(async () => {
+  try {
+    db = await window.claude?.use?.("db");
+    const user = await window.claude?.use?.("user");
+    me = user ? await user.id() : null;
+    const can = user ? await user.can("data.write") : null;
+    if (can === false) writable = false;
+  } catch(e){ db = null; }
+  if (!db){ $("#dbstate").textContent = "Хранилище ответов недоступно в этом просмотре: ответы можно прочитать, но не сохранить."; renderQuestions(); renderFinal(); return; }
+  $("#dbstate").textContent = writable ? "Ответы сохраняются и видны Claude." : "У вас доступ только для просмотра.";
+  db.collection("decisions").onSnapshot(snap => {
+    for (const d of snap.docs) answers[d.id] = d.data();
+    renderQuestions(); renderFinal();
+  }, () => { $("#dbstate").textContent = "Связь с хранилищем потеряна. Обновите страницу."; });
+})();
+</script>

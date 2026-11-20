@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+# Только чтение: устройство семейства панели (опорные плоскости, выдавливания, размеры с метками, параметры с формулами).
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+out = []
+for name in args["families"]:
+    fdoc = doc.EditFamily(fams[name])
+    try:
+        fm = fdoc.FamilyManager
+        rps = []
+        for rp in FilteredElementCollector(fdoc).OfClass(ReferencePlane):
+            n = rp.Normal
+            rps.append({"id": int(rp.Id.Value), "name": rp.Name, "normal": [round(n.X, 2), round(n.Y, 2), round(n.Z, 2)],
+                        "bubble": [round(rp.BubbleEnd.X * FT, 1), round(rp.BubbleEnd.Y * FT, 1), round(rp.BubbleEnd.Z * FT, 1)],
+                        "free": [round(rp.FreeEnd.X * FT, 1), round(rp.FreeEnd.Y * FT, 1), round(rp.FreeEnd.Z * FT, 1)]})
+        forms = []
+        for f in FilteredElementCollector(fdoc).OfClass(GenericForm):
+            bb = f.get_BoundingBox(None)
+            d = {"id": int(f.Id.Value), "class": f.GetType().Name, "solid": f.IsSolid,
+                 "bbox": [round(v * FT, 1) for v in (bb.Min.X, bb.Min.Y, bb.Min.Z, bb.Max.X, bb.Max.Y, bb.Max.Z)] if bb else None}
+            if isinstance(f, Extrusion):
+                d["start"] = round(f.StartOffset * FT, 2); d["end"] = round(f.EndOffset * FT, 2)
+                n = f.Sketch.SketchPlane.GetPlane().Normal
+                d["plane_normal"] = [round(n.X, 2), round(n.Y, 2), round(n.Z, 2)]
+                d["plane_origin"] = [round(v * FT, 1) for v in (f.Sketch.SketchPlane.GetPlane().Origin.X, f.Sketch.SketchPlane.GetPlane().Origin.Y, f.Sketch.SketchPlane.GetPlane().Origin.Z)]
+            mp = f.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM)
+            d["material"] = fdoc.GetElement(mp.AsElementId()).Name if mp and mp.AsElementId() != ElementId.InvalidElementId else None
+            assoc = []
+            for p in f.Parameters:
+                fp = fm.GetAssociatedFamilyParameter(p)
+                if fp is not None:
+                    assoc.append(p.Definition.Name + " <- " + fp.Definition.Name)
+            d["assoc"] = assoc
+            forms.append(d)
+        dims = []
+        for dm in FilteredElementCollector(fdoc).OfClass(Dimension):
+            try:
+                lbl = dm.FamilyLabel.Definition.Name if dm.FamilyLabel else None
+            except Exception:
+                lbl = None
+            refs = []
+            for i in range(dm.References.Size):
+                el = fdoc.GetElement(dm.References.get_Item(i).ElementId)
+                refs.append((el.GetType().Name + ":" + (el.Name or "")) if el else "?")
+            dims.append({"id": int(dm.Id.Value), "label": lbl, "value": round(dm.Value * FT, 2) if dm.Value else None, "refs": refs})
+        params = []
+        for p in fm.Parameters:
+            params.append({"name": p.Definition.Name, "inst": p.IsInstance, "formula": p.Formula, "reporting": p.IsReporting})
+        cur = fm.CurrentType
+        tp = None
+        for p in fm.Parameters:
+            if p.Definition.Name == u"Толщина стекла":
+                tp = round(cur.AsDouble(p) * FT, 2)
+        out.append({"family": name, "current_type": cur.Name, "glass_thk": tp, "ref_planes": rps, "forms": forms, "dims": dims, "params": params})
+    finally:
+        fdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": "read-only", "families": out}

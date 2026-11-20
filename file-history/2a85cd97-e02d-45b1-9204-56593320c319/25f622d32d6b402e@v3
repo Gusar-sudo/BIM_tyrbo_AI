@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+# Чтение: независимый пересчёт стекла М2/М3 по экземплярам панелей —
+# площадь = FT_Стекло_Ширина × FT_Стекло_Высота × слоёв (FT_Стекло_Уплотнитель_Линий), по толщине («Толщина стекла»).
+# ГКЛ (слоёв 0) и М1 (размер стекла 0) не попадают. Аргументы: нет. Вывод: по толщине — листов, м².
+import collections
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT2M2 = 0.09290304
+agg = collections.OrderedDict()
+skipped = collections.Counter()
+for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    t = doc.GetElement(p.GetTypeId())
+    if not getattr(t, "FamilyName", "").startswith("BIMLIB"):
+        continue
+    w = p.LookupParameter(u"FT_Стекло_Ширина"); h = p.LookupParameter(u"FT_Стекло_Высота")
+    n = t.LookupParameter(u"FT_Стекло_Уплотнитель_Линий"); th = t.LookupParameter(u"Толщина стекла")
+    if not (w and h and n and th):
+        skipped[u"нет параметров"] += 1; continue
+    pw = p.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH)
+    if pw is not None and pw.AsDouble() <= 0:
+        # неактивная панель (размер ячейки 0, напр. ячейку занимает дверь): Revit не включает её в спецификации
+        skipped[u"панель нулевого размера"] += 1; continue
+    layers = int(round(n.AsDouble())) if n.StorageType == StorageType.Double else n.AsInteger()
+    a = w.AsDouble() * h.AsDouble() * FT2M2
+    if layers <= 0 or a <= 0:
+        skipped[u"ГКЛ/М1/пусто"] += 1; continue
+    k = u"Стекло %g мм" % round(th.AsDouble() * 304.8, 1)
+    r = agg.setdefault(k, {"листов": 0, "м2": 0.0, "панелей": 0})
+    r["панелей"] += 1; r["листов"] += layers; r["м2"] += a * layers
+rows = [{"наименование": k, "панелей": v["панелей"], "листов": v["листов"], "м2": round(v["м2"], 2)} for k, v in sorted(agg.items())]
+__output__ = {"status": "completed_unverified", "doc": doc.Title,
+              "summary": u"%s: стекло итого %.2f м², листов %d" % (doc.Title, sum(r["м2"] for r in rows), sum(r["листов"] for r in rows)),
+              "rows": rows, "skipped": dict(skipped)}

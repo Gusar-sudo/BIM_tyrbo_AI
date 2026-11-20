@@ -1,0 +1,20 @@
+import json, sys
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+plt.rcParams["font.family"] = "Segoe UI"
+D = json.load(open(sys.argv[1], encoding="utf-8"))
+ns = [n for n in sorted(D.keys()) if "левый" in n]
+fig, axs = plt.subplots(2, 2, figsize=(16, 16))
+for row, n in enumerate(ns):
+    r = D[n]
+    for col, mir in enumerate((False, True)):
+        ax = axs[row][col]
+        for s in r["nested"]: ax.plot([s[0], s[2]], [s[1], s[3]], color="#8a8f98", lw=0.8)
+        for s in r["own"]:
+            k = -1 if mir else 1
+            ax.plot([s[0], s[2]], [k * s[1], k * s[3]], color="#d23c3c", lw=1.6)
+        ax.set_xlim(-70, 70); ax.set_ylim(-70, 70); ax.set_aspect("equal"); ax.grid(lw=0.25, color="#e5e7eb")
+        ax.axhline(0, lw=0.4, color="k"); ax.axvline(0, lw=0.4, color="k")
+        ax.set_title(n + (u"\n3D-тело отзеркалено по Y (предложение)" if mir else u"\nсейчас: 3D-тело (красное) против графики узла (серое)"), fontsize=11, loc="left")
+fig.suptitle(u"М3 FSC08 угловой левый: 3D-тело развёрнуто не в ту сторону; стена B по графике — вверх (+Y)", fontsize=15, x=0.03, ha="left")
+fig.savefig(sys.argv[2], dpi=120, bbox_inches="tight")

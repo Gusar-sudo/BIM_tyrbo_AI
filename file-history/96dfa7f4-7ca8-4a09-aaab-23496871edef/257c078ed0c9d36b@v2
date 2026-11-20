@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+# Только чтение: состав семейства (по id типоразмера): классы элементов, вложенные семейства, импорт. Без сохранения.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+out = []
+for sid in args["symbol_ids"]:
+    sym = doc.GetElement(ElementId(int(sid)))
+    fdoc = doc.EditFamily(sym.Family)
+    try:
+        cls = {}
+        nested = []
+        for e in FilteredElementCollector(fdoc).WhereElementIsNotElementType():
+            n = e.GetType().Name
+            cls[n] = cls.get(n, 0) + 1
+            if isinstance(e, FamilyInstance):
+                lp = e.Location.Point if hasattr(e.Location, "Point") else None
+                nested.append({"id": int(e.Id.Value), "family": e.Symbol.Family.Name, "type": e.Name,
+                               "pt": [round(lp.X * FT, 2), round(lp.Y * FT, 2)] if lp else None,
+                               "mirrored": e.Mirrored, "facing": [round(e.FacingOrientation.X, 3), round(e.FacingOrientation.Y, 3)] if e.FacingOrientation else None})
+            if isinstance(e, ImportInstance):
+                nested.append({"id": int(e.Id.Value), "import": True})
+        keep = {k: v for k, v in cls.items() if k not in ("Element",)}
+        out.append({"symbol_id": int(sid), "family": sym.Family.Name, "category": fdoc.OwnerFamily.FamilyCategory.Name,
+                    "classes": keep, "nested": nested[:20]})
+    finally:
+        fdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": "read-only", "families": out}

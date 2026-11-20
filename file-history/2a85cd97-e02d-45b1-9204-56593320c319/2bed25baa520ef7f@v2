@@ -1,0 +1,19 @@
+import json, sys
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+sys.stdout.reconfigure(encoding="utf-8")
+D = json.load(open(sys.argv[1], encoding="utf-8"))
+names = list(D.keys())
+fig, axs = plt.subplots(2, 3, figsize=(18, 10))
+for ax, n in zip(axs.ravel(), sorted(names)):
+    r = D[n]
+    if not isinstance(r, dict): ax.set_title(n + ": " + str(r)); continue
+    for s in r["nested"]: ax.plot([s[0], s[2]], [s[1], s[3]], color="0.5", lw=0.6)
+    for s in r["own"]: ax.plot([s[0], s[2]], [s[1], s[3]], color="red", lw=1.2)
+    face = -35.7 if n.startswith("М3") else -30.6
+    for t, c in ((5, "tab:blue"), (10, "tab:cyan")):
+        ax.axhspan(face, face + t, color=c, alpha=0.15)
+    ax.set_xlim(-5, 52); ax.set_ylim(-52, -8); ax.set_aspect("equal"); ax.grid(lw=0.2)
+    ax.set_xticks(range(0, 52, 2)); ax.set_yticks(range(-52, -8, 2)); ax.tick_params(labelsize=5)
+    ax.set_title(n, fontsize=9)
+fig.savefig(sys.argv[2], dpi=170, bbox_inches="tight")

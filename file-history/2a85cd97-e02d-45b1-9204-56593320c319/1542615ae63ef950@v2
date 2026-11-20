@@ -1,0 +1,18 @@
+import json, sys
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+D = json.load(open(sys.argv[1], encoding="utf-8"))
+fig, axs = plt.subplots(2, 2, figsize=(18, 18))
+for row, n in enumerate(sorted(D.keys())):
+    r = D[n]
+    for col, key in enumerate(("own", "nested")):
+        ax = axs[row][col]
+        for s in r[key]:
+            if s[0] >= -0.01 and s[2] >= -0.01:
+                ax.plot([s[0], s[2]], [s[1], s[3]], color="tab:blue", lw=0.9)
+            if s[0] <= 0.01 and s[2] <= 0.01:
+                ax.plot([-s[0], -s[2]], [s[1], s[3]], color="tab:red", lw=0.9, ls="--")
+        ax.set_xlim(0, 55); ax.set_ylim(-40, 40); ax.set_aspect("equal"); ax.grid(lw=0.2)
+        ax.set_xticks(range(0, 56, 2)); ax.set_yticks(range(-40, 41, 2)); ax.tick_params(labelsize=5)
+        ax.set_title(n + " · " + key + " · синее +X, красное −X зеркально", fontsize=9)
+fig.savefig(sys.argv[2], dpi=140, bbox_inches="tight")

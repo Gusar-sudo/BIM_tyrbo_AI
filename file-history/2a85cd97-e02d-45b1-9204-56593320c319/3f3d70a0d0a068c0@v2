@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+# Чтение: что стоит в стенах с панелями нулевого размера (двери-панели)
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+walls = {}
+for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    w = p.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH)
+    if w is not None and w.AsDouble() <= 0 and p.Host is not None:
+        walls.setdefault(p.Host.Id.Value, []).append(p.Name)
+rows = []
+for wid, pn in walls.items():
+    w = doc.GetElement(ElementId(wid))
+    doors = [d.Symbol.FamilyName + u" : " + d.Name for d in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Doors).WhereElementIsNotElementType()
+             if d.Host is not None and d.Host.Id.Value == wid]
+    rows.append({"wall": w.Name, "zero_panels": len(pn), "doors": doors})
+__output__ = {"status": "completed_unverified", "summary": u"стен с нулевыми панелями: %d" % len(rows), "rows": rows}

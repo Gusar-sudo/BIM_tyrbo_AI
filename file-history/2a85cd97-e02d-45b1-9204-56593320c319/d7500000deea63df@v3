@@ -1,0 +1,167 @@
+# -*- coding: utf-8 -*-
+# Контур 3D-тела профиля из заливки графики узла (fill_parity.py): упрощение (Дуглас–Пекер), привязка вершин
+# к точным вершинам линий узла, удаление отрезков короче допуска Revit, проверка пересечений контуров.
+# py -P -E body_loops_from_fill.py <args.json>: fills_json, curves_json, out_json, eps_mm=0.04, snap_mm=0.12,
+#   min_seg_mm=0.85, min_hole_mm2=0.3, preview_png?
+import json, io, sys, math
+a = json.load(io.open(sys.argv[1], encoding="utf-8-sig"))
+R = json.load(io.open(a["fills_json"], encoding="utf-8"))["regions"]
+C = json.load(io.open(a["curves_json"], encoding="utf-8"))
+EPS = float(a.get("eps_mm", 0.04)); SNAP = float(a.get("snap_mm", 0.12)); MINS = float(a.get("min_seg_mm", 0.85))
+MINH = float(a.get("min_hole_mm2", 0.3))
+if a.get("union", True):
+    # детали касаются друг друга (нащельник упирается в стойку) — для тела объединить в одно сечение растром
+    import numpy as np, contourpy
+    from PIL import Image, ImageDraw
+    PX = float(a.get("px_mm", 20))
+    xs = [p[0] for r in R for p in r["outer"]]; ys = [p[1] for r in R for p in r["outer"]]
+    X0, Y0 = min(xs) - 1, min(ys) - 1; W = int((max(xs) - X0 + 1) * PX) + 1; H = int((max(ys) - Y0 + 1) * PX) + 1
+    tp = lambda p: ((p[0] - X0) * PX, (H - 1) - (p[1] - Y0) * PX)
+    M = np.zeros((H, W), bool)
+    for r in R:
+        im = Image.new("1", (W, H), 0); dr = ImageDraw.Draw(im)
+        dr.polygon([tp(p) for p in r["outer"]], fill=1)
+        for h in r["holes"]:
+            dr.polygon([tp(p) for p in h], fill=0)
+        M |= np.asarray(im, bool)
+    z = np.pad(M.astype(float), 1)
+    gen = contourpy.contour_generator(z=z, fill_type=contourpy.FillType.OuterOffset)
+    pts, offs = gen.filled(0.5, 1.5); R = []
+    conv = lambda l: [[X0 + (c - 1) / PX, Y0 + ((H - 1) - (rr - 1)) / PX] for c, rr in l]
+    for P, O in zip(pts, offs):
+        lp = [conv(P[O[i]:O[i + 1]]) for i in range(len(O) - 1)]
+        R.append({"outer": lp[0], "holes": lp[1:]})
+V = []
+for g in C["groups"]:
+    for c in g["curves"]:
+        if c[0] in ("L", "A"):
+            V += [(c[1], c[2]), (c[-2], c[-1])]
+        elif c[0] == "P" and c[1]:
+            V += [tuple(c[1][0]), tuple(c[1][-1])]
+V = list(set((round(x, 4), round(y, 4)) for x, y in V))
+# отрезки линий узла (дуги — ломаной) для привязки «на линию»
+sys.path.insert(0, __import__("os").path.dirname(__file__))
+SEG = []
+for g in C["groups"]:
+    for c in g["curves"]:
+        if c[0] == "L":
+            SEG.append(((c[1], c[2]), (c[3], c[4])))
+        elif c[0] == "P":
+            P = [tuple(p) for p in c[1]]; SEG += list(zip(P[:-1], P[1:]))
+        elif c[0] == "C":
+            n = max(16, int(2 * math.pi * c[3] / 0.2))
+            P = [(c[1] + c[3] * math.cos(2 * math.pi * i / n), c[2] + c[3] * math.sin(2 * math.pi * i / n)) for i in range(n + 1)]
+            SEG += list(zip(P[:-1], P[1:]))
+        else:
+            ax_, ay_, mx_, my_, bx_, by_ = c[1:7]
+            dd = 2 * (ax_ * (my_ - by_) + mx_ * (by_ - ay_) + bx_ * (ay_ - my_))
+            if abs(dd) < 1e-12:
+                SEG.append(((ax_, ay_), (bx_, by_))); continue
+            ux = ((ax_**2 + ay_**2) * (my_ - by_) + (mx_**2 + my_**2) * (by_ - ay_) + (bx_**2 + by_**2) * (ay_ - my_)) / dd
+            uy = ((ax_**2 + ay_**2) * (bx_ - mx_) + (mx_**2 + my_**2) * (ax_ - bx_) + (bx_**2 + by_**2) * (mx_ - ax_)) / dd
+            rr = math.hypot(ax_ - ux, ay_ - uy); t0 = math.atan2(ay_ - uy, ax_ - ux)
+            nm = lambda t: (t - t0) % (2 * math.pi)
+            sw = nm(math.atan2(by_ - uy, bx_ - ux))
+            if nm(math.atan2(my_ - uy, mx_ - ux)) > sw: sw -= 2 * math.pi
+            n = max(4, int(abs(sw) * rr / 0.2)); P = [(ux + rr * math.cos(t0 + sw * i / n), uy + rr * math.sin(t0 + sw * i / n)) for i in range(n + 1)]
+            SEG += list(zip(P[:-1], P[1:]))
+LINE = float(a.get("line_snap_mm", 0.3))
+
+
+def on_line(p):
+    best, bd = None, LINE
+    for (ax_, ay_), (bx_, by_) in SEG:
+        dx, dy = bx_ - ax_, by_ - ay_; L2 = dx * dx + dy * dy
+        t = 0 if L2 < 1e-12 else max(0, min(1, ((p[0] - ax_) * dx + (p[1] - ay_) * dy) / L2))
+        q = (ax_ + t * dx, ay_ + t * dy); d = math.hypot(q[0] - p[0], q[1] - p[1])
+        if d < bd: best, bd = q, d
+    return best
+
+
+def dp(pts, eps):
+    if len(pts) < 3: return pts
+    ax, ay = pts[0]; bx, by = pts[-1]; L = math.hypot(bx - ax, by - ay) or 1e-12
+    dmax, k = 0, 0
+    for i in range(1, len(pts) - 1):
+        px, py = pts[i]
+        d = abs((bx - ax) * (ay - py) - (ax - px) * (by - ay)) / L
+        if d > dmax: dmax, k = d, i
+    if dmax > eps:
+        return dp(pts[:k + 1], eps)[:-1] + dp(pts[k:], eps)
+    return [pts[0], pts[-1]]
+
+
+def area(l):
+    return 0.5 * sum(l[i][0] * l[(i + 1) % len(l)][1] - l[(i + 1) % len(l)][0] * l[i][1] for i in range(len(l)))
+
+
+def simplify(loop):
+    pts = [tuple(p) for p in loop]
+    if pts[0] == pts[-1]: pts = pts[:-1]
+    # замкнутый DP: разрезать в двух дальних точках
+    i0 = 0; i1 = max(range(len(pts)), key=lambda i: math.hypot(pts[i][0] - pts[0][0], pts[i][1] - pts[0][1]))
+    s = dp(pts[i0:i1 + 1], EPS)[:-1] + dp(pts[i1:] + [pts[0]], EPS)[:-1]
+    out, snapped = [], []
+    for p in s:
+        best = min(V, key=lambda v: (v[0] - p[0]) ** 2 + (v[1] - p[1]) ** 2)
+        d = math.hypot(best[0] - p[0], best[1] - p[1])
+        if d <= SNAP:
+            out.append(best); snapped.append(True); continue
+        q = on_line(p)
+        out.append((round(q[0], 4), round(q[1], 4)) if q else (round(p[0], 4), round(p[1], 4))); snapped.append(False)
+    # короткие отрезки: убрать вершину (не привязанную, если можно)
+    changed = True
+    while changed and len(out) > 3:
+        changed = False
+        for i in range(len(out)):
+            j = (i + 1) % len(out)
+            if math.hypot(out[j][0] - out[i][0], out[j][1] - out[i][1]) < MINS:
+                k = i if not snapped[i] and snapped[j] else j
+                del out[k]; del snapped[k]; changed = True; break
+    return out
+
+
+def segs(l):
+    return [(l[i], l[(i + 1) % len(l)]) for i in range(len(l))]
+
+
+def cross(p, q, r, s):
+    def o(a, b, c): return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+    if p in (r, s) or q in (r, s): return False
+    d1, d2, d3, d4 = o(r, s, p), o(r, s, q), o(p, q, r), o(p, q, s)
+    return (d1 * d2 < 0) and (d3 * d4 < 0)
+
+
+loops = []
+for r in R:
+    o = simplify(r["outer"])
+    if len(o) >= 3: loops.append({"kind": "outer", "pts": o})
+    for h in r["holes"]:
+        if abs(area(h)) < MINH: continue
+        hh = simplify(h)
+        tiny = any(math.hypot(q[0] - p[0], q[1] - p[1]) < MINS for p, q in zip(hh, hh[1:] + hh[:1]))
+        if len(hh) >= 3 and abs(area(hh)) >= MINH and not tiny: loops.append({"kind": "hole", "pts": hh})
+bad = []
+S = [(i, s) for i, l in enumerate(loops) for s in segs(l["pts"])]
+for x in range(len(S)):
+    for y in range(x + 1, len(S)):
+        if cross(S[x][1][0], S[x][1][1], S[y][1][0], S[y][1][1]):
+            bad.append([S[x][0], S[y][0], [list(S[x][1][0]), list(S[y][1][0])]])
+short = [[i, list(p)] for i, l in enumerate(loops) for p, q in segs(l["pts"]) if math.hypot(q[0] - p[0], q[1] - p[1]) < MINS]
+rep = {"loops": len(loops), "outer": sum(1 for l in loops if l["kind"] == "outer"), "holes": sum(1 for l in loops if l["kind"] == "hole"),
+       "segments": len(S), "intersections": len(bad), "short_left": len(short), "bad": bad[:10]}
+io.open(a["out_json"], "w", encoding="utf-8").write(json.dumps({"loops": loops, "report": rep}, ensure_ascii=False))
+if a.get("preview_png"):
+    import matplotlib; matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(figsize=(8, 8))
+    for (p, q) in SEG:
+        ax.plot([p[0], q[0]], [p[1], q[1]], color="#c0c6ce", lw=0.6)
+    for l in loops:
+        p = l["pts"] + [l["pts"][0]]
+        ax.plot([q[0] for q in p], [q[1] for q in p], color="#c0392b" if l["kind"] == "outer" else "#2563eb", lw=0.9)
+    for b in bad:
+        ax.plot([b[2][0][0]], [b[2][0][1]], "o", color="#f59e0b", ms=8)
+    ax.set_aspect("equal"); ax.axis("off")
+    fig.savefig(a["preview_png"], dpi=200, bbox_inches="tight", facecolor="white")
+print(json.dumps(rep, ensure_ascii=False))

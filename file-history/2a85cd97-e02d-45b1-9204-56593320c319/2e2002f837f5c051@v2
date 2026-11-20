@@ -1,0 +1,27 @@
+# -*- coding: utf-8 -*-
+# Только чтение: типы цельностеклянных панелей (толщина, добавка, выступ, число экземпляров) и межстекольные типы импостов.
+import json
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+cnt = {}
+for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    cnt[p.GetTypeId().Value] = cnt.get(p.GetTypeId().Value, 0) + 1
+rows = []
+for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels):
+    if u"цельностекл" not in s.Name.lower():
+        continue
+    g = lambda n: (round(s.LookupParameter(n).AsDouble() * FT, 2) if s.LookupParameter(n) is not None and s.LookupParameter(n).StorageType == StorageType.Double else None)
+    rows.append([s.Family.Name.replace(u"BIMLIB_ПанельВитража_", u"").replace(u"_ФристайлТехнолоджи", u""), s.Name, g(u"Толщина стекла"), g(u"FT_Стекло_Добавка"), g(u"Выступ сбоку"), cnt.get(s.Id.Value, 0)])
+mts = []
+for m in FilteredElementCollector(doc).OfClass(MullionType):
+    n = Element.Name.GetValue(m)
+    if u"межстекол" in n:
+        mts.append([n, round(m.LookupParameter(u"Смещение").AsDouble() * FT, 2)])
+wts = []
+for w in FilteredElementCollector(doc).OfClass(WallType):
+    if u"Цельностекл" in w.Name:
+        ap = w.get_Parameter(BuiltInParameter.AUTO_PANEL_WALL)
+        pe = doc.GetElement(ap.AsElementId()) if ap else None
+        wts.append([w.Name, Element.Name.GetValue(pe) if pe else None])
+__output__ = {"status": "completed_unverified", "summary": u"панелей цс %d, межстекольных %d, стен цс %d (только чтение)" % (len(rows), len(mts), len(wts)), "panels": sorted(rows), "mullions": mts, "walls": wts}

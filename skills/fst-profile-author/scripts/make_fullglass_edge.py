@@ -1,0 +1,153 @@
+# -*- coding: utf-8 -*-
+# Краевой профиль для ЦЕЛЬНОСТЕКЛЯННОЙ стены: копия бокового профиля, у которой собственный контур (3D-тело)
+# срезан со стороны стекла на глубину захода стекла в паз (entry_mm, по умолчанию 10.87 — как «Выступ сбоку»
+# обычной двухслойной панели). Цельностеклянная панель имеет «Выступ сбоку» = 0 (стыки стекло–стекло без стоек),
+# Revit обрезает панель по крайней точке контура импоста — после среза стекло доходит до того же места, что и в
+# обычной стене, и уплотнитель панели встаёт в паз. Вложенная графика узла («Элементы узлов») не меняется.
+# Сторона стекла: «Правый»/«Нижний» — максимальный x (стена — min x), «Левый»/«Верхний» — минимальный x.
+# Аргументы: profiles [{name, save_as, glass_side?: "max"|"min", entry_mm?}], out_dir, entry_mm (10.87)
+# Сохраняет КОПИИ .rfa в out_dir; проект не меняется.
+import json, os
+from Autodesk.Revit.DB import *
+from System.Collections.Generic import List
+args = json.loads(HORIZUN_ARGS_JSON)
+if args.get("args_file"):
+    import io
+    args = json.loads(io.open(args["args_file"], encoding="utf-8-sig").read())
+FT = 304.8
+OUT = args["out_dir"]
+if not os.path.isdir(OUT):
+    os.makedirs(OUT)
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+TOL = 1e-5
+
+
+def glass_side_of(name):
+    return "min" if (u"Левый" in name or u"Верхний" in name) else "max"
+
+
+def chain(segs):
+    """Отрезки -> замкнутые контуры (списки точек)."""
+    segs = list(segs); loops = []
+    while segs:
+        a, b = segs.pop(0); pts = [a, b]
+        grown = True
+        while grown and pts[-1].DistanceTo(pts[0]) > TOL:
+            grown = False
+            for i, (p, q) in enumerate(segs):
+                if p.DistanceTo(pts[-1]) < TOL:
+                    pts.append(q); segs.pop(i); grown = True; break
+                if q.DistanceTo(pts[-1]) < TOL:
+                    pts.append(p); segs.pop(i); grown = True; break
+        if pts[-1].DistanceTo(pts[0]) > TOL:
+            raise Exception(u"контур не замкнут")
+        loops.append(pts[:-1])
+    return loops
+
+
+def clip(poly, xc, keep_le):
+    """Sutherland–Hodgman по вертикали x = xc: оставить x <= xc (keep_le) или x >= xc."""
+    ins = (lambda p: p.X <= xc + TOL) if keep_le else (lambda p: p.X >= xc - TOL)
+    out = []
+    n = len(poly)
+    for i in range(n):
+        cur = poly[i]; prv = poly[i - 1]
+        if ins(cur):
+            if not ins(prv):
+                t = (xc - prv.X) / (cur.X - prv.X); out.append(XYZ(xc, prv.Y + t * (cur.Y - prv.Y), 0))
+            out.append(cur)
+        elif ins(prv):
+            t = (xc - prv.X) / (cur.X - prv.X); out.append(XYZ(xc, prv.Y + t * (cur.Y - prv.Y), 0))
+    # убрать повторы и точки на одной прямой
+    res = []
+    for p in out:
+        if not res or p.DistanceTo(res[-1]) > TOL:
+            res.append(p)
+    if len(res) > 1 and res[0].DistanceTo(res[-1]) < TOL:
+        res.pop()
+    k = 0
+    while k < len(res) and len(res) > 2:
+        a, b, c = res[k - 1], res[k], res[(k + 1) % len(res)]
+        if abs((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X)) < 1e-9:
+            res.pop(k)
+        else:
+            k += 1
+    return res
+
+
+res = []
+for p in args["profiles"]:
+    name = p["name"]; r = {"profile": name}
+    side = p.get("glass_side") or glass_side_of(name)
+    EN = float(p.get("entry_mm", args.get("entry_mm", 10.87))) / FT
+    pdoc = doc.EditFamily(fams[name]); t = None
+    try:
+        own = [ce for ce in FilteredElementCollector(pdoc).OfClass(CurveElement) if ce.GeometryCurve is not None]
+        if any(not isinstance(ce.GeometryCurve, Line) for ce in own):
+            raise Exception(u"в контуре есть не прямые — срез не поддержан")
+        segs = [(XYZ(ce.GeometryCurve.GetEndPoint(0).X, ce.GeometryCurve.GetEndPoint(0).Y, 0),
+                 XYZ(ce.GeometryCurve.GetEndPoint(1).X, ce.GeometryCurve.GetEndPoint(1).Y, 0)) for ce in own]
+        xs = [q.X for s in segs for q in s]
+        loops = chain(segs)
+        # внешний контур — с наибольшим габаритом; внутренние (пустоты, лента) режем на 0,3 мм раньше линии среза,
+        # иначе после среза они касаются внешнего контура по линии среза и профиль становится недопустимым
+        area = lambda lp: (max(p.X for p in lp) - min(p.X for p in lp)) * (max(p.Y for p in lp) - min(p.Y for p in lp))
+        outer = max(loops, key=area)
+        GAPI = 0.3 / FT
+        sides = ["max", "min"] if side == "both" else [side]   # both — стекло с двух сторон (стойка цс над проёмом)
+        new_loops = loops
+        for sd in sides:
+            xf_ = max(xs) if sd == "max" else min(xs)
+            xc_ = xf_ - EN if sd == "max" else xf_ + EN
+            new_loops = [l for l in (clip(lp, xc_ if lp is outer else (xc_ - GAPI if sd == "max" else xc_ + GAPI), sd == "max") for lp in new_loops) if len(l) >= 3]
+            outer = max(new_loops, key=area)
+        xf = max(xs) if sides[0] == "max" else min(xs)
+        xc = xf - EN if sides[0] == "max" else xf + EN
+        # слить точки ближе ShortCurveTolerance (срез может пройти рядом с вершиной контура)
+        SHORT = doc.Application.ShortCurveTolerance * 1.5
+        merged = []
+        for lp in new_loops:
+            q = []
+            for pt in lp:
+                if not q or pt.DistanceTo(q[-1]) > SHORT:
+                    q.append(pt)
+            while len(q) > 2 and q[0].DistanceTo(q[-1]) <= SHORT:
+                q.pop()
+            if len(q) >= 3:
+                merged.append(q)
+        new_loops = merged
+        r.update(glass_side=side, face_before_mm=round(xf * FT, 2), face_after_mm=round(xc * FT, 2),
+                 loops_before=len(loops), loops_after=len(new_loops), lines_before=len(own))
+        sp = own[0]
+        view = pdoc.GetElement(sp.OwnerViewId) if sp.OwnerViewId != ElementId.InvalidElementId else pdoc.ActiveView
+        t = Transaction(pdoc, u"FT: срез контура под цельностеклянное"); t.Start()
+        pdoc.Delete(List[ElementId]([ce.Id for ce in own]))
+        made = 0
+        for lp in new_loops:
+            for i in range(len(lp)):
+                ln = pdoc.FamilyCreate.NewDetailCurve(view, Line.CreateBound(lp[i], lp[(i + 1) % len(lp)]))
+                try:
+                    ln.LineStyle = sp.LineStyle
+                except Exception:
+                    pass
+                made += 1
+        r["commit"] = str(t.Commit()); t = None
+        own2 = [ce.GeometryCurve for ce in FilteredElementCollector(pdoc).OfClass(CurveElement) if ce.GeometryCurve is not None]
+        xs2 = [q.X * FT for c in own2 for q in (c.GetEndPoint(0), c.GetEndPoint(1))]
+        ys2 = [q.Y * FT for c in own2 for q in (c.GetEndPoint(0), c.GetEndPoint(1))]
+        r["lines_after"] = made
+        r["own_after_mm"] = [round(min(xs2), 2), round(max(xs2), 2), round(min(ys2), 2), round(max(ys2), 2)]
+        so = SaveAsOptions(); so.OverwriteExistingFile = True
+        out = os.path.join(OUT, p["save_as"] + ".rfa")
+        pdoc.SaveAs(out, so)
+        r["rfa"] = out
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        if t is not None and t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        pdoc.Close(False)
+    res.append(r)
+bad = [x for x in res if x.get("error")]
+__output__ = {"status": "completed_unverified" if not bad else "partial",
+              "summary": u"профилей %d, ошибок %d; копии в %s, проект не менялся" % (len(res), len(bad), OUT), "result": res}

@@ -1,0 +1,20 @@
+﻿# Сводная картинка: узел «Как в альбоме» (правый верхний квадрант листа) по всем листам стоек ГКЛ
+param([string]$Out)
+Add-Type -AssemblyName System.Drawing
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$dirs = @("$root\review\schemes_gkl_stands", "$root\review\schemes_gkl_stands_all")
+$files = foreach ($d in $dirs) { Get-ChildItem $d -Filter 'sheet_*.png' | Sort-Object Name }
+$W = 1000; $H = 620; $cols = 3
+$rows = [Math]::Ceiling($files.Count / $cols)
+$m = New-Object System.Drawing.Bitmap ($W * $cols), (($H + 40) * $rows)
+$g = [System.Drawing.Graphics]::FromImage($m); $g.Clear([System.Drawing.Color]::White)
+$font = New-Object System.Drawing.Font 'Arial', 18
+$i = 0
+foreach ($f in $files) {
+    $b = [System.Drawing.Image]::FromFile($f.FullName)
+    $x = ($i % $cols) * $W; $y = [Math]::Floor($i / $cols) * ($H + 40)
+    $g.DrawString(($f.BaseName -replace '^sheet_', '' -replace ' - Лист.*', ''), $font, [System.Drawing.Brushes]::Black, $x + 10, $y + 5)
+    $g.DrawImage($b, (New-Object System.Drawing.Rectangle $x, ($y + 40), $W, $H), (New-Object System.Drawing.Rectangle 2600, 430, 1100, 680), [System.Drawing.GraphicsUnit]::Pixel)
+    $b.Dispose(); $i++
+}
+$m.Save($Out); $Out

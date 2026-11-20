@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+# Только чтение: типы импостов со столбами (FSC17/18/22, FSC08/04) — имя, профиль, ширина у оси.
+import re
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+rows = []
+for m in FilteredElementCollector(doc).OfClass(MullionType):
+    pe = doc.GetElement(m.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId())
+    fn = pe.Family.Name if pe is not None and hasattr(pe, "Family") else u""
+    mm = re.search(u"Профиль_(М\\d)_(FSC\\d+К?)_([^_]+)", fn)
+    if not mm or mm.group(2) not in (u"FSC17", u"FSC18", u"FSC22", u"FSC08", u"FSC04"):
+        continue
+    rows.append([mm.group(1), mm.group(2), Element.Name.GetValue(m), mm.group(3)])
+rows.sort()
+__output__ = {"status": "completed_unverified", "summary": u"типов столбов %d (только чтение)" % len(rows), "rows": rows}

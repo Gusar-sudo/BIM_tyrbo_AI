@@ -1,0 +1,38 @@
+<title>Углы столбов FSC18 и FSC05</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: одна колонка листов-схем, переключатель столба и остекления сверху */
+:root{--bg:#f6f7f6;--fg:#1d2321;--muted:#5d6763;--line:#d5dbd8;--accent:#1f6b5c;--sheet:#ffffff;--font:"IBM Plex Sans",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151918;--fg:#e6ebe9;--muted:#9aa5a1;--line:#2f3734;--accent:#6fc2ae;--sheet:#ffffff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151918;--fg:#e6ebe9;--muted:#9aa5a1;--line:#2f3734;--accent:#6fc2ae;--sheet:#ffffff;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:22px;font-weight:600;margin:0 0 6px;text-wrap:balance}
+p.lead{color:var(--muted);margin:0 0 18px;max-width:65ch}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.tabs button{font:inherit;font-size:14px;padding:7px 12px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--fg);cursor:pointer}
+.tabs button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+figure{margin:0;background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:8px}
+figure img{display:block;width:100%;height:auto}
+figcaption{color:var(--muted);font-size:13px;margin-top:8px}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap">
+<div class="wrap">
+  <h1>Углы столбов FSC18 и FSC05</h1>
+  <p class="lead">Версия 2 после замечаний: стена B поставлена по центру круга столба, профили 135° пересобраны без старого нарисованного уплотнителя. Проба в библиотеке, всё откатано. На каждом листе сверху вниз: 90°, 135°, 180°, 225°, 270°; слева — левый тип, справа — правый. Все 36 узлов: стекло в рамке, уплотнитель в пазу, предупреждений Revit нет.</p>
+  <div class="tabs" role="group" aria-label="Столб и остекление">
+    <button id="t1" data-img="m2-fsc18-1.jpg" data-cap="М2 FSC18, однослойное остекление" aria-pressed="true">М2 FSC18 · 1сл</button>
+    <button id="t2" data-img="m2-fsc18-2.jpg" data-cap="М2 FSC18, двухслойное остекление" aria-pressed="false">М2 FSC18 · 2сл</button>
+    <button id="t3" data-img="m3-fsc05-1.jpg" data-cap="М3 FSC05, однослойное остекление" aria-pressed="false">М3 FSC05 · 1сл</button>
+    <button id="t4" data-img="m3-fsc05-2.jpg" data-cap="М3 FSC05, двухслойное остекление" aria-pressed="false">М3 FSC05 · 2сл</button>
+  </div>
+  <figure>
+    <img id="sheet" src="m2-fsc18-1.jpg" alt="Планы узлов: М2 FSC18, однослойное остекление, углы 90, 135, 180, 225, 270">
+    <figcaption id="cap">М2 FSC18, однослойное остекление</figcaption>
+  </figure>
+</div>
+<script>
+const btns=[...document.querySelectorAll('.tabs button')],img=document.getElementById('sheet'),cap=document.getElementById('cap');
+btns.forEach(b=>b.addEventListener('click',()=>{btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));img.src=b.dataset.img;img.alt='Планы узлов: '+b.dataset.cap+', углы 90, 135, 180, 225, 270';cap.textContent=b.dataset.cap;}));
+</script>

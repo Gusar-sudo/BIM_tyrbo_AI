@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+import json, sys
+S = json.load(open(r"C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\silhouettes_all.json", encoding="utf-8"))
+def key(n):
+    return [k for k in S if n in k][0]
+def pts(k):
+    out = set()
+    for c in S[k]["curves"]:
+        for p in c["p"]:
+            out.add((round(p[0], 1), round(p[1], 1)))
+    return out
+for sysn, st in (("М3", "FSC01"), ("М2", "FSC21"), ("М2", "FSC139"), ("М2", "FSC22"), ("М3", "FSC111"), ("М3", "FSC09")):
+    try:
+        c = key(u"%s_%s_ЦентральныйДвухслойный" % (sysn, st))
+        b = key(u"%s_%s_БоковойДвухслойныйПравый_" % (sysn, st))
+    except IndexError:
+        print(sysn, st, "нет"); continue
+    pc, pb = pts(c), pts(b)
+    xs_c = [p[0] for p in pc]; xs_b = [p[0] for p in pb]
+    only_c = sorted(pc - pb); only_b = sorted(pb - pc)
+    def rng(ps):
+        if not ps: return "-"
+        return "x[%.1f..%.1f] y[%.1f..%.1f] n=%d" % (min(p[0] for p in ps), max(p[0] for p in ps), min(p[1] for p in ps), max(p[1] for p in ps), len(ps))
+    print(sysn, st, "центр x[%.1f..%.1f]" % (min(xs_c), max(xs_c)), "боковой правый x[%.1f..%.1f]" % (min(xs_b), max(xs_b)))
+    print("   только в центральном:", rng(only_c))
+    print("   только в боковом:   ", rng(only_b))

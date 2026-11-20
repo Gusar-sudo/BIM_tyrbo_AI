@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+# Подготовка (include): PREP(doc, pa) — загрузить цельностеклянные краевые профили из pa["rfa_dir"],
+# создать типы импостов (копия base_type, профиль = новое семейство) и назначить их в края типов стен.
+# pa: rfa_dir, edges [{wall_type, param ("Граница 1 типа"|"Граница 2 типа"), base_type, new_type, family}]
+# Ключи ответа совместимы с apply_wall_band.py: loaded, load_fail, swapped, swap_fail.
+# Вызывающий скрипт сам открывает и откатывает/фиксирует группу транзакций.
+import os, clr
+from Autodesk.Revit.DB import *
+
+
+class _FgLO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True
+        return True
+
+    def OnSharedFamilyFound(self, a, b, src, c):
+        src.Value = FamilySource.Family; c.Value = True
+        return True
+
+
+def PREP(doc, pa=None):
+    pa = pa or globals().get("PREP_ARGS") or {}
+    out = {"loaded": 0, "load_fail": [], "swapped": [], "swap_fail": [], "types_created": []}
+    t = Transaction(doc, u"FT: цельностеклянные края — загрузка профилей"); t.Start()
+    for f in sorted(os.listdir(pa["rfa_dir"])):
+        if f.lower().endswith(".rfa") and not __import__("re").search(r"\.\d{4}\.rfa$", f.lower()):   # резервные копии Revit не грузить
+            if doc.LoadFamily(os.path.join(pa["rfa_dir"], f), _FgLO(), clr.Reference[Family]()):
+                out["loaded"] += 1
+            else:
+                out["load_fail"].append(f)
+    t.Commit()
+    fams = dict((fa.Name, fa) for fa in FilteredElementCollector(doc).OfClass(Family))
+    mts = dict((Element.Name.GetValue(m), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+    wts = dict((Element.Name.GetValue(w), w) for w in FilteredElementCollector(doc).OfClass(WallType))
+    t = Transaction(doc, u"FT: цельностеклянные края — типы и назначение"); t.Start()
+    for e in pa["edges"]:
+        try:
+            m = mts.get(e["new_type"])
+            if m is None:
+                m = mts[e["base_type"]].Duplicate(e["new_type"]); mts[e["new_type"]] = m
+                out["types_created"].append([e["new_type"], int(m.Id.Value)])
+            fa = fams.get(e["family"])
+            if fa is None:
+                raise Exception(u"нет семейства " + e["family"])
+            sid = list(fa.GetFamilySymbolIds())[0]
+            if not m.get_Parameter(BuiltInParameter.MULLION_PROFILE).Set(sid):
+                raise Exception(u"профиль не назначен")
+            wp = wts[e["wall_type"]].LookupParameter(e["param"])
+            if wp is None or not wp.Set(m.Id):
+                raise Exception(u"край стены не назначен")
+            out["swapped"].append([e["wall_type"], e["param"], e["new_type"]])
+        except Exception as ex:
+            out["swap_fail"].append([e.get("wall_type"), e.get("param"), str(ex)])
+    t.Commit()
+    return out

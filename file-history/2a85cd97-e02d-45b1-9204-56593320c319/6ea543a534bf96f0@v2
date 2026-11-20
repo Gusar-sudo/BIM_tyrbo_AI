@@ -1,0 +1,19 @@
+# -*- coding: utf-8 -*-
+# Чтение: части (Parts), прочие признаки у «потерянных» и «нормальной» панели
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+res = {}
+for i in (3395048, 3434964, 3368025, 3426336):
+    p = doc.GetElement(ElementId(i))
+    d = {"has_parts": PartUtils.HasAssociatedParts(doc, p.Id), "host_parts": PartUtils.HasAssociatedParts(doc, p.Host.Id),
+         "pinned": p.Pinned, "mirrored": getattr(p, "Mirrored", None), "super": p.SuperComponent.Id.Value if p.SuperComponent else None,
+         "sub": len(p.GetSubComponentIds()), "symbol": p.Symbol.Id.Value}
+    try:
+        d["excluded"] = [n for n in (u"Исключено", u"Excluded") if p.LookupParameter(n)]
+    except Exception:
+        pass
+    bb = p.get_BoundingBox(None)
+    d["bb_z"] = [round(bb.Min.Z*304.8), round(bb.Max.Z*304.8)] if bb else None
+    res[str(i)] = d
+res["parts_total"] = FilteredElementCollector(doc).OfClass(Part).GetElementCount()
+__output__ = {"status": "completed_unverified", "summary": "probe parts", "res": res}

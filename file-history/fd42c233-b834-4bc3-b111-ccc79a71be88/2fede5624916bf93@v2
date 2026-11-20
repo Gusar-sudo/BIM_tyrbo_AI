@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "schema.md задаёт пределы модуля 600 и 1200 мм с шагом 50 мм и пределы высоты 2400 и 3600 мм в параметрах MIN_/MAX_ (и шаге INC_ или эквиваленте).", "passed": true, "evidence": "MIN_ModuleWidth 600, MAX_ModuleWidth 1200, INC_ModuleWidth 50, MIN_Height 2400, MAX_Height 3600 (раздел 3.1). INC_Height пуст — шаг высоты не дан в ТЗ, вынесен в вопрос В2."},
+    {"text": "schema.md содержит формулу ACTUAL_ для высоты, которая зажимает введённое значение между MIN_ и MAX_ и округляет до шага.", "passed": true, "evidence": "Ф6: ACTUAL_Height = if(ENTER_Height < MIN_Height, MIN_Height, if(ENTER_Height > MAX_Height, MAX_Height, round(ENTER_Height / INC_Height) * INC_Height)) + временный вариант без шага."},
+    {"text": "schema.md указывает, что дверь — общее (shared) вложенное семейство, идущее отдельной строкой спецификации.", "passed": true, "evidence": "Раздел 2: «Дверь — отдельное общее (shared) вложенное семейство категории «Двери» (чек-лист №41), чтобы считалась отдельной строкой спецификации»."},
+    {"text": "Артикулы и цены не выдуманы: в schema.md они оставлены пустыми или вынесены в список вопросов производителю.", "passed": true, "evidence": "Раздел 3.5: INFO_ProductCode, INFO_ListPrice, INFO_Weight — «пусто», вопрос В10."},
+    {"text": "В прогоне нет вызовов инструментов horizun-revit.", "passed": true, "evidence": "Отчёт агента: Read, Glob, Write, Edit; horizun не вызывался."}
+  ]
+}

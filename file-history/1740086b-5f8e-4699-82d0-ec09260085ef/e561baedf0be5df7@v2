@@ -1,0 +1,20 @@
+<section id="fatigue" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<h2 style="font-size:72px;font-weight:800;line-height:1.1;color:#2B2B2E">Что копится за проектами</h2>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFDF9;padding:40px;border-radius:24px;border-top:8px solid #3A8F9C">
+<h3 style="font-size:40px;font-weight:800;line-height:1.2">Жёсткий дедлайн</h3>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFDF9;padding:40px;border-radius:24px;border-top:8px solid #E0A43A">
+<h3 style="font-size:40px;font-weight:800;line-height:1.2">Конфликт с подрядчиком</h3>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFDF9;padding:40px;border-radius:24px;border-top:8px solid #C9622A">
+<h3 style="font-size:40px;font-weight:800;line-height:1.2">Клиент всё развернул</h3>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFDF9;padding:40px;border-radius:24px;border-top:8px solid #7E4F9A">
+<h3 style="font-size:40px;font-weight:800;line-height:1.2">Страх подвести</h3>
+</div>
+</div>
+<div style="flex:1"></div>
+<p style="font-size:44px;line-height:1.35;color:#2B2B2E">Проект сдан, а мозг продолжает его прокручивать. <span style="color:#C9622A">Силы уходят на охрану старой раны, а не на идеи.</span></p>
+<aside>«За усталостью часто стоит не нагрузка, а то, что накопилось. Неудачный проект, жёсткий дедлайн, конфликт с подрядчиком, клиент, который всё развернул. Эпизод вроде закончился, но что-то внутри его прокручивает. И вы начинаете выбирать подрядчика не потому, что он лучший, а потому, что с ним „не так страшно“. Вдохновение пропадает не потому, что нет идей: часть сил занята охраной старой раны».</aside>
+</section>

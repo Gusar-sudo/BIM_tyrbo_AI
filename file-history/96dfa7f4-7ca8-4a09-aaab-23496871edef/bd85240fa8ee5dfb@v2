@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+# Опыт без сохранения: развернуть стену (Flip) в транзакции, замерить положение стекла, уплотнителя и импостов
+# по ФИКСИРОВАННОЙ оси (Orientation до разворота) до и после, затем откатить (RollBack). Модель не меняется.
+# Аргументы: wall_ids
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+def solids(el):
+    out = []
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    ge = el.get_Geometry(opt)
+    if ge:
+        walk(ge, None)
+    return out
+
+
+def mat_of(s):
+    for f in s.Faces:
+        m = doc.GetElement(f.MaterialElementId)
+        if m is not None:
+            return m.Name
+    return ""
+
+
+def span(sols, o, n, flt=None):
+    lo, hi = 1e9, -1e9
+    for s in sols:
+        if flt and not flt(mat_of(s)):
+            continue
+        for e in s.Edges:
+            for p in e.Tessellate():
+                d = (p - o).DotProduct(n) * FT
+                lo = min(lo, d); hi = max(hi, d)
+    return None if lo > hi else [round(lo, 1), round(hi, 1)]
+
+
+def measure(w, o, n):
+    r = {"flipped": w.Flipped, "orientation_dot_n0": round(w.Orientation.DotProduct(n), 2), "glass": None, "seal": None, "mullions": {}}
+    for pid in w.CurtainGrid.GetPanelIds():
+        ss = solids(doc.GetElement(pid))
+        g = span(ss, o, n, lambda nm: u"тек" in nm.lower() or "glass" in nm.lower())
+        if g:
+            r["glass"] = g
+            r["seal"] = span(ss, o, n, lambda nm: u"Уплотнитель" in nm)
+            break
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        if m.Name in r["mullions"]:
+            continue
+        if u"центральный" in m.Name or u"угловой" in m.Name or u"столб" in m.Name or u"примыкание к стене" in m.Name:
+            r["mullions"][m.Name] = span(solids(m), o, n)
+    return r
+
+
+res = []
+for wid in args["wall_ids"]:
+    w = doc.GetElement(ElementId(int(wid)))
+    o = w.Location.Curve.Evaluate(0.5, True); n = w.Orientation
+    before = measure(w, o, n)
+    t = Transaction(doc, u"проба разворота"); t.Start()
+    try:
+        w.Flip(); doc.Regenerate()
+        after = measure(w, o, n)
+    finally:
+        t.RollBack()
+    res.append({"wall": int(wid), "type": w.WallType.Name, "axis": u"+ = Orientation до разворота", "before": before, "after_flip": after})
+__output__ = {"status": "completed_unverified", "summary": u"опыт с откатом, модель не изменена", "walls": res}

@@ -1,0 +1,24 @@
+param([string]$Path, [string]$OutDir)
+$bytes = [System.IO.File]::ReadAllBytes($Path)
+$latin = [System.Text.Encoding]::GetEncoding(28591)
+$text = $latin.GetString($bytes)
+New-Item -ItemType Directory -Force $OutDir | Out-Null
+$rx = [regex]'stream\r?\n'
+$i = 0
+foreach ($m in $rx.Matches($text)) {
+    $start = $m.Index + $m.Length
+    $end = $text.IndexOf('endstream', $start)
+    if ($end -lt 0) { continue }
+    $len = $end - $start
+    if ($len -lt 3) { continue }
+    try {
+        $ms = New-Object System.IO.MemoryStream($bytes, ($start + 2), ($len - 2))
+        $ds = New-Object System.IO.Compression.DeflateStream($ms, [System.IO.Compression.CompressionMode]::Decompress)
+        $out = New-Object System.IO.MemoryStream
+        $ds.CopyTo($out)
+        $data = $out.ToArray()
+        [System.IO.File]::WriteAllBytes((Join-Path $OutDir ("s{0:D4}.bin" -f $i)), $data)
+    } catch { }
+    $i++
+}
+"streams: $i"

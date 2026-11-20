@@ -1,0 +1,132 @@
+# -*- coding: utf-8 -*-
+# Разрезы М2 для визуальной проверки: вертикальные разрезы через центр каждой колонки панелей
+# (узлы: пол / ригель / потолок) и горизонтальные узлы (край левый / центр / край правый, на 2 высотах).
+# Виды 1:2, «Высокая». PNG в out_dir. commit=false -> всё откатывается.
+# Аргументы: walls [{id, tag, plan(bool), heights_mm:[...]}], out_dir, px, commit
+import json, os, math
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+vft_sec = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.Section][0]
+vft_plan = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+existing = set(v.Name for v in FilteredElementCollector(doc).OfClass(View))
+
+
+def bbox_el(e):
+    return e.get_BoundingBox(None)
+
+
+def uname(n):
+    k = n; i = 2
+    while k in existing:
+        k = "%s (%d)" % (n, i); i += 1
+    existing.add(k)
+    return k
+
+
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_GenericAnnotation, BuiltInCategory.OST_CLines,
+        BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers]
+
+
+def tidy(v):
+    for bic in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(bic), True)
+        except Exception:
+            pass
+
+
+def export(v, tag):
+    o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+    ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+    o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 1200))
+    o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+    o.FilePath = os.path.join(args["out_dir"], tag)
+    doc.ExportImage(o)
+
+
+res = {"views": [], "errors": []}
+tg = TransactionGroup(doc, u"FT: разрезы М2"); tg.Start()
+try:
+    for wj in args["walls"]:
+        w = doc.GetElement(ElementId(int(wj["id"])))
+        c = w.Location.Curve
+        p0 = c.GetEndPoint(0); d = c.ComputeDerivatives(0, True).BasisX.Normalize()
+        n = XYZ.BasisZ.CrossProduct(d)
+        lvl = doc.GetElement(w.LevelId)
+        base = lvl.Elevation + w.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET).AsDouble()
+        top = base + w.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsDouble()
+        cg = w.CurtainGrid
+        # колонки панелей (центры вдоль стены) и высоты горизонтальных линий сетки
+        cols = {}
+        for pid in cg.GetPanelIds():
+            bb = bbox_el(doc.GetElement(pid))
+            if bb is None:
+                continue
+            cx = (bb.Min + bb.Max) * 0.5
+            s = round((cx - p0).DotProduct(d) * FT / 50.0) * 50
+            cols[s] = p0 + d * (s / FT)     # по оси стены (габарит панели в плане шире стекла)
+        ulines = []
+        for uid in cg.GetUGridLineIds():
+            gl = doc.GetElement(uid)
+            ulines.append(gl.FullCurve.GetEndPoint(0).Z)
+        tag0 = wj["tag"]
+        # --- вертикальные разрезы
+        for ci, (s, cx) in enumerate(sorted(cols.items())):
+            nodes = [("пол", base)] + [("ригель", z) for z in ulines] + [("потолок", top)]
+            for nm, z in nodes:
+                t = Transaction(doc, u"разрез"); t.Start()
+                tr = Transform.Identity
+                tr.Origin = XYZ(cx.X, cx.Y, z)
+                tr.BasisX = n; tr.BasisY = XYZ.BasisZ; tr.BasisZ = n.CrossProduct(XYZ.BasisZ)
+                box = BoundingBoxXYZ(); box.Transform = tr
+                box.Min = XYZ(-170 / FT, -150 / FT, -30 / FT); box.Max = XYZ(170 / FT, 150 / FT, 30 / FT)
+                v = ViewSection.CreateSection(doc, vft_sec.Id, box)
+                v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+                v.Name = uname(u"М2 разрез %s · колонка %d · %s" % (tag0, ci + 1, nm)); tidy(v)
+                t.Commit()
+                export(v, u"V_%s_c%d_%s" % (tag0, ci + 1, nm))
+                res["views"].append([int(v.Id.Value), v.Name])
+        # --- горизонтальные узлы
+        if wj.get("plan"):
+            mids = []
+            for mid in cg.GetMullionIds():
+                m = doc.GetElement(mid); bb = bbox_el(m)
+                if bb is None or (bb.Max.Z - bb.Min.Z) < 1.0:
+                    continue
+                cx = (bb.Min + bb.Max) * 0.5
+                s = (cx - p0).DotProduct(d) * FT
+                mids.append((s, p0 + d * (s / FT), m.Name))
+            seen = set()
+            for hz in wj.get("heights_mm", [500]):
+                for s, cx, nm in sorted(mids, key=lambda q: q[0]):
+                    key = (round(s / 20), hz)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    t = Transaction(doc, u"план"); t.Start()
+                    v = ViewPlan.Create(doc, vft_plan.Id, w.LevelId)
+                    v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+                    vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, (base - lvl.Elevation) + hz / FT); v.SetViewRange(vr)
+                    H = 170 / FT
+                    bx = BoundingBoxXYZ(); bx.Min = XYZ(cx.X - H, cx.Y - H, -1000); bx.Max = XYZ(cx.X + H, cx.Y + H, 1000)
+                    v.CropBox = bx; v.CropBoxActive = True; v.CropBoxVisible = False
+                    v.Name = uname(u"М2 план %s · %d мм · %s" % (tag0, hz, nm)); tidy(v)
+                    t.Commit()
+                    export(v, u"H_%s_%04d_%05d" % (tag0, hz, int(s)))
+                    res["views"].append([int(v.Id.Value), v.Name])
+    res["warnings"] = len(doc.GetWarnings())
+except Exception as ex:
+    res["errors"].append(str(ex)[:300])
+finally:
+    if commit and not res["errors"]:
+        tg.Assimilate()
+    else:
+        tg.RollBack()
+res["committed"] = commit and not res["errors"]
+__output__ = {"status": "completed_unverified", "summary": u"%s; видов %d" % (u"применено" if res["committed"] else u"откат", len(res["views"])), "result": res}

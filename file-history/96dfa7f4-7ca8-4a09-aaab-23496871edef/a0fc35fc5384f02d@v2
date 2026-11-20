@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*-
+# Только чтение: элементы верхнего уровня вложенного 2D-элемента профиля (линии, области, группы с числом членов)
+# с габаритом по точкам кривых в координатах ПРОФИЛЯ. Аргументы: family_names
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+byname = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+
+
+def pts_of(el):
+    out = []
+    if isinstance(el, CurveElement):
+        out += list(el.GeometryCurve.Tessellate())
+    elif isinstance(el, FilledRegion):
+        for lp in el.GetBoundaries():
+            for c in lp:
+                out += list(c.Tessellate())
+    elif isinstance(el, Group):
+        for mid in el.GetMemberIds():
+            out += pts_of(el.Document.GetElement(mid))
+    return out
+
+
+res = []
+for fn in args["family_names"]:
+    pdoc = doc.EditFamily(byname[fn])
+    try:
+        fi = list(FilteredElementCollector(pdoc).OfClass(FamilyInstance))[0]
+        T = fi.GetTotalTransform()
+        nd = pdoc.EditFamily(fi.Symbol.Family)
+        try:
+            rows = []
+            for el in FilteredElementCollector(nd).WhereElementIsNotElementType():
+                if not isinstance(el, (CurveElement, FilledRegion, Group)):
+                    continue
+                if el.GroupId != ElementId.InvalidElementId:
+                    continue
+                if isinstance(el, CurveElement) and not el.GetType().Name.startswith("Detail"):
+                    continue
+                ps = [T.OfPoint(q) for q in pts_of(el)]
+                if not ps:
+                    continue
+                xs = [p.X * FT for p in ps]; ys = [p.Y * FT for p in ps]
+                rows.append({"id": int(el.Id.Value), "cls": el.GetType().Name, "members": len(el.GetMemberIds()) if isinstance(el, Group) else 1,
+                             "bbox": [round(min(xs), 1), round(min(ys), 1), round(max(xs), 1), round(max(ys), 1)]})
+            res.append({"family": fn, "mirrored": fi.Mirrored, "basisX": [round(T.BasisX.X, 2), round(T.BasisX.Y, 2)], "basisY": [round(T.BasisY.X, 2), round(T.BasisY.Y, 2)], "elements": rows})
+        finally:
+            nd.Close(False)
+    finally:
+        pdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": "read-only", "families": res}

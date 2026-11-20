@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+# Только чтение: для витражей — с какой стороны оси стены лежит стекло и куда выступают импосты.
+# Знак «+» = в сторону wall.Orientation (наружная сторона стены, стрелки разворота Revit).
+# Аргументы: wall_ids
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine; opt.ComputeReferences = False
+
+
+def solids(el):
+    out = []
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetSymbolGeometry(), (tr.Multiply(g.Transform) if tr else g.Transform))
+    walk(el.get_Geometry(opt), None)
+    return out
+
+
+def span(sols, o, n, mat_filter=None):
+    lo, hi = 1e9, -1e9
+    for s in sols:
+        if mat_filter:
+            ok = False
+            for f in s.Faces:
+                m = doc.GetElement(f.MaterialElementId)
+                if m is not None and mat_filter(m.Name):
+                    ok = True; break
+            if not ok:
+                continue
+        for e in s.Edges:
+            for p in e.Tessellate():
+                d = (p - o).DotProduct(n) * FT
+                lo = min(lo, d); hi = max(hi, d)
+    return None if lo > hi else [round(lo, 1), round(hi, 1)]
+
+
+res = []
+for wid in args["wall_ids"]:
+    w = doc.GetElement(ElementId(int(wid)))
+    lc = w.Location.Curve
+    o = lc.GetEndPoint(0); n = w.Orientation
+    r = {"wall": int(wid), "type": w.WallType.Name, "flipped": w.Flipped,
+         "orientation": [round(n.X, 3), round(n.Y, 3)], "panels": [], "mullions": {}}
+    for pid in list(w.CurtainGrid.GetPanelIds())[:2]:
+        p = doc.GetElement(pid)
+        ss = solids(p)
+        r["panels"].append({"id": int(pid.Value), "type": p.Name,
+                            "all": span(ss, o, n),
+                            "glass": span(ss, o, n, lambda nm: u"тек" in nm.lower() or "glass" in nm.lower()),
+                            "seal": span(ss, o, n, lambda nm: u"Уплотнитель" in nm)})
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        key = m.Name
+        if key in r["mullions"]:
+            continue
+        r["mullions"][key] = {"id": int(mid.Value), "span": span(solids(m), o, n)}
+    res.append(r)
+__output__ = {"status": "completed_unverified", "summary": "read-only", "walls": res}

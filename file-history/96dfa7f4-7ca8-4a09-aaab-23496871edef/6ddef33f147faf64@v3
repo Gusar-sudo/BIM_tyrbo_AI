@@ -1,0 +1,166 @@
+"""Силуэт сечения импоста из DXF узла: объединение замкнутых контуров деталей + основная камера как отверстие.
+
+Без сети и без сторонних геометрических библиотек: растр (шаг STEP мм) → изолиния 0,5 (matplotlib) →
+упрощение Дугласа–Пекера (TOL мм). Координаты сдвигаются так, что (0,0) — ось стойки.
+Ось X профиля — вдоль витража (в DXF узла стекло лежит горизонтально), ось Y — поперёк (толщина).
+
+py -P -E profile_from_dxf.py <узел.dxf> <окно x0,y0,x1,y1> <центр cx,cy> <камера x0,y0,x1,y1|-> <выход.json> [превью.png]
+Берутся только замкнутые LWPOLYLINE слоя "0" (детали) целиком внутри окна; уплотнители (слой «Основная») — нет.
+"""
+import json, math, sys
+import numpy as np
+import ezdxf
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.path import Path
+
+STEP, TOL = 0.05, 0.2
+
+def flat(es, d=0):
+    for e in es:
+        if e.dxftype() == "INSERT" and d < 6:
+            try: yield from flat(e.virtual_entities(), d + 1)
+            except Exception: pass
+        else: yield e
+
+def lw_points(e):
+    pts = []
+    for x, y, *_rest in e.get_points("xyb"):
+        pts.append((x, y))
+    # дуги (bulge) аппроксимируем через virtual_entities
+    if any(abs(p[2]) > 1e-9 for p in e.get_points("xyb")):
+        pts = []
+        for v in e.virtual_entities():
+            if v.dxftype() == "LINE":
+                pts.append((v.dxf.start.x, v.dxf.start.y))
+            else:
+                pts += [(q.x, q.y) for q in v.flattening(0.02)][:-1]
+    return pts
+
+def dp(points, tol):
+    if len(points) < 3: return points
+    a, b = np.array(points[0]), np.array(points[-1])
+    ab = b - a; L = np.hypot(*ab)
+    d = [abs(ab[0] * (p[1] - a[1]) - ab[1] * (p[0] - a[0])) / L if L > 0 else math.dist(p, a) for p in points]
+    i = int(np.argmax(d))
+    if d[i] > tol:
+        return dp(points[:i + 1], tol)[:-1] + dp(points[i:], tol)
+    return [points[0], points[-1]]
+
+def simplify_ring(ring, tol):
+    ring = ring[:-1] if ring[0] == ring[-1] else ring
+    # разрезаем кольцо по самой дальней от первой точки вершине
+    far = max(range(len(ring)), key=lambda k: math.dist(ring[0], ring[k]))
+    s = dp(ring[:far + 1], tol)[:-1] + dp(ring[far:] + [ring[0]], tol)[:-1]
+    return s
+
+MIN_SEG = 1.0          # мм: Revit не создаёт линии короче ~0,8 мм
+MIN_HOLE_AREA = 100.0  # мм²: оставляем только крупные полости (камера, полости витражей)
+CLOSE_K = 31           # пикселей (31 × 0,05 = 1,5 мм): заклейка щелей и мелких пазов между деталями
+
+def drop_short(r, m):
+    changed = True
+    while changed and len(r) > 3:
+        changed = False
+        for i in range(len(r)):
+            if math.dist(r[i], r[(i + 1) % len(r)]) < m:
+                del r[(i + 1) % len(r)]; changed = True; break
+    return r
+
+def _seg_x(p1, p2, p3, p4):
+    def o(a, b, c): return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+    d1, d2, d3, d4 = o(p3, p4, p1), o(p3, p4, p2), o(p1, p2, p3), o(p1, p2, p4)
+    return (d1 * d2 < 0) and (d3 * d4 < 0)
+
+def _segs(r): return [(r[i], r[(i + 1) % len(r)]) for i in range(len(r))]
+
+def simple(r):
+    s = _segs(r); n = len(s)
+    for i in range(n):
+        for j in range(i + 2, n):
+            if i == 0 and j == n - 1: continue
+            if _seg_x(*s[i], *s[j]): return False
+    return True
+
+MIN_GAP = 0.3  # мм: минимальный зазор между контурами (Revit 2026 принял 0,45 мм в FSC21 центральном двухслойном)
+
+def _pt_seg(p, a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]; L2 = dx * dx + dy * dy
+    t = 0 if L2 == 0 else max(0, min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2))
+    return math.dist(p, (a[0] + t * dx, a[1] + t * dy))
+
+def ring_gap(a, b):
+    return min(min(_pt_seg(p, *s) for p in a for s in _segs(b)), min(_pt_seg(p, *s) for p in b for s in _segs(a)))
+
+def rings_cross(a, b):
+    return any(_seg_x(*s, *t) for s in _segs(a) for t in _segs(b)) or ring_gap(a, b) < MIN_GAP
+
+def area(r):
+    return 0.5 * sum(r[i][0] * r[(i + 1) % len(r)][1] - r[(i + 1) % len(r)][0] * r[i][1] for i in range(len(r)))
+
+def main(src, win, ctr, cham, out, png=None):
+    x0, y0, x1, y1 = win; cx, cy = ctr
+    doc = ezdxf.readfile(src)
+    parts = []
+    for e in flat(doc.modelspace()):
+        if e.dxftype() == "LWPOLYLINE" and e.closed and e.dxf.layer == "0":
+            pts = lw_points(e)
+            if pts and all(x0 <= x <= x1 and y0 <= y <= y1 for x, y in pts):
+                parts.append(pts)
+    gx = np.arange(x0, x1, STEP); gy = np.arange(y0, y1, STEP)
+    X, Y = np.meshgrid(gx, gy); P = np.c_[X.ravel(), Y.ravel()]
+    mask = np.zeros(len(P), bool)
+    for pts in parts:
+        mask |= Path(pts + [pts[0]]).contains_points(P, radius=-STEP)
+    if cham:
+        c0, c1, c2, c3 = cham
+        mask &= ~((P[:, 0] > c0) & (P[:, 0] < c2) & (P[:, 1] > c1) & (P[:, 1] < c3))
+    M = mask.reshape(X.shape).astype(float)
+    # закрыть щели между деталями (до 2 шагов): дилатация + эрозия
+    from numpy.lib.stride_tricks import sliding_window_view as swv
+    def morph(A, op, k=3):
+        Ap = np.pad(A, k // 2, mode="constant"); W = swv(Ap, (k, k)); return (W.max((2, 3)) if op == "d" else W.min((2, 3)))
+    M = morph(morph(M, "d", CLOSE_K), "e", CLOSE_K)
+    fig, ax = plt.subplots()
+    cs = ax.contour(X, Y, M, levels=[0.5])
+    rings = [ [tuple(p) for p in seg] for seg in cs.allsegs[0] if len(seg) > 10 ]
+    plt.close(fig)
+    rings = [drop_short(simplify_ring(r, TOL), MIN_SEG) for r in rings]
+    rings = [r for r in rings if len(r) >= 3 and abs(area(r)) > MIN_HOLE_AREA]
+    rings.sort(key=lambda r: -abs(area(r)))
+    # проверка: каждое кольцо простое, кольца не пересекаются; негодные отверстия отбрасываются
+    kept, dropped = [rings[0]], []
+    if not simple(rings[0]):
+        raise SystemExit("внешний контур самопересекается — увеличьте TOL/MIN_SEG")
+    for r in rings[1:]:
+        if simple(r) and all(not rings_cross(r, k) for k in kept):
+            kept.append(r)
+        else:
+            dropped.append(round(abs(area(r)), 1))
+    rings = kept
+    outer, holes = rings[0], rings[1:]
+    loops = [[(round(x - cx, 3), round(y - cy, 3)) for x, y in r] for r in [outer] + holes]
+    xs = [p[0] for p in loops[0]]; ys = [p[1] for p in loops[0]]
+    res = {"source": src, "window": win, "center": ctr, "step_mm": STEP, "tol_mm": TOL,
+           "parts_used": len(parts), "loops": loops,
+           "outer_bbox_mm": [min(xs), min(ys), max(xs), max(ys)],
+           "outer_size_mm": [round(max(xs) - min(xs), 2), round(max(ys) - min(ys), 2)],
+           "vertices": [len(l) for l in loops], "holes_dropped_area_mm2": dropped,
+           "min_segment_mm": round(min(math.dist(l[i], l[(i + 1) % len(l)]) for l in loops for i in range(len(l))), 3)}
+    json.dump(res, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(json.dumps({k: res[k] for k in ("parts_used", "outer_size_mm", "outer_bbox_mm", "vertices", "holes_dropped_area_mm2", "min_segment_mm")}, ensure_ascii=False))
+    if png:
+        fig, ax = plt.subplots(figsize=(6, 9))
+        for pts in parts:
+            q = np.array(pts + [pts[0]]); ax.plot(q[:, 0] - cx, q[:, 1] - cy, color="0.75", lw=0.5)
+        for i, l in enumerate(loops):
+            q = np.array(l + [l[0]]); ax.plot(q[:, 0], q[:, 1], color="red" if i == 0 else "blue", lw=1)
+        ax.axhline(0, lw=0.3, color="k"); ax.axvline(0, lw=0.3, color="k"); ax.set_aspect("equal"); ax.grid(lw=0.2)
+        ax.set_title("серое — детали DWG; красное — силуэт профиля; синее — камера (отверстие)", fontsize=8)
+        fig.savefig(png, dpi=200, bbox_inches="tight"); plt.close(fig)
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    a = sys.argv[1:]
+    f = lambda s: [float(v) for v in s.split(",")]
+    main(a[0], f(a[1]), f(a[2]), None if a[3] == "-" else f(a[3]), a[4], a[5] if len(a) > 5 else None)

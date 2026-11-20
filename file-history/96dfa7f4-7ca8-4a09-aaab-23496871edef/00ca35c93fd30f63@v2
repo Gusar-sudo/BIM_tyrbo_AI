@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+# Только чтение: для каждого типа импоста с профилем BIMLIB_Профиль_* — имя типа, профиль, ширины по сторонам 1/2 (мм).
+# Аргументы: out_json
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+out = []
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    if not p or p.AsElementId() == ElementId.InvalidElementId:
+        continue
+    s = doc.GetElement(p.AsElementId())
+    if s is None or not s.Family.Name.startswith(u"BIMLIB_Профиль_"):
+        continue
+    w1 = mt.get_Parameter(BuiltInParameter.CUST_MULLION_WIDTH1)
+    w2 = mt.get_Parameter(BuiltInParameter.CUST_MULLION_WIDTH2)
+    out.append({"id": int(mt.Id.Value), "name": mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(),
+                "profile": s.Family.Name[15:], "w1": round(w1.AsDouble() * FT, 2) if w1 else None,
+                "w2": round(w2.AsDouble() * FT, 2) if w2 else None})
+with open(args["out_json"], "w", encoding="utf-8") as f:
+    json.dump(out, f, ensure_ascii=False, indent=0)
+__output__ = {"status": "completed_unverified", "summary": u"типов %d" % len(out)}

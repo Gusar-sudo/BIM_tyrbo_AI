@@ -1,0 +1,179 @@
+"""Поиск дублей среди документов производства и выбор актуального (правило: при расхождении — самый свежий).
+
+Вход: папка с документами и папка extract (после extract_docs.py, там index.json и тексты).
+Группы:
+  identical — одинаковое содержимое (sha256): расхождений нет, канон — одна копия;
+  similar   — похожие имя и/или текст: сравниваются тексты, строки с числами, которые есть
+              только в одной версии, выводятся для проверки; канон — самый свежий;
+  format    — тот же документ в другом формате (например DWG и PDF): текстом не сравнить,
+              канон — самый свежий, сверка содержимого — вручную/через Revit.
+Свежесть: 1) дата внутри документа (дд.мм.гггг, «Действует с …», год «20хх г.» на первых страницах);
+          2) если внутренних дат нет или они равны — дата изменения файла (может быть датой копирования!).
+Выход: <catalog>/duplicates.md (отчёт) и <catalog>/canonical.csv (файл; группа; статус; причина).
+Только локально. Запуск: py -P -E find_duplicates.py <корень_документов> <extract> <catalog>
+"""
+import csv
+import json
+import re
+import sys
+from datetime import datetime
+from itertools import combinations
+from pathlib import Path
+
+STOP = {"инструкция", "по", "для", "и", "в", "сборке", "изготовлению", "сборка", "буклет",
+        "дверного", "pdf", "docx", "dwg", "xlsx", "_"}
+ENDINGS = sorted(["ами", "ями", "ого", "его", "ому", "ему", "ыми", "ими", "ая", "яя", "ой", "ей", "ые", "ие", "ый", "ий",
+                  "ам", "ям", "ах", "ях", "ом", "ем", "ов", "ев", "а", "я", "ы", "и", "е", "у", "ю", "о"], key=len, reverse=True)
+
+
+def stem(t):
+    """Грубое приведение русских окончаний: рама/рамы/рамам → рам, полотна/полотнам → полотн."""
+    if re.fullmatch(r"[а-яё]{4,}", t):
+        for e in ENDINGS:
+            if t.endswith(e) and len(t) - len(e) >= 3:
+                return t[: -len(e)]
+    return t
+FORMAT_EXT = {".dwg", ".pdf", ".docx", ".xlsx"}
+
+
+def tokens(name):
+    s = re.sub(r"\(\d+\)", " ", Path(name).stem.lower())          # «(1)», «(2)» — номер копии, не признак
+    s = re.sub(r"\b20\d{2}\b", " ", s)                              # год — не различающий признак
+    s = re.sub(r"[^a-zа-яё0-9]+", " ", s)
+    s = s.replace("doble vitrage", "dv").replace("double vitrage", "dv").replace("эстет", "estet")
+    return {stem(t) for t in s.split() if (len(t) > 1 or t.isdigit()) and t not in STOP}
+
+
+def conflict(ta, tb):
+    """У каждого имени есть признак, которого нет у другого (М1/М2, 1/2, loft/sv, вертикал/горизонтал) — разные документы."""
+    return bool(ta - tb) and bool(tb - ta)
+
+
+def jacc(a, b):
+    return len(a & b) / len(a | b) if a | b else 0.0
+
+
+def shingles(text, k=5):
+    w = re.findall(r"\w+", text.lower())
+    return {" ".join(w[i:i + k]) for i in range(max(len(w) - k + 1, 0))}
+
+
+def internal_date(text):
+    head = text[:6000]
+    dates = []
+    for d, m, y in re.findall(r"\b(\d{2})\.(\d{2})\.(20\d{2})\b", head):
+        try:
+            dates.append(datetime(int(y), int(m), int(d)))
+        except ValueError:
+            pass
+    for y in re.findall(r"\b(20\d{2})\s*г", head):
+        dates.append(datetime(int(y), 1, 1))
+    return max(dates) if dates else None
+
+
+def numeric_lines(text):
+    out = set()
+    for line in text.splitlines():
+        s = " ".join(line.split())
+        if re.search(r"\d", s) and len(s) > 3 and not s.startswith("=== стр."):
+            out.add(s)
+    return out
+
+
+def main(root, extract, catalog):
+    root, extract, catalog = Path(root), Path(extract), Path(catalog)
+    index = {e["file"]: e for e in json.loads((extract / "index.json").read_text(encoding="utf-8"))}
+    files = sorted(str(p.relative_to(root)) for p in root.rglob("*")
+                   if p.is_file() and p.suffix.lower() in FORMAT_EXT and "_bim" not in p.relative_to(root).parts)
+    info = {}
+    for f in files:
+        p = root / f
+        e = index.get(f, {})
+        text = (extract / e["txt"]).read_text(encoding="utf-8") if e.get("txt") else ""
+        if not text and p.suffix.lower() == ".dwg":  # тексты DWG из fst-dwg-reader (DXF), если уже извлечены
+            dxf_txt = root / "_bim" / "dxf" / (p.stem + ".texts.txt")
+            if dxf_txt.exists():
+                text = dxf_txt.read_text(encoding="utf-8")
+        info[f] = {"sha": e.get("sha256"), "mtime": datetime.fromtimestamp(p.stat().st_mtime), "text": text,
+                   "idate": internal_date(text) if text else None, "tok": tokens(f), "sh": shingles(text) if text else set()}
+
+    # union-find по признакам дубля
+    parent = {f: f for f in files}
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]; x = parent[x]
+        return x
+    kinds = {}
+    for a, b in combinations(files, 2):
+        A, B = info[a], info[b]
+        kind = None
+        same_ext = Path(a).suffix.lower() == Path(b).suffix.lower()
+        name_ok = jacc(A["tok"], B["tok"]) >= 0.5 and not conflict(A["tok"], B["tok"])
+        if A["sha"] and A["sha"] == B["sha"]:
+            kind = "identical"
+        elif name_ok and same_ext and A["sh"] and B["sh"] and jacc(A["sh"], B["sh"]) >= 0.5:
+            kind = "similar"
+        elif name_ok and not same_ext and (A["tok"] == B["tok"] or not (A["sh"] and B["sh"]) or jacc(A["sh"], B["sh"]) >= 0.5):
+            kind = "format"
+        if kind:
+            parent[find(a)] = find(b)
+            kinds[(a, b)] = kind
+
+    groups = {}
+    for f in files:
+        groups.setdefault(find(f), []).append(f)
+    groups = [g for g in groups.values() if len(g) > 1]
+
+    def fresh_key(f):
+        i = info[f]
+        return (i["idate"] or datetime.min, i["mtime"])
+
+    rows, md = [], ["# Дубли документов", "", "Правило: при расхождении приоритет у самого свежего (дата внутри документа, иначе дата файла).", ""]
+    for n, g in enumerate(sorted(groups, key=lambda g: g[0]), 1):
+        canon = max(g, key=fresh_key)
+        gk = {kinds.get((a, b)) or kinds.get((b, a)) for a, b in combinations(g, 2)} - {None}
+        md.append(f"## Группа {n}: {Path(canon).stem}")
+        md.append("| Файл | Дата в документе | Дата файла | Статус |")
+        md.append("|---|---|---|---|")
+        for f in sorted(g, key=fresh_key, reverse=True):
+            i = info[f]
+            if f == canon:
+                st = "КАНОН"
+            elif i["sha"] and i["sha"] == info[canon]["sha"]:
+                st = "копия (идентична)"
+            else:
+                st = "устарел — не использовать"
+            rows.append({"file": f, "group": n, "status": "canonical" if f == canon else ("identical_copy" if st.startswith("копия") else "superseded"),
+                         "reason": ("самый свежий" if f == canon else st)})
+            md.append(f"| {f} | {i['idate'].date() if i['idate'] else '—'} | {i['mtime']:%Y-%m-%d %H:%M} | {st} |")
+        for f in g:
+            if f == canon or (info[f]["sha"] and info[f]["sha"] == info[canon]["sha"]):
+                continue
+            if not info[f]["text"] or not info[canon]["text"]:
+                md.append(f"\n*{Path(f).name}* ↔ *{Path(canon).name}*: нет текста DWG — извлечь через fst-dwg-reader (dwg_to_dxf + dxf_extract) и сверить dwg_pdf_compare.")
+                continue
+            a, b = numeric_lines(info[f]["text"]), numeric_lines(info[canon]["text"])
+            only_old, only_new = sorted(a - b)[:12], sorted(b - a)[:12]
+            sim = jacc(info[f]["sh"], info[canon]["sh"])
+            md.append(f"\n*{Path(f).name}* → канон *{Path(canon).name}*: сходство текста {sim:.0%}; строк с числами только в старом: {len(a - b)}, только в новом: {len(b - a)}.")
+            if only_old or only_new:
+                md.append("<details><summary>Различающиеся строки с числами (до 12)</summary>\n")
+                md += [f"- старый: {s}" for s in only_old] + [f"- новый: {s}" for s in only_new]
+                md.append("\n</details>")
+        md.append(f"\nПризнак: {', '.join(sorted(gk))}\n")
+
+    catalog.mkdir(parents=True, exist_ok=True)
+    (catalog / "duplicates.md").write_text("\n".join(md), encoding="utf-8")
+    with open(catalog / "canonical.csv", "w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["file", "group", "status", "reason"], delimiter=";")
+        w.writeheader(); w.writerows(rows)
+    print(f"групп дублей: {len(groups)}; файлов в них: {sum(len(g) for g in groups)}; устаревших: {sum(r['status'] == 'superseded' for r in rows)}")
+    for g in groups:
+        print(" · " + " | ".join(Path(f).name for f in sorted(g, key=fresh_key, reverse=True)))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        sys.exit("usage: find_duplicates.py <root> <extract> <catalog>")
+    sys.stdout.reconfigure(encoding="utf-8")
+    main(*sys.argv[1:])

@@ -1,0 +1,14 @@
+param([string]$Pdf, [string]$OutTxt)
+# Конвертирует PDF в текст через локальный Microsoft Word (PDF Reflow). Ничего не скачивает.
+$word = New-Object -ComObject Word.Application
+$word.Visible = $false
+$word.DisplayAlerts = 0
+try {
+    $doc = $word.Documents.Open($Pdf, $false, $true, $false)   # FileName, ConfirmConversions, ReadOnly, AddToRecentFiles
+    $doc.SaveAs2([ref]$OutTxt, [ref]7, [ref]$false, [ref]'', [ref]$false, [ref]'', [ref]$false, [ref]$false, [ref]$false, [ref]$false, [ref]$false, [ref]65001)  # 7 = wdFormatUnicodeText, 65001 = UTF-8
+    $doc.Close([ref]0)
+    "OK " + (Get-Item -LiteralPath $OutTxt).Length
+} finally {
+    $word.Quit()
+    [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($word)
+}

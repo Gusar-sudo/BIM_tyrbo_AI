@@ -1,0 +1,9 @@
+import sys, re, ezdxf
+doc = ezdxf.readfile(sys.argv[1])
+pat = re.compile(sys.argv[2])
+msp = doc.modelspace()
+for e in msp.query("TEXT MTEXT"):
+    t = e.dxf.text if e.dxftype() == "TEXT" else e.plain_text()
+    if pat.search(t or ""):
+        p = e.dxf.insert
+        print(f"{e.dxftype():5} ({p.x:9.1f},{p.y:9.1f}) h={getattr(e.dxf,'height',getattr(e.dxf,'char_height',0)):.1f} {t.strip()[:60]!r}")

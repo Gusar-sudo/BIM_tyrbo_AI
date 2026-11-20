@@ -1,0 +1,20 @@
+<section id="aroma" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-size:84px;font-weight:800;line-height:1.1;color:#2B2B2E">Арома-палитра состояний</h2>
+<div style="display:flex;gap:56px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:36px;justify-content:center">
+<p style="font-size:64px;font-weight:800;line-height:1.15;color:#B9531F">5 масел — 5 состояний</p>
+<p style="font-size:44px;font-weight:600;line-height:1.3;color:#2B2B2E">Запах быстрее всего связан с эмоциями и памятью</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;background:#FFFDF9;padding:48px;border-radius:24px;border-left:12px solid #C9622A">
+<h3 style="font-size:52px;font-weight:800;color:#7A3814">Стенд 15–16</h3>
+<ul style="font-size:44px;font-weight:600;line-height:1.35;color:#2B2B2E">
+<li>ваш аромат</li>
+<li>мини-карта состояния</li>
+<li>скрытый страх</li>
+<li><b>кулон в подарок</b></li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:56px;width:1664px;font-size:34px;font-weight:600;color:#3F3B36">Не диагноз, а момент честного внимания к себе</p>
+<aside>12:30–14:00. Тон легче, улыбка. «С чего начать? Иногда первый шаг — честно заметить своё состояние. На стенде 15–16 собрана арома-палитра: пять эфирных масел, пять психоэмоциональных профилей. Из всех чувств обоняние связано с центрами эмоций и памяти самым коротким путём: один запах может мгновенно вернуть вас в детство. Поэтому выбор аромата часто говорит о состоянии больше, чем анкета. Вы выберете свой аромат, получите мини-карту и узнаете, какой скрытый страх за ним стоит. И подарок: кулон с вашим ароматом. Если захочется пойти глубже, лично расскажу про EMDR».</aside>
+</section>

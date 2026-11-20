@@ -1,0 +1,19 @@
+<section id="myths" data-transition="fade" style="background:#F8F4EE;color:#2B2B2E;font-family:'Nunito', Verdana, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-size:72px;font-weight:800;line-height:1.1;color:#2B2B2E">Три частых вопроса</h2>
+<div style="display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;gap:40px;align-items:center;background:#FFFDF9;padding:36px 48px;border-radius:24px">
+<p style="width:520px;font-size:40px;font-weight:800;color:#1F5560">Это гипноз?</p>
+<p style="flex:1;font-size:34px;line-height:1.35"><b>Нет.</b> Вы всё время в сознании и контролируете процесс.</p>
+</div>
+<div style="display:flex;gap:40px;align-items:center;background:#FFFDF9;padding:36px 48px;border-radius:24px">
+<p style="width:520px;font-size:40px;font-weight:800;color:#1F5560">Воспоминание сотрётся?</p>
+<p style="flex:1;font-size:34px;line-height:1.35"><b>Нет.</b> Вы будете помнить, что было, но без кома в горле.</p>
+</div>
+<div style="display:flex;gap:40px;align-items:center;background:#FFFDF9;padding:36px 48px;border-radius:24px">
+<p style="width:520px;font-size:40px;font-weight:800;color:#1F5560">Это эксперимент?</p>
+<p style="flex:1;font-size:34px;line-height:1.35"><b>Нет.</b> Методу больше 30 лет, ВОЗ рекомендует его при посттравматическом стрессе.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:26px;color:#6A645C">EMDR проводит обученный специалист по протоколу, после этапа подготовки.</p>
+<aside>«Сразу отвечу на частые вопросы. Это не гипноз: вы в сознании и всё контролируете. Воспоминание не стирается: оно становится просто историей из прошлого. Это не эксперимент: методу больше тридцати лет, ВОЗ рекомендует его при посттравматическом стрессе. И важно: это профессиональная психотерапия, её проводит обученный специалист, сначала идёт подготовка. Проживать заново ничего не нужно: вы смотрите на эпизод со стороны, на безопасном расстоянии».</aside>
+</section>

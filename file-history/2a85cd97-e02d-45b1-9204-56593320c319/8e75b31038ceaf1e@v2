@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+# Чтение: параметры типов панелей М2/М3 с толщиной стекла / заполнения
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+rows = []
+for s in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsElementType():
+    fam = getattr(s, "FamilyName", "")
+    if not fam.startswith("BIMLIB"):
+        continue
+    d = {"name": s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), "fam": fam.split("_")[2]}
+    for p in s.Parameters:
+        n = p.Definition.Name
+        if (u"Толщ" in n or u"толщ" in n or u"Стекло" in n or u"Единица" in n) and not n.startswith("FT_Уплотнитель") and not n.startswith("FT_Жалюзи"):
+            try:
+                d[n] = p.AsValueString() if p.StorageType == StorageType.Double else (p.AsString() if p.StorageType == StorageType.String else p.AsInteger())
+            except Exception:
+                d[n] = "?"
+            d[n + "#ro"] = p.IsReadOnly
+    rows.append(d)
+__output__ = {"status": "completed_unverified", "summary": "панелей %d" % len(rows), "rows": rows}

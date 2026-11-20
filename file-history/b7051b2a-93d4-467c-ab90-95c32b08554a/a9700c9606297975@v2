@@ -1,0 +1,32 @@
+param([string]$Dir)
+$enc = [System.Text.Encoding]::GetEncoding(28591)
+$maps = @{}
+foreach ($f in Get-ChildItem $Dir) {
+    $t = [IO.File]::ReadAllText($f.FullName, $enc)
+    if ($t -notmatch 'beginbf') { continue }
+    $m = @{}
+    foreach ($x in [regex]::Matches($t, '<([0-9A-Fa-f]{4})>\s*<([0-9A-Fa-f]+)>')) {
+        $u = $x.Groups[2].Value; $s = ''
+        for ($i = 0; $i -lt $u.Length; $i += 4) { $s += [char][Convert]::ToInt32($u.Substring($i, 4), 16) }
+        $m[$x.Groups[1].Value.ToUpper()] = $s
+    }
+    foreach ($x in [regex]::Matches($t, '<([0-9A-Fa-f]{4})>\s*<([0-9A-Fa-f]{4})>\s*<([0-9A-Fa-f]{4})>')) {
+        $a = [Convert]::ToInt32($x.Groups[1].Value, 16); $b = [Convert]::ToInt32($x.Groups[2].Value, 16); $c = [Convert]::ToInt32($x.Groups[3].Value, 16)
+        for ($k = $a; $k -le $b; $k++) { $m[('{0:X4}' -f $k)] = [string][char]($c + $k - $a) }
+    }
+    if ($m.Count -gt 0) { $maps[$f.Name] = $m }
+}
+"maps: " + ($maps.Keys -join ', ')
+foreach ($name in 's0023.bin','s0053.bin','s0054.bin','s0058.bin') {
+    $t = [IO.File]::ReadAllText((Join-Path $Dir $name), $enc)
+    "=== $name ==="
+    foreach ($x in [regex]::Matches($t, '\[([^\]]*<[0-9A-Fa-f]{4,}>[^\]]*)\]\s*TJ|<([0-9A-Fa-f]{4,})>\s*Tj')) {
+        $hexes = if ($x.Groups[1].Success) { [regex]::Matches($x.Groups[1].Value, '<([0-9A-Fa-f]+)>') | ForEach-Object { $_.Groups[1].Value } } else { @($x.Groups[2].Value) }
+        $hex = ($hexes -join '').ToUpper()
+        foreach ($mk in $maps.Keys) {
+            $mp = $maps[$mk]; $s = ''; $ok = $true
+            for ($i = 0; $i + 4 -le $hex.Length; $i += 4) { $code = $hex.Substring($i, 4); if ($mp.ContainsKey($code)) { $s += $mp[$code] } else { $ok = $false; break } }
+            if ($ok) { "[$mk] $s" }
+        }
+    }
+}

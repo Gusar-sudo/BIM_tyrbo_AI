@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+# Убрать нарисованный уплотнитель (U5) из вложенных 2D-элементов узлов в профилях импостов:
+# удаляются FilledRegion со сплошной заливкой и габаритом <= max_mm по обеим осям (уплотнитель ~8x9 мм).
+# Уплотнитель теперь рисует панель (по толщине стекла). Профили берутся с импостов, стоящих в указанных стенах.
+# EditFamily(профиль) -> EditFamily(вложенный) -> удалить -> загрузить вложенный обратно -> SaveAs профиля в out_dir.
+# Проект НЕ меняется. Пишет args_file для load_profiles_multi.py.
+# Аргументы: wall_ids, out_dir, max_mm, args_out
+import json
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MAX = float(args.get("max_mm", 12.0))
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+sym_ids = {}
+for wid in args["wall_ids"]:
+    w = doc.GetElement(ElementId(int(wid)))
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        mt = doc.GetElement(m.GetTypeId())
+        p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+        if p and p.AsElementId() != ElementId.InvalidElementId:
+            sym_ids.setdefault(int(p.AsElementId().Value), set()).add(mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString())
+
+results = []
+items = []
+for sid, tnames in sorted(sym_ids.items()):
+    sym = doc.GetElement(ElementId(sid))
+    r = {"symbol_id": sid, "profile": sym.Family.Name, "mullion_types": sorted(tnames), "ok": False, "removed": [], "kept_fills": []}
+    pdoc = doc.EditFamily(sym.Family)
+    try:
+        for fi in list(FilteredElementCollector(pdoc).OfClass(FamilyInstance)):
+            nfam = fi.Symbol.Family
+            ndoc = pdoc.EditFamily(nfam)
+            try:
+                dele = List[ElementId]()
+                for fr in FilteredElementCollector(ndoc).OfClass(FilledRegion):
+                    ft = ndoc.GetElement(fr.GetTypeId())
+                    fp = ndoc.GetElement(ft.ForegroundPatternId) if ft else None
+                    is_solid = fp is not None and fp.GetFillPattern().IsSolidFill
+                    xs, ys = [], []
+                    for loop in fr.GetBoundaries():
+                        for c in loop:
+                            for pt in (c.GetEndPoint(0), c.GetEndPoint(1)):
+                                xs.append(pt.X * FT); ys.append(pt.Y * FT)
+                    w_, h_ = max(xs) - min(xs), max(ys) - min(ys)
+                    rec = {"nested": nfam.Name, "type": ft.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() if ft else None,
+                           "size": [round(w_, 1), round(h_, 1)], "at": [round(min(xs), 1), round(min(ys), 1)]}
+                    if is_solid and w_ <= MAX and h_ <= MAX:
+                        dele.Add(fr.Id); r["removed"].append(rec)
+                    else:
+                        r["kept_fills"].append(rec)
+                if dele.Count > 0:
+                    t = Transaction(ndoc, u"Убрать нарисованный уплотнитель")
+                    t.Start(); ndoc.Delete(dele); t.Commit()
+                    ndoc.LoadFamily(pdoc, LoadOpt())
+            finally:
+                ndoc.Close(False)
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["out_rfa"] = args["out_dir"] + u"\\" + sym.Family.Name + u".rfa"
+        pdoc.SaveAs(r["out_rfa"], opts)
+        r["ok"] = True
+        if r["removed"]:
+            items.append({"symbol_id": sid, "rfa": r["out_rfa"]})
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        pdoc.Close(False)
+    results.append(r)
+with open(args["args_out"], "w", encoding="utf-8") as f:
+    json.dump({"items": items}, f, ensure_ascii=False)
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Профилей: %d, обработано %d, с удалённым уплотнителем %d; проект не изменён." % (len(results), ok, len(items)),
+              "results": [dict(symbol_id=r["symbol_id"], profile=r["profile"], mullion_types=r["mullion_types"], ok=r["ok"],
+                               removed=len(r["removed"]), removed_sizes=[x["size"] for x in r["removed"]],
+                               kept_fills=r["kept_fills"][:4], error=r.get("error")) for r in results]}

@@ -1,0 +1,149 @@
+﻿# Пакет «М2 разрезы»: листы A3 — слева рисунок альбома, справа разрезы/узлы из Revit (test_M2M3_seals).
+import glob, os
+from PIL import Image, ImageDraw, ImageFont
+base = r"C:\Users\user\Desktop\Фристайл\_bim\test\2026-10-28_M2M3_seals"
+src = os.path.join(base, "M2_sections")
+alb = os.path.join(base, "album_M2")
+out_dir = os.path.join(base, "M2_sections_pdf"); os.makedirs(out_dir, exist_ok=True)
+out_pdf = os.path.join(out_dir, "М2_разрезы_2026-10-30.pdf")
+W, H = 3307, 2339
+F = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arial.ttf", s)
+FB = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arialbd.ttf", s)
+pages = []
+GL = {1: ("5", "8"), 2: ("6", "10")}          # колонка: (стекло снизу, сверху), мм
+SEAL = {"5": "U5", "6": "U6", "8": "U8", "10": "U10"}
+
+
+def new_page(title, sub=None):
+    p = Image.new("RGB", (W, H), "white"); d = ImageDraw.Draw(p)
+    d.text((80, 50), title, fill="black", font=FB(54))
+    if sub:
+        d.text((80, 125), sub, fill=(90, 90, 90), font=F(30))
+    d.line([(80, 180), (W - 80, 180)], fill=(160, 160, 160), width=3)
+    d.text((W - 640, H - 70), "Фристайл · М2 · test_M2M3_seals · 30.10.2026", fill=(150, 150, 150), font=F(26))
+    d.text((80, H - 70), "стр. %d" % (len(pages) + 1), fill=(150, 150, 150), font=F(26))
+    return p, d
+
+
+def crop_content(im, pad=30):
+    g = im.convert("L").point(lambda v: 255 if v < 245 else 0)
+    bb = g.getbbox()
+    return im.crop((max(0, bb[0] - pad), max(0, bb[1] - pad), min(im.width, bb[2] + pad), min(im.height, bb[3] + pad))) if bb else im
+
+
+def fit(im, w, h):
+    im = im.copy(); im.thumbnail((w, h), Image.LANCZOS); return im
+
+
+def one(pattern):
+    f = glob.glob(os.path.join(src, pattern))
+    return f[0] if f else None
+
+
+def cell(p, d, f, x, y, w, h, label, crop=True):
+    d.rectangle([x, y, x + w, y + h], outline=(190, 190, 190), width=2)
+    d.text((x + 14, y + 10), label, fill=(170, 0, 0), font=FB(28))
+    if f is None:
+        d.text((x + 20, y + 60), "нет вида", fill=(200, 0, 0), font=F(28)); return
+    im = Image.open(f).convert("RGB")
+    if crop == "center":
+        # центральная часть вида: узел крупно, без посторонних элементов модели по краям
+        k = 0.62; cw0, ch0 = im.width * k, im.height * k
+        im = im.crop((int((im.width - cw0) / 2), int((im.height - ch0) / 2), int((im.width + cw0) / 2), int((im.height + ch0) / 2)))
+    elif crop:
+        im = crop_content(im)
+    im = fit(im, w - 20, h - 60)
+    p.paste(im, (x + (w - im.width) // 2, y + 50 + (h - 50 - im.height) // 2))
+
+
+def page(title, sub, album, cells, ncol, album_w=1050):
+    p, d = new_page(title, sub)
+    top, bot = 210, H - 100
+    if album:
+        cell(p, d, os.path.join(alb, album[0]), 80, top, album_w, bot - top, "Альбом: " + album[1], crop=False)
+        x0 = 80 + album_w + 40
+    else:
+        x0 = 80
+    nrow = (len(cells) + ncol - 1) // ncol
+    cw = (W - 80 - x0 - (ncol - 1) * 25) // ncol; ch = (bot - top - (nrow - 1) * 25) // nrow
+    for i, (f, lab, cr) in enumerate(cells):
+        cell(p, d, f, x0 + (i % ncol) * (cw + 25), top + (i // ncol) * (ch + 25), cw, ch, lab, crop=cr)
+    pages.append(p)
+
+
+# 1. титул
+p, d = new_page("Перегородки М2 — разрезы и узлы для сверки с альбомом",
+                "Тестовый файл test_M2M3_seals, Revit 2026, «Высокая» детализация, разрезы 1:2. Виды созданы пробным прогоном и откатаны.")
+L = [("Как читать", 1),
+     ("• Вертикальные разрезы — через середину каждой колонки панелей: пол, ригель (середина высоты), потолок.", 0),
+     ("• Колонка 1: стекло 5 мм снизу и 8 мм сверху (U5 / U8). Колонка 2: 6 мм снизу и 10 мм сверху (U6 / U10).", 0),
+     ("• Горизонтальные узлы — план на 500 мм (стекло 5 | 6) и 1500 мм (8 | 10): край левый / центр / край правый.", 0),
+     ("• Слева на каждом листе — рисунок альбома М2 для сравнения; чёрное в сечении — уплотнитель.", 0),
+     ("", 0),
+     ("Состав", 1),
+     ("стр. 2–4   Стойка FSC21: однослойное, двухслойное, цельностеклянное — вертикальные разрезы.", 0),
+     ("стр. 5–7   Широкая стойка FSC139: то же.", 0),
+     ("стр. 8–9   Горизонтальные узлы: примыкание к стене (левый / правый) и центр, FSC21 и FSC139.", 0),
+     ("", 0),
+     ("Что видно сразу (замечания)", 1),
+     ("1. Основание (серое) добавлено для показа: плита 220 мм под и над перегородкой, кирпичная стена 380 мм у торцов.", 0),
+     ("    Стойки стоят вплотную к плите и стене: зазора под ленту Дихтунгсбанд (поз. 5 альбома) и дюбелей в модели нет.", 0),
+     ("2. В библиотеке нет глухих и комбинированных панелей (ГКЛ + минвата, рис. 32 / 35) — сравнить нечем.", 0),
+     ("3. Стекло во всех разрезах со стороны фасада, уплотнитель стоит у кромки в пазу рамки, разный для 5/6/8/10.", 0),
+     ("    02.11: из 87 профилей убран нарисованный U5 (был вторым уплотнителем), вырез силуэта углублён до паза;", 0),
+     ("    цельностеклянная стена FSC139 получила свой тип панели — стекло заходит в импост на 14 мм.", 0),
+     ("4. Двери и углы в этот пакет не вошли: углы/Т — в пакете «М2 визуальная проверка», двери — следующим шагом.", 0)]
+y = 260
+for t, b in L:
+    d.text((100, y), t, fill="black" if b else (40, 40, 40), font=FB(40) if b else F(33))
+    y += 60 if t else 28
+pages.append(p)
+
+
+def vpage(tag, title, album, has_rigel=True):
+    nodes = ["потолок", "ригель", "пол"] if has_rigel else ["потолок", "пол"]
+    cells = []
+    for c in (1, 2):
+        lo, hi = GL[c]
+        for nm in nodes:
+            g = {"потолок": hi, "ригель": hi + " / " + lo, "пол": lo}[nm] if has_rigel else "—"
+            lab = "Колонка %d · %s" % (c, nm) + ("" if not has_rigel else " · стекло %s мм" % g)
+            cells.append((one("V_%s_c%d_%s*.png" % (tag, c, nm)), lab, "center"))
+    # раскладка: столбцы = колонки панелей, строки = узлы сверху вниз
+    order = []
+    for r in range(len(nodes)):
+        for c in range(2):
+            order.append(cells[c * len(nodes) + r])
+    page(title, "Вертикальные разрезы через середину колонок панелей; фасад (стекло) — слева. Сверху вниз: потолок → ригель → пол.", album, order, 2)
+
+
+vpage("1сл_FSC21", "Вертикальные разрезы · М2 однослойное · FSC21", ("32_33_секции_гл_одн.png", "рис. 32–33 (справа — одинарное)"))
+vpage("2сл_FSC21", "Вертикальные разрезы · М2 двухслойное · FSC21", ("34_35_двойн_комб.png", "рис. 34–35 (двойное)"))
+vpage("цс_FSC21", "Вертикальные разрезы · М2 цельностеклянное · FSC21", ("34_35_двойн_комб.png", "рис. 34–35"), has_rigel=False)
+vpage("1сл_FSC139", "Вертикальные разрезы · М2 однослойное · широкая FSC139", ("32_33_секции_гл_одн.png", "рис. 32–33"))
+vpage("2сл_FSC139", "Вертикальные разрезы · М2 двухслойное · широкая FSC139", ("34_35_двойн_комб.png", "рис. 34–35"))
+vpage("цс_FSC139", "Вертикальные разрезы · М2 цельностеклянное · FSC139", ("34_35_двойн_комб.png", "рис. 34–35"), has_rigel=False)
+
+
+def hpage(tags, title):
+    cells = []
+    for tag, hz in tags:
+        fs = sorted(glob.glob(os.path.join(src, "H_%s_%04d_*.png" % (tag, hz))))
+        for f in fs:
+            nm = os.path.basename(f).split(" · ")[-1][:-4]
+            for a, b in (("М2 ", ""), (" с однослойным остеклением", ""), (" с двухслойным остеклением", ""),
+                         (" с двухслойным цельностеклянным остеклением", ""), ("примыкание к ", "к "), (" центральный", " центр")):
+                nm = nm.replace(a, b)
+            g = {500: "5|6", 1500: "8|10", 1000: "цс"}[hz]
+            cells.append((f, "%s · %s · %s" % (tag, g, nm), "center"))
+    page(title, "Горизонтальные сечения (план) 1:2. Фасад (стекло однослойных) — сверху, столбы выступают вниз. Серое — кирпичная стена. Слева — рис. 36.", ("36_гориз_сечение.png", "рис. 36"), cells, 3, album_w=950)
+
+
+hpage([("1сл_FSC21", 500), ("1сл_FSC21", 1500), ("2сл_FSC21", 500), ("2сл_FSC21", 1500)], "Горизонтальные узлы · FSC21 (+ столб FSC17 в центре)")
+hpage([("1сл_FSC139", 500), ("2сл_FSC139", 500), ("цс_FSC139", 1000), ("цс_FSC21", 1000)], "Горизонтальные узлы · FSC139 и цельностеклянные")
+
+pages[0].save(out_pdf, save_all=True, append_images=pages[1:], resolution=200)
+for i, pg in enumerate(pages):
+    pg.resize((W // 2, H // 2)).save(os.path.join(out_dir, "page_%02d.png" % (i + 1)))
+print(out_pdf, len(pages))
+

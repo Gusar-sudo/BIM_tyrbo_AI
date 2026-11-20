@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+# Чтение: какие параметры типа стены ГКЛ ссылаются на типы импостов; есть ли updater'ы
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+w = doc.GetElement(ElementId(15485416))
+out = []
+for p in w.Parameters:
+    if p.StorageType == StorageType.ElementId:
+        e = doc.GetElement(p.AsElementId())
+        out.append([p.Definition.Name, (p.Definition.BuiltInParameter.ToString() if hasattr(p.Definition, "BuiltInParameter") else ""), e.Name if e else None, e.GetType().Name if e else None])
+wall = doc.GetElement(ElementId(15490752))
+m = doc.GetElement(wall.CurtainGrid.GetMullionIds()[0])
+upd = [u.UpdaterName for u in UpdaterRegistry.GetRegisteredUpdaterInfos(doc)]
+__output__ = {"status": "completed_unverified", "summary": u"ссылок %d" % len(out), "params": out,
+              "mullion_type_param": m.get_Parameter(BuiltInParameter.ELEM_TYPE_PARAM).AsValueString(), "updaters": upd}

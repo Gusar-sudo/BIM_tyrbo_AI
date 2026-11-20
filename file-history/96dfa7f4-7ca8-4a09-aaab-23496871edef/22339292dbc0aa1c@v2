@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*-
+# Только чтение: во всех семействах профилей импостов (по типам импостов документа) найти нарисованный уплотнитель —
+# сплошные заливки <= max_mm во вложенных 2D. Плюс: какие стены используют эти профили.
+# Семейства открываются на чтение и закрываются без сохранения. Аргументы: max_mm, prefix (фильтр имени семейства)
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MAX = float(args.get("max_mm", 12.0))
+pref = args.get("prefix", u"BIMLIB_Профиль_")
+
+used = {}   # symbol id -> set(mullion type names)
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    if p and p.AsElementId() != ElementId.InvalidElementId:
+        used.setdefault(int(p.AsElementId().Value), set()).add(mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString())
+inst = {}
+for m in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType():
+    inst[int(m.GetTypeId().Value)] = inst.get(int(m.GetTypeId().Value), 0) + 1
+
+res = []
+for sid, tn in sorted(used.items()):
+    sym = doc.GetElement(ElementId(sid))
+    if sym is None or not sym.Family.Name.startswith(pref):
+        continue
+    r = {"profile": sym.Family.Name, "types": sorted(tn), "fills": []}
+    pdoc = doc.EditFamily(sym.Family)
+    try:
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            ndoc = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                for fr in FilteredElementCollector(ndoc).OfClass(FilledRegion):
+                    ft = ndoc.GetElement(fr.GetTypeId())
+                    fp = ndoc.GetElement(ft.ForegroundPatternId) if ft else None
+                    if fp is None or not fp.GetFillPattern().IsSolidFill:
+                        continue
+                    xs, ys = [], []
+                    for loop in fr.GetBoundaries():
+                        for c in loop:
+                            for pt in (c.GetEndPoint(0), c.GetEndPoint(1)):
+                                xs.append(pt.X * FT); ys.append(pt.Y * FT)
+                    w_, h_ = max(xs) - min(xs), max(ys) - min(ys)
+                    if w_ <= MAX and h_ <= MAX:
+                        r["fills"].append([round(w_, 1), round(h_, 1)])
+            finally:
+                ndoc.Close(False)
+    finally:
+        pdoc.Close(False)
+    if r["fills"]:
+        res.append(r)
+__output__ = {"status": "completed_unverified", "summary": u"профилей с нарисованным уплотнителем: %d" % len(res),
+              "profiles": [dict(profile=r["profile"], n=len(r["fills"]), sizes=r["fills"][:4], types=r["types"]) for r in res]}

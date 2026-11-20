@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+# Массовая запись строковых параметров ТИПОВ (импосты, витражи, панели) по имени типа — для правок ADSK, когда
+# типизированная команда требует по записи на тип. Типы ищутся по ключу, а не по id, поэтому один список годится
+# и для теста, и для библиотеки. Ключ: "M:<имя типа импоста>", "W:<имя типа стены>", "P:<семейство>:<имя типа панели>".
+# dry_run=true: записать -> Regenerate -> перечитать -> ОТКАТ. dry_run=false: записать -> зафиксировать -> перечитать.
+# Аргументы: args_file {writes:[{key, param, value}], transaction_name}, dry_run
+import json, io, collections
+from Autodesk.Revit.DB import *
+a0 = json.loads(HORIZUN_ARGS_JSON)
+args = json.loads(io.open(a0["args_file"], encoding="utf-8-sig").read())
+DRY = bool(a0.get("dry_run", True))
+doc = __revit__.ActiveUIDocument.Document
+idx = {}
+for m in FilteredElementCollector(doc).OfClass(MullionType):
+    idx["M:" + m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()] = m
+for w in FilteredElementCollector(doc).OfClass(WallType):
+    idx["W:" + w.Name] = w
+for s in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsElementType():
+    fam = s.FamilyName if hasattr(s, "FamilyName") else ""
+    idx["P:%s:%s" % (fam, s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString())] = s
+res = {"doc": doc.Title, "dry_run": DRY, "requested": len(args["writes"]), "missing": [], "readonly": [], "refused": [],
+       "mismatch": [], "unchanged": 0, "changed": 0, "by_param": collections.Counter()}
+t = Transaction(doc, args.get("transaction_name", u"FT: параметры типов")); t.Start()
+try:
+    done = []
+    for w in args["writes"]:
+        e = idx.get(w["key"])
+        if e is None:
+            res["missing"].append(w["key"]); continue
+        p = e.LookupParameter(w["param"])
+        if p is None:
+            res["missing"].append(w["key"] + " / " + w["param"]); continue
+        before = p.AsString()
+        if before == w["value"]:
+            res["unchanged"] += 1; continue
+        if p.IsReadOnly:
+            res["readonly"].append(w["key"] + " / " + w["param"]); continue
+        if not p.Set(w["value"]):
+            res["refused"].append(w["key"] + " / " + w["param"]); continue
+        done.append((e, w, before))
+    doc.Regenerate()
+    for e, w, before in done:
+        v = e.LookupParameter(w["param"]).AsString()
+        if v != w["value"]:
+            res["mismatch"].append([w["key"], w["param"], v])
+        else:
+            res["changed"] += 1
+            res["by_param"]["%s: %s -> %s" % (w["param"], before, w["value"])] += 1
+    if DRY or res["missing"] or res["readonly"] or res["refused"] or res["mismatch"]:
+        t.RollBack(); res["committed"] = False
+    else:
+        t.Commit(); res["committed"] = True
+except Exception:
+    if t.HasStarted() and not t.HasEnded():
+        t.RollBack()
+    raise
+if res.get("committed"):
+    bad = []
+    for e, w, before in done:
+        if e.LookupParameter(w["param"]).AsString() != w["value"]:
+            bad.append(w["key"])
+    res["readback_after_commit_bad"] = bad
+res["by_param"] = dict(res["by_param"])
+for k in ("missing", "readonly", "refused", "mismatch"):
+    res[k + "_n"] = len(res[k]); res[k] = res[k][:15]
+__output__ = {"status": "completed_unverified", "summary": u"%s: %s; изменится/изменено %d, без изменений %d, ошибок %d" % (
+    doc.Title, u"проба, откат" if DRY else (u"записано" if res.get("committed") else u"НЕ записано (ошибки, откат)"),
+    res["changed"], res["unchanged"], res["missing_n"] + res["readonly_n"] + res["refused_n"] + res["mismatch_n"]), "result": res}

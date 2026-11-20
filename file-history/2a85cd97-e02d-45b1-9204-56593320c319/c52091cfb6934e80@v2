@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+# Чтение: параметры экземпляров панелей М2/М3 (размер стекла, площадь), по одному на тип
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+seen = {}
+total = 0
+for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    t = doc.GetElement(p.GetTypeId())
+    fam = getattr(t, "FamilyName", "")
+    if not fam.startswith("BIMLIB"):
+        continue
+    total += 1
+    k = t.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
+    if k in seen:
+        seen[k]["n"] += 1
+        continue
+    d = {"n": 1, "id": p.Id.Value}
+    for q in p.Parameters:
+        n = q.Definition.Name
+        if u"Стекло" in n or n in (u"Площадь", u"Ширина", u"Высота") or u"Слой" in n:
+            d[n] = q.AsValueString() if q.StorageType == StorageType.Double else (q.AsString() if q.StorageType == StorageType.String else q.AsInteger())
+            d[n + "#f"] = q.IsShared
+    seen[k] = d
+__output__ = {"status": "completed_unverified", "summary": u"экземпляров %d, типов %d" % (total, len(seen)), "types": seen}

@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+# Локально: параметры профилей и типов стоек для ГКЛ. Аргумент: pilot (1 = только FSC21 и FSC01)
+import json, sys
+pilot = len(sys.argv) > 1 and sys.argv[1] == "1"
+STANDS = [(u"М2", u"FSC21"), (u"М2", u"FSC139"), (u"М2", u"FSC22"), (u"М3", u"FSC01"), (u"М3", u"FSC01К"), (u"М3", u"FSC111"), (u"М3", u"FSC09")]
+if pilot:
+    STANDS = [(u"М2", u"FSC21"), (u"М3", u"FSC01")]
+# выбор стоек: python make_args_gkl_stands.py sel FSC139,FSC22  -> args_gkl_stands_FSC139_FSC22.json
+sel = sys.argv[2].split(",") if len(sys.argv) > 2 and sys.argv[1] == "sel" else None
+if sel:
+    STANDS = [s for s in STANDS if s[1] in sel]
+SYS = {u"М2": u"MODEL 2", u"М3": u"MODEL 3"}
+items = []
+for sysn, st in STANDS:
+    for lay, lay_t in ((u"Двухслойный", u"двухслойным"), (u"Однослойный", u"однослойным")):
+        base_p = u"BIMLIB_Профиль_%s_%s_Центральный%s_ФристайлТехнолоджи" % (sysn, st, lay)
+        base_t = u"%s %s центральный с %s остеклением" % (sysn, st, lay_t)
+        for side, side_p, side_t in (("L", u"Левый", u"слева"), ("R", u"Правый", u"справа")):
+            items.append({"base_profile": base_p, "new_profile": u"BIMLIB_Профиль_%s_%s_ЦентральныйКомбинированный%s%s_ФристайлТехнолоджи" % (sysn, st, lay, side_p),
+                          "remove": [side], "base_type": base_t, "new_type": u"%s %s центральный стекло + ГКЛ с %s остеклением, ГКЛ %s" % (sysn, st, lay_t, side_t),
+                          "vitrazh": 1, "adsk_name": u"Сборка %s в центре комбинированной перегородки (стекло + ГКЛ)" % SYS[sysn]})
+    items.append({"base_profile": u"BIMLIB_Профиль_%s_%s_ЦентральныйДвухслойный_ФристайлТехнолоджи" % (sysn, st),
+                  "new_profile": u"BIMLIB_Профиль_%s_%s_ЦентральныйГлухойГКЛ_ФристайлТехнолоджи" % (sysn, st), "remove": ["L", "R"],
+                  "base_type": u"%s %s центральный с двухслойным остеклением" % (sysn, st), "new_type": u"%s %s центральный глухой ГКЛ" % (sysn, st),
+                  "vitrazh": 0, "adsk_name": u"Сборка %s в центре глухой перегородки (ГКЛ)" % SYS[sysn]})
+W = {u"М2": u"BIMLIB_Витраж_Без разрезки_Система М2_Стойка основная_Двойное заполнение_62мм",
+     u"М3": u"BIMLIB_Витраж_Без разрезки_Система М3_Стойка стандартная_Двойное заполнение_72мм"}
+G = {u"М2": u"Глухая панель ГКЛ 12,5 с утеплителем 62 мм", u"М3": u"Глухая панель ГКЛ 12,5 с утеплителем 72 мм"}
+P = {u"М2": u"Двуслойная стеклянная панель 62 мм", u"М3": u"Двуслойная стеклянная панель 72 мм (стекло 6 мм)"}
+probe = []
+for sysn, st in STANDS:
+    probe.append({"new_type": u"%s %s центральный стекло + ГКЛ с двухслойным остеклением, ГКЛ слева" % (sysn, st), "wall_type": W[sysn], "gkl_type": G[sysn], "glass_type": P[sysn], "sides": ["left", "right"]})
+    probe.append({"new_type": u"%s %s центральный глухой ГКЛ" % (sysn, st), "wall_type": W[sysn], "gkl_type": G[sysn], "glass_type": G[sysn], "sides": ["left"]})
+fn = "args_gkl_stands_pilot.json" if pilot else ("args_gkl_stands_%s.json" % "_".join(sel) if sel else "args_gkl_stands.json")
+if sel:
+    # замер лучом медленный: только глухая стойка, шаг 2 мм
+    probe = [p for p in probe if p["new_type"].endswith(u"глухой ГКЛ")]
+json.dump({"items": items, "out_dir": r"C:\Users\user\Desktop\Фристайл\_bim\work\2026\families\gkl_stands_2026-11-03", "dry_run": True,
+           "probe": probe, "probe_range": [0, 20, 2] if sel else [-4, 16, 1]}, open(fn, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(fn, len(items), len(probe))

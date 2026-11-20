@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+# Конфиг пакета приёмки М2/М3 11.11.2026 по замечаниям 10.11: всё снято из БИБЛИОТЕКИ после стыка цс УП-008 (v2, 2×7 мм),
+# краёв цс с уплотнителем, стекла 8 мм, светлых ламелей. Порядок тегов = args_review_*.json. Запуск: python make_config.py
+import json, glob
+B = r"C:\Users\user\Desktop\Фристайл\_bim"
+R = B + r"\review\2026-11-11_M2M3_lib"
+FLEX = R + r"\raw_flex"; NODES = R + r"\raw_nodes_all"
+A2 = B + r"\review\album_m2_media"; A3 = B + r"\review\album_m3_media"
+
+
+def g(pat):
+    r = glob.glob(pat)
+    return r[0] if r else None
+
+
+M2N = ("М2", "Стойка обычная FS.C-139", "FS.C-112 / FS.C-113", A2 + r"\image81.png", A2 + r"\image84.png")
+M2U = ("М2", "Стойка узкая FS.C-21", "FS.C-28 узкий / FS.C-29", A2 + r"\image78.png", A2 + r"\image83.png")
+M3T = ("М3", "Стойка обычная FS.C-111", "Т-образный FS.C-112 / FS.C-113", A3 + r"\image99.png", None)
+M3K = ("М3", "Стойка обычная FS.C-01К", "клипсовый FS.C-20 + клипса", A3 + r"\image97.png", None)
+M3O = ("М3", "Стойка обычная FS.C-01", "омега FS.C-11 / FS.C-82 + заглушка FS.C-10", A3 + r"\image98.png", None)
+M3U = ("М3", "Стойка узкая FS.C-09 (альбом: FS.C-115)", "FS.C-28 узкий / FS.C-29", A3 + r"\image100.png", None)
+rows = []
+for grp, names in ((M2N, ("М2_Стойка обычная", 62)), (M2U, ("М2_Стойка узкая", 62)), (M3T, ("М3_Стойка обычная_Нащельник Т-образный", 72)),
+                   (M3K, ("М3_Стойка обычная_Нащельник клипсовый", 72)), (M3O, ("М3_Стойка обычная_Нащельник омега", 72)), (M3U, ("М3_Стойка узкая", 72))):
+    for fill in ("Двойное", "Одинарное", "Цельностеклянное"):
+        rows.append((grp, "%s_%s заполнение_%dмм" % (names[0], fill, names[1]), "%s %d мм" % (fill, names[1])))
+CS = u"Стык стекло–стекло: межстекольный профиль УП-008 (2×7 мм в габарите стекла, зазор 2 мм), уплотнителя рейки нет. Край у стены: уплотнитель стекла в пазу. Стекло по умолчанию 8 мм."
+NOTES = {"03": CS, "06": CS + u" Край М2 узкой исправлен (боковой профиль FSC21, смещение 0).", "09": CS, "12": CS, "15": CS, "18": CS}
+types = []
+for i, (grp, name, fill) in enumerate(rows):
+    tag = "%02d" % (i + 1)
+    sy, st, cv, cr, er = grp
+    if "Одинарное" in fill or "Цельност" in fill:
+        cr = cr if "Двойное" in fill else None
+        er = None
+    types.append({"tag": tag, "name": name, "system": sy, "stand": st, "cover": cv, "fill": fill, "note": NOTES.get(tag),
+                  "center_ref": cr, "edge_ref": er,
+                  "flex": {"c3d": g(FLEX + "\\%s_1_*.png" % tag), "f3d": g(FLEX + "\\%s_2_*.png" % tag), "fac": g(FLEX + "\\%s_3_*.png" % tag)},
+                  "nodes": {"center": g(NODES + "\\%s_центр*.png" % tag), "edge": g(NODES + "\\%s_край*.png" % tag)}})
+cfg = {"pkg_dir": R + r"\pkg", "types": types,
+       "extra": [
+           {"key": "up008", "title": "УП-008: было / стало (11.11, ваше замечание)", "files": [["План стыка, стекло 8 мм: сверху было 13 мм (выходило за стекло), снизу стало 7 мм в габарите стекла", R + r"\_УП008_было_стало.png"]]},
+           {"key": "cs", "title": "Цельностеклянные: край у стены и стык УП-008, 6 типов", "files": [["План 1:2, библиотека", R + r"\_узлы_цс_финал.png"]]},
+           {"key": "corner", "title": "Углы у пола и потолка: нащельник у стены сплошной", "files": [["3D крупно, библиотека", R + r"\_углы_библиотека.png"]]},
+           {"key": "blinds", "title": "Жалюзи: светлые ламели", "files": [["Слева «Реалистичный», справа «Тонирование с кромками»", R + r"\_жалюзи_библиотека.png"]]}],
+       "checks": {"flex": {"types": 18, "pass": 18, "sections": 54, "warnings": 0, "glass_bad": 0},
+                  "up008": {"types": 6, "inside_glass": 5, "m2_mm": "23,1–30,1 в стекле 22,6–30,6", "m3_mm": "28,2–35,2 в стекле 27,7–35,7"},
+                  "nodes": {"types": 18, "warnings": 0},
+                  "deleted": {"cs_6mm_types": 2},
+                  "model": {"warnings": 0, "intersections": 0}},
+       "questions": [
+           {"id": "q_up", "text": "Стык стекло–стекло цельностеклянных (03, 06, 09, 12, 15, 18): профиль УП-008 в зазоре 2 мм и не выходит за грани стекла?"},
+           {"id": "q_seal", "text": "Край цельностеклянных у стены: уплотнитель стекла в пазу, лента у стены есть?"},
+           {"id": "q_corner", "text": "Углы у пола и потолка: нащельник/стойка у стены сплошные от пола до потолка, торца не видно?"},
+           {"id": "q_blinds", "text": "Жалюзи: ламели видны и светлые, нет «чёрного» стекла?"},
+           {"id": "q_flex", "text": "18 типов на трёх размерах: сетка, края и ригель без разрывов?"}],
+       "meta": {"date": "11.11.2026", "model": "BIMLIB_ВитражиДвери_ВнутренниеПерегородкиИДвериВитражные_ФристайлТехнолоджи.rvt", "saved": "11.11.2026 11:45"}}
+missing = [(t["tag"], k) for t in types for k, v in list(t["flex"].items()) + list(t["nodes"].items()) if not v]
+missing += [(e["key"], c) for e in cfg["extra"] for c, f in e["files"] if not f]
+print("missing", missing)
+json.dump(cfg, open(R + r"\config.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)

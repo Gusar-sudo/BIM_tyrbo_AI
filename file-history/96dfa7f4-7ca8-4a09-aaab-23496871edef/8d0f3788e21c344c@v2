@@ -1,0 +1,121 @@
+# -*- coding: utf-8 -*-
+# Пробный прогон / применение: загрузить панели с контурным уплотнителем, замерить в панелях указанных стен
+# уплотнитель относительно стекла (отступ от кромок вдоль стены и по высоте, глубина от лица стекла),
+# при dry_run — выгрузить узлы в PNG и откатить всё (TransactionGroup.RollBack).
+# Аргументы: rfas, wall_ids, commit, view_ids, out_dir, px
+import json, os, clr
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def solids(el):
+    out = []
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-12:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    ge = el.get_Geometry(opt)
+    if ge:
+        walk(ge, None)
+    return out
+
+
+def mname(s):
+    for f in s.Faces:
+        m = doc.GetElement(f.MaterialElementId)
+        if m is not None:
+            return m.Name
+    return ""
+
+
+def ext(sols, o, ax):
+    lo, hi = 1e9, -1e9
+    for s in sols:
+        for e in s.Edges:
+            for p in e.Tessellate():
+                d = (p - o).DotProduct(ax) * FT
+                lo = min(lo, d); hi = max(hi, d)
+    return lo, hi
+
+
+tg = TransactionGroup(doc, u"контурный уплотнитель"); tg.Start()
+res = {"loaded": [], "panels": [], "files": []}
+try:
+    t = Transaction(doc, u"FT: панели с контурным уплотнителем"); t.Start()
+    for rfa in args["rfas"]:
+        f = clr.Reference[Family]()
+        res["loaded"].append([os.path.basename(rfa), bool(doc.LoadFamily(rfa, LoadOpt(), f))])
+    t.Commit()
+    for wid in args["wall_ids"]:
+        w = doc.GetElement(ElementId(int(wid)))
+        c = w.Location.Curve
+        d = c.ComputeDerivatives(0.5, True).BasisX.Normalize()
+        n = XYZ.BasisZ.CrossProduct(d)
+        for pid in w.CurtainGrid.GetPanelIds():
+            p = doc.GetElement(pid)
+            ss = solids(p)
+            gl = [s for s in ss if u"тек" in mname(s).lower()]
+            se = [s for s in ss if mname(s) == u"FT_Уплотнитель_EPDM"]
+            if not gl:
+                continue
+            o = c.GetEndPoint(0)
+            row = {"wall": int(wid), "panel": int(pid.Value), "type": p.Name, "seal_solids": len(se), "glass": []}
+            for g in gl:
+                gx = ext([g], o, d); gy = ext([g], o, n); gz = ext([g], o, XYZ.BasisZ)
+                t_mm = round(gy[1] - gy[0], 1)
+                # уплотнители этого стекла: те, что по глубине ближе к нему
+                mine = [s for s in se if abs((ext([s], o, n)[0] + ext([s], o, n)[1]) / 2 - (gy[0] + gy[1]) / 2) < 25]
+                if not mine:
+                    row["glass"].append({"t": t_mm, "seal": None}); continue
+                face = gy[0] if abs(gy[0]) > abs(gy[1]) else gy[1]
+                sg = 1 if face < 0 else -1
+                edges = []
+                for s in mine:
+                    sx = ext([s], o, d); sy = ext([s], o, n); sz = ext([s], o, XYZ.BasisZ)
+                    dep = sorted([round((sy[0] - face) * sg, 2), round((sy[1] - face) * sg, 2)])
+                    if sx[1] - sx[0] < 50:   # вертикальная кромка
+                        ins = round(sx[0] - gx[0], 2) if abs(sx[0] - gx[0]) < abs(gx[1] - sx[1]) else round(gx[1] - sx[1], 2)
+                        span = [round(sz[0] - gz[0], 2), round(gz[1] - sz[1], 2)]; kind = "V"
+                    else:
+                        ins = round(sz[0] - gz[0], 2) if abs(sz[0] - gz[0]) < abs(gz[1] - sz[1]) else round(gz[1] - sz[1], 2)
+                        span = [round(sx[0] - gx[0], 2), round(gx[1] - sx[1], 2)]; kind = "H"
+                    edges.append([kind, ins, span, dep])
+                row["glass"].append({"t": t_mm, "edges": len(edges), "inset": sorted(set(e[1] for e in edges)),
+                                     "span": sorted(set(tuple(e[2]) for e in edges)), "depth": sorted(set(tuple(e[3]) for e in edges))})
+            res["panels"].append(row)
+    if args.get("view_ids") and args.get("out_dir"):
+        for vid in args["view_ids"]:
+            v = doc.GetElement(ElementId(int(vid)))
+            o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+            o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 1200))
+            o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+            o.FilePath = os.path.join(args["out_dir"], u"v%s" % vid)
+            doc.ExportImage(o)
+            res["files"].append(int(vid))
+    res["warnings"] = len(doc.GetWarnings())
+finally:
+    if commit:
+        tg.Assimilate()
+    else:
+        tg.RollBack()
+res["committed"] = commit
+__output__ = {"status": "completed_unverified", "summary": u"%s; панелей замерено %d" % (u"применено" if commit else u"пробный прогон, откат", len(res["panels"])), "result": res}

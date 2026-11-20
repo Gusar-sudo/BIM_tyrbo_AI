@@ -1,0 +1,22 @@
+param([string]$dir, [string]$names, [string]$out, [int]$cols = 3, [int]$cw = 600, [int]$ch = 450)
+# Сводный лист картинок: names — через запятую (имена файлов в dir), подписи — имя файла
+Add-Type -AssemblyName System.Drawing
+$list = $names.Split(',')
+$rows = [math]::Ceiling($list.Count / $cols)
+$bmp = New-Object System.Drawing.Bitmap ($cw * $cols), ($ch * $rows)
+$g = [System.Drawing.Graphics]::FromImage($bmp); $g.Clear([System.Drawing.Color]::White)
+$g.InterpolationMode = 'HighQualityBicubic'
+$fn = New-Object System.Drawing.Font "Arial", 16
+for ($i = 0; $i -lt $list.Count; $i++) {
+    $p = Join-Path $dir $list[$i]
+    $x = ($i % $cols) * $cw; $y = [math]::Floor($i / $cols) * $ch
+    try {
+        $im = [System.Drawing.Image]::FromFile($p)
+        $sc = [math]::Min(($cw - 10) / $im.Width, ($ch - 30) / $im.Height)
+        $g.DrawImage($im, $x + 5, $y + 25, [int]($im.Width * $sc), [int]($im.Height * $sc))
+        $g.DrawString("$($list[$i]) $($im.Width)x$($im.Height)", $fn, [System.Drawing.Brushes]::Red, $x, $y)
+        $im.Dispose()
+    } catch { $g.DrawString("$($list[$i]) ?", $fn, [System.Drawing.Brushes]::Red, $x, $y) }
+    $g.DrawRectangle([System.Drawing.Pens]::Gray, $x, $y, $cw - 1, $ch - 1)
+}
+$bmp.Save($out); $g.Dispose(); $bmp.Dispose()

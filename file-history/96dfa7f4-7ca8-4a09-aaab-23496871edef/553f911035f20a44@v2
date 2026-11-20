@@ -1,0 +1,44 @@
+# -*- coding: utf-8 -*-
+# Только чтение: фасады/разрезы документа — откуда смотрят (ViewDirection = к зрителю), на каких листах;
+# для указанных стен — с какой стороны от оси стены стоит зритель (+ = наружная сторона, где стрелки разворота).
+# Аргументы: wall_ids
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+
+sheet_of = {}
+for vp in FilteredElementCollector(doc).OfClass(Viewport):
+    sh = doc.GetElement(vp.SheetId)
+    sheet_of[int(vp.ViewId.Value)] = sh.SheetNumber + " " + sh.Name
+
+walls = []
+for wid in args["wall_ids"]:
+    w = doc.GetElement(ElementId(int(wid)))
+    c = w.Location.Curve
+    d = c.ComputeDerivatives(0.5, True).BasisX.Normalize()
+    ext = XYZ.BasisZ.CrossProduct(d).Normalize()
+    if w.Flipped:
+        ext = ext.Negate()
+    walls.append((w, c.Evaluate(0.5, True), ext))
+
+views = []
+for v in FilteredElementCollector(doc).OfClass(ViewSection):
+    if v.IsTemplate:
+        continue
+    vd = v.ViewDirection
+    row = {"id": int(v.Id.Value), "name": v.Name, "kind": str(v.ViewType), "view_dir": [round(vd.X, 2), round(vd.Y, 2)],
+           "sheet": sheet_of.get(int(v.Id.Value)), "sees": []}
+    for w, mid, ext in walls:
+        try:
+            ids = FilteredElementCollector(doc, v.Id).WhereElementIsNotElementType().ToElementIds()
+            visible = w.Id in ids
+        except Exception:
+            visible = None
+        if not visible:
+            continue
+        dot = vd.DotProduct(ext)
+        row["sees"].append({"wall": int(w.Id.Value), "viewer_side": u"наружная" if dot > 0.5 else (u"внутренняя" if dot < -0.5 else u"сбоку")})
+    if row["sees"]:
+        views.append(row)
+__output__ = {"status": "completed_unverified", "summary": "%d видов видят указанные стены" % len(views), "views": views}

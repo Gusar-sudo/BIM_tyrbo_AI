@@ -1,0 +1,232 @@
+# -*- coding: utf-8 -*-
+# Уплотнитель стекла в панели ТОЧНЫМ КОНТУРОМ из «Уплотнители в перегородку.dwg» (решение пользователя 30.10.2026).
+# Для каждого стекла: 4 сдвига (FS.C-U5/U6/U8/U10) по замкнутому контуру кромок стекла, путь — на плоскости лицевой
+# грани стекла, линии пути привязаны к плоскостям кромок стекла. Видим только сдвиг, подходящий к толщине стекла
+# (те же пороги, что в артикуле: <5.5 U5, <7 U6, <9 U8, иначе U10), и только если FT_Уплотнитель_Показать (не М1).
+# Старые прямоугольные полосы (выдавливания с материалом FT_Уплотнитель_EPDM) и их параметры удаляются.
+# Копии семейств -> SaveAs в out_dir. Проект НЕ меняется.
+# Аргументы: families, profiles_dir, out_dir
+import json, math, os, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+TOL = 0.2 / FT
+# по контурам DWG (seal_profiles.json): отступ от кромки стекла, глубина от лица стекла (от, до), мм
+EXPECT = {"U5": [4.08, 5.17, 14.13], "U6": [5.06, 6.0, 14.61], "U8": [5.32, 8.01, 14.66], "U10": [3.31, 8.42, 14.91]}
+KINDS =[("U5", u"and(FT_Уплотнитель_Показать, Толщина стекла < 5.5 мм)"),
+         ("U6", u"and(FT_Уплотнитель_Показать, and(not(Толщина стекла < 5.5 мм), Толщина стекла < 7 мм))"),
+         ("U8", u"and(FT_Уплотнитель_Показать, and(not(Толщина стекла < 7 мм), Толщина стекла < 9 мм))"),
+         ("U10", u"and(FT_Уплотнитель_Показать, not(Толщина стекла < 9 мм))")]
+OLD_PARAMS_FIRST = [u"FT_Уплотнитель_С%d_%s" % (i, s) for i in range(1, 5) for s in (u"Начало", u"Конец")]
+OLD_PARAMS_THEN = [u"FT_Уплотнитель_Отступ", u"FT_Уплотнитель_Ширина", u"FT_Уплотнитель_Посадка"]
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def fparam(fm, name):
+    for p in fm.Parameters:
+        if p.Definition.Name == name:
+            return p
+    return None
+
+
+def mat_name(fdoc, e):
+    p = e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM)
+    if p is None or p.AsElementId() == ElementId.InvalidElementId:
+        return ""
+    m = fdoc.GetElement(p.AsElementId())
+    return m.Name if m else ""
+
+
+fams = dict((f.Name, f) for f in FilteredElementCollector(doc).OfClass(Family))
+results = []
+for name in args["families"]:
+    r = {"family": name, "ok": False}
+    fdoc = doc.EditFamily(fams[name])
+    t = Transaction(fdoc, u"FT: уплотнитель точным контуром")
+    try:
+        fm = fdoc.FamilyManager
+        t.Start()
+        # 0) профили
+        syms = {}
+        for k, _ in KINDS:
+            path = os.path.join(args["profiles_dir"], u"BIMLIB_Профиль_Уплотнитель_FS.C-%s_ФристайлТехнолоджи.rfa" % k)
+            pf = clr.Reference[Family]()
+            fdoc.LoadFamily(path, LoadOpt(), pf)
+            fam = pf.Value
+            if fam is None:
+                fam = [f for f in FilteredElementCollector(fdoc).OfClass(Family) if f.Name == os.path.splitext(os.path.basename(path))[0]][0]
+            syms[k] = fdoc.GetElement(list(fam.GetFamilySymbolIds())[0])
+        # 1) старые полосы и их параметры
+        old = [e.Id for e in FilteredElementCollector(fdoc).OfClass(Extrusion) if mat_name(fdoc, e) == u"FT_Уплотнитель_EPDM"]
+        old += [e.Id for e in FilteredElementCollector(fdoc).OfClass(Sweep) if mat_name(fdoc, e) == u"FT_Уплотнитель_EPDM"]
+        for i in old:
+            fdoc.Delete(i)
+        r["old_removed"] = len(old)
+        fdoc.Regenerate()
+        removed = []
+        for pn in OLD_PARAMS_FIRST + OLD_PARAMS_THEN:
+            p = fparam(fm, pn)
+            if p is not None:
+                try:
+                    fm.RemoveParameter(p); removed.append(pn)
+                except Exception as ex:
+                    r.setdefault("param_remove_errors", []).append(pn + ": " + str(ex))
+        r["params_removed"] = removed
+        # 2) параметры видимости по типу уплотнителя
+        vis_p = {}
+        for k, f in KINDS:
+            pn = u"FT_Уплотнитель_%s_Показать" % k
+            p = fparam(fm, pn)
+            if p is None:
+                p = fm.AddParameter(pn, GroupTypeId.Graphics, SpecTypeId.Boolean.YesNo, False)
+            fm.SetFormula(p, f)
+            vis_p[k] = p
+        # 3) материал: в разрезе — сплошная чёрная, поверхность — без заливки (иначе «лента» на планах ниже секущей)
+        mat = [m for m in FilteredElementCollector(fdoc).OfClass(Material) if m.Name == u"FT_Уплотнитель_EPDM"]
+        mat = mat[0] if mat else fdoc.GetElement(Material.Create(fdoc, u"FT_Уплотнитель_EPDM"))
+        mat.Color = Color(30, 30, 30)
+        solid = [fp for fp in FilteredElementCollector(fdoc).OfClass(FillPatternElement) if fp.GetFillPattern().IsSolidFill]
+        if solid:
+            mat.CutForegroundPatternId = solid[0].Id
+            mat.CutForegroundPatternColor = Color(0, 0, 0)
+        mat.SurfaceForegroundPatternId = ElementId.InvalidElementId
+        # 4) сдвиги по каждому стеклу
+        p_adsk = fparam(fm, u"ADSK_Размер_Толщина")
+        H = fm.CurrentType.AsDouble(p_adsk) / 2
+        glasses = [e for e in FilteredElementCollector(fdoc).OfClass(Extrusion) if u"Стекло" in mat_name(fdoc, e)]
+        rps = list(FilteredElementCollector(fdoc).OfClass(ReferencePlane))
+        elev = [v for v in FilteredElementCollector(fdoc).OfClass(View) if not v.IsTemplate and v.ViewType == ViewType.Elevation
+                and abs(abs(v.ViewDirection.Y) - 1) < 1e-6][0]
+
+        def rp_axis(axis, val):
+            for rp in rps:
+                n = rp.Normal
+                comp = {"x": n.X, "y": n.Y, "z": n.Z}[axis]
+                pos = {"x": rp.BubbleEnd.X, "y": rp.BubbleEnd.Y, "z": rp.BubbleEnd.Z}[axis]
+                if abs(abs(comp) - 1) < 1e-6 and abs(pos - val) < TOL and rp.Name not in (u"Слева", u"Справа", u"Верх"):
+                    return rp
+            return None
+
+        made = []
+        for gi, g in enumerate(glasses):
+            gb = g.get_BoundingBox(None)
+            face_y = gb.Min.Y if abs(gb.Min.Y + H) < abs(gb.Max.Y - H) else gb.Max.Y
+            rpf = rp_axis("y", face_y)
+            if rpf is None:
+                raise Exception(u"нет опорной плоскости лицевой грани стекла %d (y=%.1f)" % (gi + 1, face_y * FT))
+            sp = SketchPlane.Create(fdoc, rpf.Id)
+            x0, x1, z0, z1 = gb.Min.X, gb.Max.X, gb.Min.Z, gb.Max.Z
+            edge_rp = [rp_axis("z", z0), rp_axis("x", x1), rp_axis("z", z1), rp_axis("x", x0)]   # низ, право, верх, лево
+            if None in edge_rp:
+                raise Exception(u"нет плоскостей кромок стекла %d: %s" % (gi + 1, [e is not None for e in edge_rp]))
+            sgn = 1 if face_y < 0 else -1   # глубина «вглубь стены» от лица стекла
+            # кромки: (имя, линия пути, плоскость линии, плоскости концов, вертикальная?)
+            EDGES = [("L", XYZ(x0, face_y, z0), XYZ(x0, face_y, z1), edge_rp[3], (edge_rp[0], edge_rp[2]), True),
+                     ("R", XYZ(x1, face_y, z0), XYZ(x1, face_y, z1), edge_rp[1], (edge_rp[0], edge_rp[2]), True),
+                     ("B", XYZ(x0, face_y, z0), XYZ(x1, face_y, z0), edge_rp[0], (edge_rp[3], edge_rp[1]), False),
+                     ("T", XYZ(x0, face_y, z1), XYZ(x1, face_y, z1), edge_rp[2], (edge_rp[3], edge_rp[1]), False)]
+
+            def fits(sw, k, en):
+                bb = sw.get_BoundingBox(None)
+                e = EXPECT[k]
+                ins = {"L": (bb.Min.X - x0), "R": (x1 - bb.Max.X), "B": (bb.Min.Z - z0), "T": (z1 - bb.Max.Z)}[en] * FT
+                dep = sorted([(bb.Min.Y - face_y) * FT * sgn, (bb.Max.Y - face_y) * FT * sgn])
+                return abs(ins - e[0]) < 0.05 and abs(dep[0] - e[1]) < 0.05 and abs(dep[1] - e[2]) < 0.05
+
+            for k, _ in KINDS:
+                for en, a, b, rp_line, rp_ends, vert in EDGES:
+                    ca = CurveArray(); ca.Append(Line.CreateBound(a, b))
+                    sw = fdoc.FamilyCreate.NewSweep(True, ca, sp, app.Create.NewFamilySymbolProfile(syms[k]), 0, ProfilePlaneLocation.Start)
+                    sw.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).Set(mat.Id)
+                    # ориентация профиля: подбираем из 4 вариантов тот, что совпадает с DWG
+                    chosen = None
+                    for ang, flp in ((0, 0), (180, 0), (0, 1), (180, 1)):
+                        sw.get_Parameter(BuiltInParameter.PROFILE_ANGLE).Set(math.radians(ang))
+                        sw.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR).Set(flp)
+                        fdoc.Regenerate()
+                        if fits(sw, k, en):
+                            chosen = (ang, flp); break
+                    if chosen is None:
+                        raise Exception(u"не подобрана ориентация профиля %s, стекло %d, кромка %s" % (k, gi + 1, en))
+                    fm.AssociateElementParameterToFamilyParameter(sw.get_Parameter(BuiltInParameter.IS_VISIBLE_PARAM), vis_p[k])
+                    vis = FamilyElementVisibility(FamilyElementVisibilityType.Model)
+                    vis.IsShownInCoarse = False
+                    vis.IsShownInTopBottom = vert     # горизонтальные участки не показывать на планах (иначе чёрная полоса)
+                    sw.SetVisibility(vis)
+                    fdoc.Regenerate()
+                    ml = [fdoc.GetElement(i) for i in sw.PathSketch.GetAllElements() if isinstance(fdoc.GetElement(i), ModelCurve)][0]
+                    c = ml.GeometryCurve
+                    locked = 0
+                    for rp, ref in ((rp_line, c.Reference), (rp_ends[0], c.GetEndPointReference(0)), (rp_ends[1], c.GetEndPointReference(1))):
+                        try:
+                            fdoc.FamilyCreate.NewAlignment(elev, rp.GetReference(), ref); locked += 1
+                        except Exception as ex:
+                            r.setdefault("lock_errors", []).append(str(ex)[:120])
+                    made.append({"sweep": sw, "glass": gi, "kind": k, "edge": en, "face_y": face_y, "locked": locked, "orient": chosen})
+        fdoc.Regenerate()
+        r["sweeps"] = len(made)
+        r["locked_not_3"] = [[m["kind"], m["glass"] + 1, m["edge"], m["locked"]] for m in made if m["locked"] != 3]
+        r["orient"] = sorted(set("%s:%s" % (m["edge"], m["orient"]) for m in made))
+        # 5) проверка по всем типам
+        p_thk = fparam(fm, u"Толщина стекла")
+        check, bad = [], []
+        expect = EXPECT
+        for tp in list(fm.Types):
+            fm.CurrentType = tp
+            fdoc.Regenerate()
+            tt = round(tp.AsDouble(p_thk) * FT, 1)
+            shown = []
+            for m in made:
+                bb = m["sweep"].get_BoundingBox(None)
+                visible = bool(tp.AsInteger(vis_p[m["kind"]]))
+                if not visible:
+                    continue
+                gb = glasses[m["glass"]].get_BoundingBox(None)
+                Hn = tp.AsDouble(p_adsk) / 2
+                fy = gb.Min.Y if abs(gb.Min.Y + Hn) < abs(gb.Max.Y - Hn) else gb.Max.Y
+                sgn = 1 if fy < 0 else -1
+                en = m["edge"]
+                ins = round({"L": (bb.Min.X - gb.Min.X), "R": (gb.Max.X - bb.Max.X), "B": (bb.Min.Z - gb.Min.Z), "T": (gb.Max.Z - bb.Max.Z)}[en] * FT, 2)
+                # длина по кромке: от края до края стекла
+                span = ([round((bb.Min.Z - gb.Min.Z) * FT, 2), round((gb.Max.Z - bb.Max.Z) * FT, 2)] if en in ("L", "R")
+                        else [round((bb.Min.X - gb.Min.X) * FT, 2), round((gb.Max.X - bb.Max.X) * FT, 2)])
+                dep = sorted([round((bb.Min.Y - fy) * FT * sgn, 2), round((bb.Max.Y - fy) * FT * sgn, 2)])
+                e = expect[m["kind"]]
+                ok = abs(ins - e[0]) < 0.05 and abs(dep[0] - e[1]) < 0.05 and abs(dep[1] - e[2]) < 0.05 and all(abs(v) < 0.05 for v in span)
+                shown.append({"g": m["glass"] + 1, "kind": m["kind"], "edge": en, "ok": ok})
+                if not ok:
+                    bad.append({"type": tp.Name, "g": m["glass"] + 1, "kind": m["kind"], "edge": en, "ins": ins, "span": span, "depth": dep})
+            check.append({"type": tp.Name, "t": tt, "M1": not bool(tp.AsInteger(fparam(fm, u"FT_Уплотнитель_Показать"))),
+                          "shown": sorted(set(s["kind"] + "/g%d" % s["g"] for s in shown)), "edges_shown": len(shown)})
+        r["check"] = check
+        r["bad"] = bad[:10]; r["bad_count"] = len(bad)
+        t.Commit()
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["out_rfa"] = os.path.join(args["out_dir"], name + u".rfa")
+        fdoc.SaveAs(r["out_rfa"], opts)
+        r["ok"] = True
+    except Exception as ex:
+        r["error"] = str(ex)
+        try:
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+        except Exception:
+            pass
+    finally:
+        fdoc.Close(False)
+    results.append(r)
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Панелей с контурным уплотнителем: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

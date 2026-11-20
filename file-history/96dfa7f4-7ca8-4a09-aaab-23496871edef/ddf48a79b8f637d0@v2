@@ -1,0 +1,61 @@
+# Контуры уплотнителей U5/U6/U8/U10 из DXF (верхний узел каждой колонки) в координатах:
+# x — от кромки стекла (+ внутрь стекла), y — от лицевой (верхней) грани стекла (вниз отрицательно).
+import sys, json, math
+import ezdxf
+from ezdxf import bbox, path as ezpath
+src, out = sys.argv[1], sys.argv[2]
+doc = ezdxf.readfile(src)
+msp = doc.modelspace()
+cols = {"U5": 6100.0, "U6": 6200.0, "U8": 6300.0, "U10": 6400.0}
+GLASS_EDGE_DX = 9.82   # кромка стекла x = base + 9.82 (по штриховке стекла)
+GLASS_TOP_Y = -130.96
+
+
+def flat(e, depth=0):
+    if e.dxftype() == "INSERT":
+        for v in e.virtual_entities():
+            yield from flat(v, depth + 1)
+    else:
+        yield e
+
+
+res = {}
+for name, base in cols.items():
+    x0, x1 = base + 10.5, base + 25.0
+    y0, y1 = -150.0, -132.0
+    items = []
+    for e in msp:
+        for f in flat(e):
+            if f.dxftype() not in ("LWPOLYLINE", "POLYLINE", "HATCH", "LINE", "ARC", "SPLINE", "CIRCLE"):
+                continue
+            try:
+                b = bbox.extents([f])
+            except Exception:
+                continue
+            if not b.has_data:
+                continue
+            if b.extmin.x >= x0 - 0.01 and b.extmax.x <= x1 and b.extmin.y >= y0 and b.extmax.y <= y1 + 6:
+                try:
+                    p = ezpath.make_path(f) if f.dxftype() != "HATCH" else None
+                except Exception:
+                    p = None
+                pts = []
+                if p is not None:
+                    pts = [(round(v.x - base - GLASS_EDGE_DX, 2), round(v.y - GLASS_TOP_Y, 2)) for v in p.flattening(0.05)]
+                elif f.dxftype() == "HATCH":
+                    for bp in f.paths:
+                        try:
+                            hp = ezpath.from_hatch_boundary_path(bp)
+                            pts += [(round(v.x - base - GLASS_EDGE_DX, 2), round(v.y - GLASS_TOP_Y, 2)) for v in hp.flattening(0.05)]
+                        except Exception:
+                            pass
+                items.append({"t": f.dxftype(), "layer": f.dxf.layer,
+                              "bbox": [round(b.extmin.x - base - GLASS_EDGE_DX, 2), round(b.extmin.y - GLASS_TOP_Y, 2),
+                                       round(b.extmax.x - base - GLASS_EDGE_DX, 2), round(b.extmax.y - GLASS_TOP_Y, 2)],
+                              "n": len(pts), "pts": pts})
+    res[name] = items
+json.dump(res, open(out + "/seal_contours.json", "w", encoding="utf-8"), ensure_ascii=False)
+for k, v in res.items():
+    print(k)
+    for it in v:
+        print("  ", it["t"], it["layer"], it["bbox"], it["n"])

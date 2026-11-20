@@ -1,0 +1,124 @@
+# -*- coding: utf-8 -*-
+# Пробный прогон (модель не меняется): по каждому типу импоста М2/М3 взять один экземпляр в стенах проекта и снять узел:
+# вертикальный импост — план на середине его высоты; горизонтальный — разрез поперёк в середине длины. 1:2, Fine.
+# Виды создаются в группе транзакций и откатываются. Аргументы: out_dir, half_mm, px, prefix_filter (["М2","М3"])
+import json, os
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+H = float(args.get("half_mm", 150)) / FT
+vft_p = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+vft_s = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.Section][0]
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_GenericAnnotation, BuiltInCategory.OST_CLines,
+        BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers, BuiltInCategory.OST_GenericModel]
+pref = args.get("prefix_filter", [u"М2", u"М3"])
+by_type = {}
+for m in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType():
+    mt = doc.GetElement(m.GetTypeId())
+    if mt is None:
+        continue
+    nm = mt.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
+    if not any(nm.startswith(p) for p in pref):
+        continue
+    bb = m.get_BoundingBox(None)
+    if bb is None:
+        continue
+    dz = bb.Max.Z - bb.Min.Z; dxy = max(bb.Max.X - bb.Min.X, bb.Max.Y - bb.Min.Y)
+    vert = dz > dxy
+    ln = dz if vert else dxy
+    # предпочтение: экземпляр подлиннее (середина пролёта, а не обрубок)
+    cur = by_type.get(nm)
+    if cur is None or ln > cur[2]:
+        by_type[nm] = (m, vert, ln)
+
+
+def tidy(v):
+    for bic in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(bic), True)
+        except Exception:
+            pass
+
+
+def export(v, tag):
+    o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+    ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+    o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 900))
+    o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+    o.FilePath = os.path.join(args["out_dir"], tag)
+    doc.ExportImage(o)
+
+
+if not os.path.isdir(args["out_dir"]):
+    os.makedirs(args["out_dir"])
+index, errs = [], []
+names = sorted(by_type)
+tg = TransactionGroup(doc, u"снимки всех типов импостов (откат)"); tg.Start()
+filled = {}
+try:
+    # пустые панели в стенах → стекло нужной системы/слойности (только внутри отката): fill_empty {"М2|1": "имя типа панели", ...}
+    if args.get("fill_empty"):
+        ptypes = dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s)
+                      for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels))
+        t = Transaction(doc, u"стекло вместо пустых панелей"); t.Start()
+        for w in FilteredElementCollector(doc).OfClass(Wall):
+            if w.CurtainGrid is None:
+                continue
+            sysn = u"М2" if u"М2" in w.Name else (u"М3" if u"М3" in w.Name else None)
+            lay = u"2" if (u"Двухслойн" in w.Name or u"Двойн" in w.Name) else u"1"
+            key = u"%s|%s" % (sysn, lay)
+            if sysn is None or key not in args["fill_empty"] or u"Дверн" in w.Name:
+                continue
+            st = ptypes[args["fill_empty"][key]]
+            if not st.IsActive:
+                st.Activate()
+            for pid in w.CurtainGrid.GetPanelIds():
+                p = doc.GetElement(pid)
+                tn = doc.GetElement(p.GetTypeId())
+                if tn is None or tn.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() != u"Пусто":
+                    continue
+                try:
+                    p.Pinned = False
+                    p.ChangeTypeId(st.Id)
+                    filled[key] = filled.get(key, 0) + 1
+                except Exception:
+                    pass
+        t.Commit()
+    for k, nm in enumerate(names):
+        m, vert, ln = by_type[nm]
+        checkpoint(nm[:60], k, len(names))
+        try:
+            bb = m.get_BoundingBox(None); c = (bb.Min + bb.Max) * 0.5
+            w = m.Host
+            t = Transaction(doc, u"вид"); t.Start()
+            if vert:
+                lvl = doc.GetElement(w.LevelId)
+                v = ViewPlan.Create(doc, vft_p.Id, w.LevelId)
+                vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, c.Z - lvl.Elevation); v.SetViewRange(vr)
+                box = BoundingBoxXYZ(); box.Min = XYZ(c.X - H, c.Y - H, -1000); box.Max = XYZ(c.X + H, c.Y + H, 1000)
+                v.CropBox = box; v.CropBoxActive = True; v.CropBoxVisible = False
+            else:
+                d = XYZ(1, 0, 0) if (bb.Max.X - bb.Min.X) >= (bb.Max.Y - bb.Min.Y) else XYZ(0, 1, 0)
+                n = XYZ.BasisZ.CrossProduct(d)
+                tr = Transform.Identity; tr.Origin = c; tr.BasisX = n; tr.BasisY = XYZ.BasisZ; tr.BasisZ = n.CrossProduct(XYZ.BasisZ)
+                box = BoundingBoxXYZ(); box.Transform = tr
+                box.Min = XYZ(-H, -H, -30 / FT); box.Max = XYZ(H, H, 30 / FT)
+                v = ViewSection.CreateSection(doc, vft_s.Id, box)
+            v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+            tidy(v)
+            t.Commit()
+            tag = u"%03d" % (k + 1)
+            export(v, tag)
+            index.append({"k": k + 1, "type": nm, "vertical": vert, "wall": w.Name if w else None, "mullion": int(m.Id.Value), "len_mm": round(ln * FT)})
+        except Exception as ex:
+            errs.append([nm, str(ex)[:150]])
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+finally:
+    tg.RollBack()
+with open(os.path.join(args["out_dir"], "index.json"), "w", encoding="utf-8") as f:
+    json.dump(index, f, ensure_ascii=False, indent=1)
+__output__ = {"status": "completed_unverified", "summary": u"снимков %d из %d типов, ошибок %d; всё откатано" % (len(index), len(names), len(errs)), "errors": errs[:20], "filled_panels": filled}

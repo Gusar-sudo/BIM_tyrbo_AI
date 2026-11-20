@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+# Картинки сечений отдельных импостов БЕЗ изменения модели: в группе транзакций создать план с обрезкой
+# вокруг импоста (Fine, 1:2), выгрузить PNG, затем откатить всю группу (RollBack).
+# Аргументы: mullion_ids, out_dir, half_mm (полуразмер рамки), px
+import json, os
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+H = float(args.get("half_mm", 160)) / FT
+vft = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+files = []
+tg = TransactionGroup(doc, u"снимки импостов (откат)")
+tg.Start()
+try:
+    for mid in args["mullion_ids"]:
+        m = doc.GetElement(ElementId(int(mid)))
+        w = m.Host
+        bb = m.get_BoundingBox(None)
+        c = (bb.Min + bb.Max) * 0.5
+        t = Transaction(doc, u"вид"); t.Start()
+        v = ViewPlan.Create(doc, vft.Id, w.LevelId)
+        v.Scale = 2
+        v.DetailLevel = ViewDetailLevel.Fine
+        lvl = doc.GetElement(w.LevelId)
+        vr = v.GetViewRange()
+        vr.SetOffset(PlanViewPlane.CutPlane, (c.Z - lvl.Elevation))
+        v.SetViewRange(vr)
+        box = BoundingBoxXYZ()
+        box.Min = XYZ(c.X - H, c.Y - H, -1000); box.Max = XYZ(c.X + H, c.Y + H, 1000)
+        v.CropBox = box; v.CropBoxActive = True; v.CropBoxVisible = False
+        t.Commit()
+        o = ImageExportOptions()
+        o.ExportRange = ExportRange.SetOfViews
+        ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+        o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 900))
+        o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+        name = (u"m%s_%s" % (mid, m.Name)).replace(u"/", u"-")
+        o.FilePath = os.path.join(args["out_dir"], name)
+        doc.ExportImage(o)
+        files.append(name)
+finally:
+    tg.RollBack()
+__output__ = {"status": "completed_unverified", "summary": u"%d снимков, модель откатана" % len(files), "files": files}

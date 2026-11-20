@@ -1,0 +1,60 @@
+# -*- coding: utf-8 -*-
+# Только чтение: все несимметричные импосты-столбы во всех витражах (М2/М3, 1сл/2сл) — куда выступают
+# относительно наружной стороны стены (+ = сторона стрелок разворота; фасад = внутренняя сторона, минус).
+# По каждому типу импоста: профиль, сторона выступа (по всем экземплярам), в каких стенах.
+import json
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+opt = Options(); opt.DetailLevel = ViewDetailLevel.Fine
+
+
+def span(el, o, n):
+    lo, hi = 1e9, -1e9
+    def walk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                s = SolidUtils.CreateTransformed(g, tr) if tr else g
+                for e in s.Edges:
+                    for p in e.Tessellate():
+                        d = (p - o).DotProduct(n) * FT
+                        yield d
+            elif isinstance(g, GeometryInstance):
+                for d in walk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform):
+                    yield d
+    ge = el.get_Geometry(opt)
+    vals = list(walk(ge, None)) if ge else []
+    return (min(vals), max(vals)) if vals else None
+
+
+types = {}
+for w in FilteredElementCollector(doc).OfClass(Wall):
+    if w.CurtainGrid is None:
+        continue
+    c = w.Location.Curve
+    d = c.ComputeDerivatives(0.5, True).BasisX.Normalize()
+    ext = XYZ.BasisZ.CrossProduct(d).Normalize()
+    if w.Flipped:
+        ext = ext.Negate()
+    o = c.Evaluate(0.5, True)
+    for mid in w.CurtainGrid.GetMullionIds():
+        m = doc.GetElement(mid)
+        sp = span(m, o, ext)
+        if sp is None:
+            continue
+        asym = sp[0] + sp[1]
+        if abs(asym) < 5:
+            continue
+        mt = doc.GetElement(m.GetTypeId())
+        prof = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+        pf = doc.GetElement(prof.AsElementId()).Family.Name if prof and prof.AsElementId() != ElementId.InvalidElementId else None
+        k = m.Name
+        r = types.setdefault(k, {"profile": pf, "sides": set(), "walls": set(), "span": None})
+        r["sides"].add("+" if asym > 0 else "-")
+        r["walls"].add(int(w.Id.Value))
+        r["span"] = [round(sp[0], 1), round(sp[1], 1)]
+rows = []
+for k, r in sorted(types.items()):
+    rows.append({"type": k, "profile": (r["profile"] or "").replace(u"BIMLIB_Профиль_", "").replace(u"_ФристайлТехнолоджи", ""),
+                 "side": "".join(sorted(r["sides"])), "span": r["span"], "walls": sorted(r["walls"])})
+__output__ = {"status": "completed_unverified", "summary": u"несимметричных типов импостов: %d" % len(rows), "rows": rows}

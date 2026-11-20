@@ -1,0 +1,94 @@
+# -*- coding: utf-8 -*-
+# Замер (откат): с какого захода лист ГКЛ касается стойки — отдельно для левой и правой стороны стойки.
+# Стена по +X, стойка в середине; ГКЛ только с одной стороны, с другой — стекло.
+# Аргументы: stands [{wall_type, mullion_type, gkl_type, glass_type}], range [a,b,step]
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if "args_file" in args:
+    with open(args["args_file"], encoding="utf-8-sig") as _f:
+        args = json.load(_f)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MM = lambda v: v / FT
+level = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+wtypes = dict((w.Name, w) for w in FilteredElementCollector(doc).OfClass(WallType))
+mtypes = dict((m.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), m) for m in FilteredElementCollector(doc).OfClass(MullionType))
+ptypes = dict((s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(), s) for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels))
+
+
+def solids(el):
+    out = []
+
+    def wk(ge, tr):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                out.append(SolidUtils.CreateTransformed(g, tr) if tr else g)
+            elif isinstance(g, GeometryInstance):
+                wk(g.GetSymbolGeometry(), tr.Multiply(g.Transform) if tr else g.Transform)
+    o = Options(); o.DetailLevel = ViewDetailLevel.Fine
+    wk(el.get_Geometry(o), None)
+    return out
+
+
+a, b, st = args.get("range", [4, 20, 1])
+res = []
+tg = TransactionGroup(doc, u"замер ГКЛ по сторонам (откат)"); tg.Start()
+try:
+    for k, pr in enumerate(args["stands"]):
+        for side in ("left", "right"):
+            checkpoint(pr["mullion_type"][:30] + " " + side, len(res), 2 * len(args["stands"]))
+            t = Transaction(doc, u"проба"); t.Start()
+            Pt = XYZ(MM(20000 + 3000 * len(res)), MM(420000), level.Elevation)
+            w = Wall.Create(doc, Line.CreateBound(Pt - XYZ(MM(600), 0, 0), Pt + XYZ(MM(600), 0, 0)), wtypes[pr["wall_type"]].Id, level.Id, MM(2700), 0, False, False)
+            doc.Regenerate()
+            w.CurtainGrid.AddGridLine(False, Pt + XYZ(0, 0, 1), False); doc.Regenerate()
+            m = None
+            for mid in w.CurtainGrid.GetMullionIds():
+                mm_ = doc.GetElement(mid); bb = mm_.get_BoundingBox(None)
+                if bb and (bb.Max.Z - bb.Min.Z) > 1 and abs((bb.Min.X + bb.Max.X) / 2 - Pt.X) < MM(60):
+                    m = mm_
+            m.ChangeTypeId(mtypes[pr["mullion_type"]].Id)
+            gk = ptypes[pr["gkl_type"]]; gl = ptypes[pr["glass_type"]]
+            for s_ in (gk, gl):
+                if not s_.IsActive:
+                    s_.Activate()
+            gpanels = []
+            for pid in w.CurtainGrid.GetPanelIds():
+                p = doc.GetElement(pid); bb = p.get_BoundingBox(None)
+                left = (bb.Min.X + bb.Max.X) / 2 < Pt.X
+                p.Pinned = False
+                is_g = (left and side == "left") or ((not left) and side == "right")
+                p.ChangeTypeId(gk.Id if is_g else gl.Id)
+            doc.Regenerate()
+            for pid in w.CurtainGrid.GetPanelIds():
+                p = doc.GetElement(pid)
+                if p.GetTypeId() == gk.Id:
+                    gpanels.append(p)
+            cs = solids(m)
+            vp = gk.LookupParameter(u"Выступ сбоку")
+            r = {"stand": pr["mullion_type"], "side": side, "first_contact_mm": None, "w": None}
+            fc = None; v = a
+            while v <= b + 1e-9:
+                vp.Set(MM(v)); doc.Regenerate()
+                tot = 0.0
+                for p in gpanels:
+                    for ps in solids(p):
+                        for c in cs:
+                            try:
+                                x = BooleanOperationsUtils.ExecuteBooleanOperation(c, ps, BooleanOperationsType.Intersect)
+                                if x:
+                                    tot += x.Volume
+                            except Exception:
+                                pass
+                if tot * FT ** 3 / 2700.0 > 5 and fc is None:
+                    fc = v
+                v += st
+            r["first_contact_mm"] = fc
+            mt = mtypes[pr["mullion_type"]]
+            r["w"] = [round(mt.get_Parameter(BuiltInParameter.CUST_MULLION_WIDTH1).AsDouble() * FT, 1), round(mt.get_Parameter(BuiltInParameter.CUST_MULLION_WIDTH2).AsDouble() * FT, 1)]
+            t.RollBack()
+            res.append(r)
+finally:
+    tg.RollBack()
+__output__ = {"status": "completed_unverified", "summary": u"замеров %d; всё откатано" % len(res), "res": res}

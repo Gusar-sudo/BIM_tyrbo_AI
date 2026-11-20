@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+# Чтение с откатом: сколько панелей в ведомости без каждого фильтра
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+sch = [v for v in FilteredElementCollector(doc).OfClass(ViewSchedule) if v.Name == u"О_Ведомость стекла"][0]
+ids = [3395048, 3434964, 3368025]
+def cnt():
+    s = set(e.Id.Value for e in FilteredElementCollector(doc, sch.Id).WhereElementIsNotElementType())
+    return len(s), [i in s for i in ids]
+res = {"base": cnt()}
+d = sch.Definition
+flt = [(f.FieldId, f.FilterType, f.GetStringValue() if f.IsStringValue else None) for f in d.GetFilters()]
+res["filters"] = [(d.GetField(f[0]).GetName(), str(f[1]), f[2]) for f in flt]
+for k in range(len(flt)):
+    t = Transaction(doc, "probe"); t.Start()
+    sch.Definition.RemoveFilter(k); doc.Regenerate()
+    res["without_%d" % k] = cnt()
+    t.RollBack()
+t = Transaction(doc, "probe"); t.Start()
+sch.Definition.IsItemized = True; doc.Regenerate(); res["itemized"] = cnt(); t.RollBack()
+res["after"] = cnt()
+__output__ = {"status": "completed_unverified", "summary": "probe filters", "res": res}

@@ -1,0 +1,42 @@
+# -*- coding: utf-8 -*-
+# Только чтение: в семействе панели — опорные плоскости, размеры с метками, выдавливания (что двигает стекло по ширине).
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fam = [f for f in FilteredElementCollector(doc).OfClass(Family) if f.Name == args["family"]][0]
+fd = doc.EditFamily(fam)
+out = {}
+try:
+    out["planes"] = [[rp.Name, round(rp.BubbleEnd.X * FT, 2), round(rp.BubbleEnd.Y * FT, 2), round(rp.BubbleEnd.Z * FT, 2), round(rp.FreeEnd.X * FT, 2), round(rp.FreeEnd.Y * FT, 2), round(rp.FreeEnd.Z * FT, 2)] for rp in FilteredElementCollector(fd).OfClass(ReferencePlane)]
+    dims = []
+    for d in FilteredElementCollector(fd).OfClass(Dimension):
+        try:
+            lab = d.FamilyLabel.Definition.Name if d.FamilyLabel else None
+        except Exception:
+            lab = None
+        refs = []
+        for r in d.References:
+            e = fd.GetElement(r.ElementId)
+            refs.append((e.GetType().Name + ":" + (e.Name or "")) if e else "?")
+        dims.append([lab, round(d.Value * FT, 2) if d.Value is not None else None, refs])
+    out["dims"] = dims
+    ex = []
+    for e in FilteredElementCollector(fd).OfClass(GenericForm):
+        bb = e.get_BoundingBox(None)
+        mp = e.LookupParameter(u"Материал")
+        vis = e.get_Parameter(BuiltInParameter.IS_VISIBLE_PARAM)
+        assoc = None
+        try:
+            fm = fd.FamilyManager
+            if vis is not None:
+                ap = fm.GetAssociatedFamilyParameter(vis); assoc = ap.Definition.Name if ap else None
+        except Exception:
+            pass
+        ex.append([e.GetType().Name, e.Name, [round(v * FT, 1) for v in (bb.Min.X, bb.Min.Y, bb.Min.Z, bb.Max.X, bb.Max.Y, bb.Max.Z)] if bb else None, assoc])
+    out["forms"] = ex
+    out["fam_instances"] = [[fi.Symbol.Family.Name, fi.Symbol.Name] for fi in FilteredElementCollector(fd).OfClass(FamilyInstance)]
+finally:
+    fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"только чтение", "r": out}

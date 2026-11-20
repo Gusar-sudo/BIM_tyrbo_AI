@@ -1,0 +1,9 @@
+{
+ "base_profile": "BIMLIB_Профиль_УП-008_Межстекольный62_ФристайлТехнолоджи",
+ "out_dir": "C:\\Users\\user\\Desktop\\Фристайл\\_bim\\work\\2026\\families\\fsc156_2026-11-12\\t3",
+ "gap_mm": 4, "web_mm": 2.4, "flange_mm": 1, "over_mm": 1,
+ "items": [
+  {"save_as": "BIMLIB_Профиль_FS.C-156_Межстекольный62Однослойный_ФристайлТехнолоджи", "glass_outer_mm": [30.6], "glass_mm": 8, "origin_on_first": true},
+  {"save_as": "BIMLIB_Профиль_FS.C-156_Межстекольный62_ФристайлТехнолоджи", "glass_outer_mm": [30.6, -30.6], "glass_mm": 8, "origin_on_first": true}
+ ]
+}

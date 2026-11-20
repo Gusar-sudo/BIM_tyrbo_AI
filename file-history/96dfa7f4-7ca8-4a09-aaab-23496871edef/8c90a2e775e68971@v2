@@ -1,0 +1,87 @@
+# -*- coding: utf-8 -*-
+# Только чтение моделей: сравнить семейства профилей импостов и панелей витража в АКТИВНОМ документе (тест)
+# и в другом открытом документе (библиотека) по «отпечатку» содержимого; отличающиеся и новые — SaveAs из теста
+# в out_dir (если export=true). Ни одна модель не меняется (EditFamily -> SaveAs -> Close без сохранения).
+# Аргументы: other_title, out_dir, export
+import json, os, hashlib
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+doc = __revit__.ActiveUIDocument.Document
+other = [d for d in app.Documents if d.Title == args["other_title"]][0]
+FT = 304.8
+CATS = (int(BuiltInCategory.OST_ProfileFamilies), int(BuiltInCategory.OST_CurtainWallPanels))
+
+
+def r2(v):
+    return round(v * FT, 2)
+
+
+def fingerprint(fdoc, depth=0):
+    parts = []
+    for ce in FilteredElementCollector(fdoc).OfClass(CurveElement):
+        c = ce.GeometryCurve
+        try:
+            parts.append("C%s,%s,%s,%s" % (r2(c.GetEndPoint(0).X), r2(c.GetEndPoint(0).Y), r2(c.GetEndPoint(1).X), r2(c.GetEndPoint(1).Y)))
+        except Exception:
+            pass
+    for fr in FilteredElementCollector(fdoc).OfClass(FilledRegion):
+        bb = fr.get_BoundingBox(None)
+        parts.append("F%s" % ([r2(bb.Min.X), r2(bb.Min.Y), r2(bb.Max.X), r2(bb.Max.Y)] if bb else "-"))
+    for cls in (Extrusion, Sweep):
+        for e in FilteredElementCollector(fdoc).OfClass(cls):
+            bb = e.get_BoundingBox(None)
+            parts.append("%s%s" % (cls.__name__[0], [r2(bb.Min.X), r2(bb.Min.Y), r2(bb.Min.Z), r2(bb.Max.X), r2(bb.Max.Y), r2(bb.Max.Z)] if bb else "-"))
+    for fi in FilteredElementCollector(fdoc).OfClass(FamilyInstance):
+        t = fi.GetTotalTransform()
+        parts.append("I%s|%s,%s|%s,%s" % (fi.Symbol.Family.Name, r2(t.Origin.X), r2(t.Origin.Y), round(t.BasisX.X, 3), round(t.BasisY.Y, 3)))
+        if depth == 0:
+            nd = fdoc.EditFamily(fi.Symbol.Family)
+            try:
+                parts.append("N" + fingerprint(nd, 1))
+            finally:
+                nd.Close(False)
+    fm = fdoc.FamilyManager
+    for p in fm.Parameters:
+        parts.append("P%s=%s" % (p.Definition.Name, p.Formula))
+    parts.sort()
+    return hashlib.md5("\n".join(parts).encode("utf-8")).hexdigest()
+
+
+def fams(d):
+    out = {}
+    for f in FilteredElementCollector(d).OfClass(Family):
+        if f.FamilyCategory is not None and int(f.FamilyCategory.Id.Value) in CATS and f.IsEditable:
+            out[f.Name] = f
+    return out
+
+
+ft, fl = fams(doc), fams(other)
+diff, new, same, errors = [], [], 0, []
+for name, f in sorted(ft.items()):
+    try:
+        a = doc.EditFamily(f)
+        try:
+            ha = fingerprint(a)
+            if name not in fl:
+                new.append(name); changed = True
+            else:
+                b = other.EditFamily(fl[name])
+                try:
+                    hb = fingerprint(b)
+                finally:
+                    b.Close(False)
+                changed = ha != hb
+                if changed:
+                    diff.append(name)
+                else:
+                    same += 1
+            if changed and args.get("export"):
+                opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+                a.SaveAs(os.path.join(args["out_dir"], name + u".rfa"), opts)
+        finally:
+            a.Close(False)
+    except Exception as ex:
+        errors.append(name + ": " + str(ex)[:120])
+__output__ = {"status": "completed_unverified", "summary": u"отличаются %d, новых %d, одинаковых %d" % (len(diff), len(new), same),
+              "different": diff, "new_in_test": new, "only_in_library": sorted(set(fl) - set(ft)), "errors": errors}

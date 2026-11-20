@@ -1,0 +1,60 @@
+# -*- coding: utf-8 -*-
+# ПРОБА (откат): сдвиг по ОДНОЙ кромке стекла (левая, вертикальная) — линия пути привязана к плоскости кромки,
+# концы — к плоскостям низа/верха стекла (NewAlignment с ссылкой на конец линии). Затем меняем ширину/высоту панели
+# и проверяем, что сдвиг идёт за стеклом. Аргументы: family, profile_family_name
+import json, math
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+fam = [f for f in FilteredElementCollector(doc).OfClass(Family) if f.Name == args["family"]][0]
+fdoc = doc.EditFamily(fam)
+out = {"steps": []}
+try:
+    t = Transaction(fdoc, u"проба"); t.Start()
+    import clr
+    pf = clr.Reference[Family]()
+    fdoc.LoadFamily(args["profile_rfa"], pf)
+    sym = fdoc.GetElement(list(pf.Value.GetFamilySymbolIds())[0])
+    g = [e for e in FilteredElementCollector(fdoc).OfClass(Extrusion) if e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).AsElementId() != ElementId.InvalidElementId and u"Стекло" in fdoc.GetElement(e.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM).AsElementId()).Name][0]
+    gb = g.get_BoundingBox(None)
+    fy = gb.Min.Y
+    rps = list(FilteredElementCollector(fdoc).OfClass(ReferencePlane))
+    def rp_at(axis, val):
+        for rp in rps:
+            n = rp.Normal; comp = {"x": n.X, "y": n.Y, "z": n.Z}[axis]; pos = {"x": rp.BubbleEnd.X, "y": rp.BubbleEnd.Y, "z": rp.BubbleEnd.Z}[axis]
+            if abs(abs(comp) - 1) < 1e-6 and abs(pos - val) < 0.2 / FT and rp.Name not in (u"Слева", u"Справа", u"Верх"):
+                return rp
+    rpf, rpx0, rpz0, rpz1 = rp_at("y", fy), rp_at("x", gb.Min.X), rp_at("z", gb.Min.Z), rp_at("z", gb.Max.Z)
+    elev = [v for v in FilteredElementCollector(fdoc).OfClass(View) if not v.IsTemplate and v.ViewType == ViewType.Elevation and abs(abs(v.ViewDirection.Y) - 1) < 1e-6][0]
+    sp = SketchPlane.Create(fdoc, rpf.Id)
+    ca = CurveArray(); ca.Append(Line.CreateBound(XYZ(gb.Min.X, fy, gb.Min.Z), XYZ(gb.Min.X, fy, gb.Max.Z)))
+    sw = fdoc.FamilyCreate.NewSweep(True, ca, sp, app.Create.NewFamilySymbolProfile(sym), 0, ProfilePlaneLocation.Start)
+    sw.get_Parameter(BuiltInParameter.PROFILE_ANGLE).Set(math.pi)
+    fdoc.Regenerate()
+    ml = [fdoc.GetElement(i) for i in sw.PathSketch.GetAllElements() if isinstance(fdoc.GetElement(i), ModelCurve)][0]
+    c = ml.GeometryCurve
+    for nm, rp, ref in (("line->x0", rpx0, c.Reference), ("end0->z0", rpz0, c.GetEndPointReference(0)), ("end1->z1", rpz1, c.GetEndPointReference(1))):
+        try:
+            fdoc.FamilyCreate.NewAlignment(elev, rp.GetReference(), ref); out["steps"].append(nm + ": ok")
+        except Exception as ex:
+            out["steps"].append(nm + ": " + str(ex)[:150])
+    fdoc.Regenerate()
+    def meas():
+        bb = sw.get_BoundingBox(None); gb2 = g.get_BoundingBox(None)
+        return {"inset_x": round((bb.Min.X - gb2.Min.X) * FT, 2), "z": [round((bb.Min.Z - gb2.Min.Z) * FT, 2), round((gb2.Max.Z - bb.Max.Z) * FT, 2)], "glass_w": round((gb2.Max.X - gb2.Min.X) * FT, 1), "glass_h": round((gb2.Max.Z - gb2.Min.Z) * FT, 1)}
+    out["before"] = meas()
+    fm = fdoc.FamilyManager
+    pw = [p for p in fm.Parameters if p.Definition.Name in (u"Ширина",)]
+    ph = [p for p in fm.Parameters if p.Definition.Name in (u"Высота",)]
+    out["has_wh"] = [len(pw), len(ph)]
+    if pw and ph:
+        fm.Set(pw[0], fm.CurrentType.AsDouble(pw[0]) + 300 / FT)
+        fm.Set(ph[0], fm.CurrentType.AsDouble(ph[0]) + 500 / FT)
+        fdoc.Regenerate()
+        out["after_flex"] = meas()
+    t.RollBack()
+finally:
+    fdoc.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"проба, откат", "probe": out}

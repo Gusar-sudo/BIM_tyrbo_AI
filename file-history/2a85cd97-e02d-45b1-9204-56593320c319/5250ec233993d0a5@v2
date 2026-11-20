@@ -1,0 +1,18 @@
+# -*- coding: utf-8 -*-
+import sys, os
+from PIL import Image, ImageDraw, ImageFont
+d, out = sys.argv[1], sys.argv[2]
+names = sys.argv[3:]
+font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 22)
+cell = 300; cols = 6
+rows = (len(names) + cols - 1) // cols
+pg = Image.new("RGB", (cols * cell, rows * (cell + 30)), "white"); dr = ImageDraw.Draw(pg)
+for i, n in enumerate(names):
+    p = os.path.join(d, n)
+    if not os.path.exists(p):
+        continue
+    im = Image.open(p).convert("RGB"); im.thumbnail((cell - 10, cell - 10))
+    x = (i % cols) * cell; y = (i // cols) * (cell + 30)
+    pg.paste(im, (x + 5, y + 30)); dr.text((x + 5, y + 4), n, fill="red", font=font)
+pg.save(out)
+print(out)

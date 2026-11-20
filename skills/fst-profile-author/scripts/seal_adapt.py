@@ -1,0 +1,204 @@
+# -*- coding: utf-8 -*-
+# Локально: подгонка сечения уплотнителя под паз держателя. В координатах семейства уплотнителя (начало — угол стекла:
+# кромка × наружная грань) собирается «запретная зона» = металл держателей всех стоек из сечений (заливка по графике
+# fills_dir\<профиль>.json, + зазор clear_mm), уплотнитель U5..U10 = его контур минус зона; оставляется связная часть,
+# прилегающая к стеклу; упрощение (отрезки >= min_seg_mm). Картинка «было/стало» и JSON контуров.
+# py -P -E seal_adapt.py <args.json>: fit_json, seal_profiles_json, fills_dir, out_json, preview_png, clear_mm=0.1,
+#   profiles_like [подстроки центральных профилей, у которых графика = координаты сечения], px_mm=40
+import json, io, os, sys, math
+import numpy as np
+from PIL import Image, ImageDraw
+import contourpy
+a = json.load(io.open(sys.argv[1], encoding="utf-8-sig"))
+FIT = json.load(io.open(a["fit_json"], encoding="utf-8"))
+PX = float(a.get("px_mm", 40)); CL = int(round(float(a.get("clear_mm", 0.1)) * PX)); MINS = float(a.get("min_seg_mm", 0.79))
+X0, Y0, X1, Y1 = -25, -25, 25, 25   # окно в координатах семейства уплотнителя, мм
+W = int((X1 - X0) * PX); H = int((Y1 - Y0) * PX)
+tp = lambda p: ((p[0] - X0) * PX, (Y1 - p[1]) * PX)
+like = a.get("profiles_like", [])
+
+
+def Mof(key):
+    m, r = key
+    c, s = [(1, 0), (0, 1), (-1, 0), (0, -1)][r]
+    return np.array([[c * m, -s], [s * m, c]], float)
+
+
+def to_fam(pts, key, sh):
+    M = Mof(key); P = np.array(pts, float) - np.array(sh)
+    return P @ np.linalg.inv(M).T
+
+
+def poly_mask(loops, evenodd=True):
+    B = np.zeros((H, W), np.uint8)
+    for l in loops:
+        if len(l) < 3: continue
+        t = Image.new("1", (W, H), 0); ImageDraw.Draw(t).polygon([tp(p) for p in l], fill=1); B ^= np.asarray(t, np.uint8)
+    return B.astype(bool)
+
+
+forbid = np.zeros((H, W), bool); used = []; skipped = []
+seals = {}; glassm = np.zeros((H, W), bool)
+for r in FIT:
+    if like and not any(k in r["profile"] for k in like): continue
+    fp = os.path.join(a["fills_dir"], r["profile"] + ".json")
+    if not os.path.exists(fp): continue
+    regs = json.load(io.open(fp, encoding="utf-8"))["regions"]
+    loops = [to_fam(l, tuple(r["ori"]), r["shift"]).tolist() for rg in regs for l in [rg["outer"]] + rg["holes"]]
+    fm = poly_mask(loops); gm = poly_mask([to_fam(r["glass_loop"], tuple(r["ori"]), r["shift"]).tolist()])
+    # проверка совмещения: стекло не должно лежать в металле профиля (иначе графика в других координатах — пропуск)
+    if (fm & gm).sum() / PX / PX > float(a.get("max_glass_in_metal_mm2", 0.5)):
+        skipped.append(r["profile"]); continue
+    forbid |= fm; used.append(r["profile"]); glassm |= gm
+    s = seals.setdefault(r["seal"], [])
+    if len(s) < 1: s.append(to_fam(r["seal_loop"], tuple(r["ori"]), r["shift"]).tolist())
+# уплотнители, которых нет в сечениях (нет стекла этой толщины в модели) — контур из семейства (цепочка линий)
+P_ = json.load(io.open(a["seal_profiles_json"], encoding="utf-8"))
+for k, v in P_.items():
+    u = k.split("FS.C-")[1].split("_")[0]
+    if u in seals: continue
+    segs = [[tuple(p) for p in c["pts"]] for c in list(v.values())[0]]
+    loop = list(segs.pop(0))
+    while segs:
+        end = loop[-1]; best = min(range(len(segs)), key=lambda i: min(math.hypot(segs[i][0][0] - end[0], segs[i][0][1] - end[1]), math.hypot(segs[i][-1][0] - end[0], segs[i][-1][1] - end[1])))
+        sg = segs.pop(best)
+        if math.hypot(sg[-1][0] - end[0], sg[-1][1] - end[1]) < math.hypot(sg[0][0] - end[0], sg[0][1] - end[1]): sg = sg[::-1]
+        loop += sg[1:]
+    seals[u] = [[list(p) for p in loop[:-1]]]
+THK = {"U5": 5, "U6": 6, "U8": 8, "U10": 10}
+D = forbid.copy()
+for _ in range(CL):
+    E = D.copy(); E[1:, :] |= D[:-1, :]; E[:-1, :] |= D[1:, :]; E[:, 1:] |= D[:, :-1]; E[:, :-1] |= D[:, 1:]; D = E
+
+
+def components(M):
+    im = Image.fromarray(np.where(M, 1, 0).astype(np.int32), mode="I"); comps = []; lab = 2
+    while True:
+        arr = np.asarray(im)
+        z = np.flatnonzero(arr == 1)
+        if not len(z) or lab > 500: break
+        y, x = divmod(int(z[0]), W)
+        ImageDraw.floodfill(im, (x, y), lab, thresh=0)
+        comps.append(np.asarray(im) == lab); lab += 1
+    return comps
+
+
+def dp(pts, eps):
+    if len(pts) < 3: return pts
+    ax, ay = pts[0]; bx, by = pts[-1]; L = math.hypot(bx - ax, by - ay) or 1e-12; dmax, k = 0, 0
+    for i in range(1, len(pts) - 1):
+        d = abs((bx - ax) * (ay - pts[i][1]) - (ax - pts[i][0]) * (by - ay)) / L
+        if d > dmax: dmax, k = d, i
+    return dp(pts[:k + 1], eps)[:-1] + dp(pts[k:], eps) if dmax > eps else [pts[0], pts[-1]]
+
+
+res = {"profiles_used": sorted(set(used)), "profiles_skipped": sorted(set(skipped)), "seals": {}}
+for u, ls in sorted(seals.items()):
+    S0 = poly_mask(ls)
+    # примыкание к стеклу: полоса от верха уплотнителя до внутренней грани стекла (y = -t) по ширине уплотнителя
+    t = THK[u]; L0 = np.array(ls[0])
+    band = poly_mask([[[L0[:, 0].min(), -t], [L0[:, 0].max(), -t], [L0[:, 0].max(), L0[:, 1].max()], [L0[:, 0].min(), L0[:, 1].max()]]]) if L0[:, 1].max() < -t else np.zeros((H, W), bool)
+    if a.get("fill_to_holder"):
+        # сплошное сечение от стекла до держателей: прямоугольник по ширине уплотнителя от грани стекла вниз до его низа
+        band |= poly_mask([[[L0[:, 0].min(), -t], [L0[:, 0].max(), -t], [L0[:, 0].max(), L0[:, 1].min()], [L0[:, 0].min(), L0[:, 1].min()]]])
+    glass_u = poly_mask([[[X0, -t], [X1, -t], [X1, 0], [X0, 0]]])
+    S1 = (S0 | band) & ~D & ~glass_u
+    if a.get("rect"):
+        # прямоугольник: верх — грань стекла, низ — над держателями (с зазором), по ширине уплотнителя;
+        # если по всей ширине глубины меньше min_depth — самый широкий участок, где помещается
+        mind = float(a.get("min_depth_mm", 0.8))
+        xr = (a.get("rect_x_range") or {}).get(u) or [L0[:, 0].min(), L0[:, 0].max()]
+        c0 = int((xr[0] - X0) * PX); c1 = int((xr[1] - X0) * PX)
+        r0 = int((Y1 - (-t)) * PX)
+        depth = []
+        for c in range(c0, c1):
+            col = D[r0:, c]; hit = np.flatnonzero(col)
+            depth.append((hit[0] if len(hit) else H - r0) / PX)
+        depth = np.array(depth)
+        full = depth.min()
+        res.setdefault("depth_profile", {})[u] = [[round(X0 + (c0 + i) / PX, 2), round(float(depth[i]), 2)] for i in range(0, len(depth), int(PX / 4))]
+        if full >= mind and not (a.get("rect_x_range") or {}).get(u):
+            xa, xb, dd = L0[:, 0].min(), L0[:, 0].max(), min(full, float(a.get("max_depth_mm", 99)))
+            dd = min(dd, -L0[:, 1].min() - t) if a.get("keep_bottom") else dd
+        else:
+            ok = depth >= mind; best = (0, 0, 0); i = 0
+            while i < len(ok):
+                if ok[i]:
+                    j = i
+                    while j < len(ok) and ok[j]: j += 1
+                    if j - i > best[1] - best[0]: best = (i, j, depth[i:j].min())
+                    i = j
+                else: i += 1
+            xa = X0 + (c0 + best[0]) / PX; xb = X0 + (c0 + best[1]) / PX; dd = min(best[2], mind)
+        y_bot = -t - dd
+        loop = [[round(xa, 3), round(-t, 3)], [round(xb, 3), round(-t, 3)], [round(xb, 3), round(y_bot, 3)], [round(xa, 3), round(y_bot, 3)]]
+        keepm = poly_mask([loop])
+        res["seals"][u] = {"loop": loop, "area_before_mm2": round(S0.sum() / PX / PX, 2), "area_after_mm2": round(keepm.sum() / PX / PX, 2),
+                           "overlap_before_mm2": round((S0 & forbid).sum() / PX / PX, 3), "overlap_after_mm2": round((keepm & forbid).sum() / PX / PX, 3),
+                           "rect_mm": [round(xb - xa, 2), round(dd, 2)], "pieces_dropped": 0}
+        continue
+    op = int(round(float(a.get("open_mm", 0.3)) * PX))
+    if op and not (a.get("thin_strip") or {}).get(u):
+        # убрать шипы в щели между держателями: размыкание (сжать и вернуть), затем снова без держателей
+        E = S1.copy()
+        for _ in range(op):
+            F_ = E.copy(); F_[1:, :] &= E[:-1, :]; F_[:-1, :] &= E[1:, :]; F_[:, 1:] &= E[:, :-1]; F_[:, :-1] &= E[:, 1:]; E = F_
+        for _ in range(op):
+            F_ = E.copy(); F_[1:, :] |= E[:-1, :]; F_[:-1, :] |= E[1:, :]; F_[:, 1:] |= E[:, :-1]; F_[:, :-1] |= E[:, 1:]; E = F_
+        S1 = E & S1
+    th = (a.get("thin_strip") or {}).get(u)
+    if th:
+        # тонкая полоса под стеклом по ширине уплотнителя там, где она помещается (U10: стекло лежит на держателях)
+        S1 = poly_mask([[[L0[:, 0].min(), -t - th], [L0[:, 0].max(), -t - th], [L0[:, 0].max(), -t], [L0[:, 0].min(), -t]]]) & ~D
+    # оставить связную часть, касающуюся стекла (самую большую из касающихся)
+    comps = components(S1)
+    gl = glassm.copy()
+    for _ in range(3):
+        E = gl.copy(); E[1:, :] |= gl[:-1, :]; E[:-1, :] |= gl[1:, :]; E[:, 1:] |= gl[:, :-1]; E[:, :-1] |= gl[:, 1:]; gl = E
+    comps = sorted(comps, key=lambda c: (-(c & gl).sum() > 0, -c.sum()))
+    keep = max(comps, key=lambda c: ((c & gl).sum() > 0) * 1e9 + c.sum()) if comps else S1
+    z = np.pad(keep.astype(float), 1)
+    P, O = contourpy.contour_generator(z=z, fill_type=contourpy.FillType.OuterOffset).filled(0.5, 1.5)
+    loops = []
+    for Pp, Oo in zip(P, O):
+        for i in range(len(Oo) - 1):
+            l = [[X0 + (c - 1) / PX, Y1 - (rr - 1) / PX] for c, rr in Pp[Oo[i]:Oo[i + 1]]]
+            if len(l) > 2: loops.append(l)
+    loops.sort(key=lambda l: -len(l))
+    outer = loops[0]
+    i1 = max(range(len(outer)), key=lambda i: math.hypot(outer[i][0] - outer[0][0], outer[i][1] - outer[0][1]))
+    s = dp(outer[:i1 + 1], 0.03)[:-1] + dp(outer[i1:] + [outer[0]], 0.03)[:-1]
+    ch = True
+    while ch and len(s) > 3:
+        ch = False
+        for i in range(len(s)):
+            j = (i + 1) % len(s)
+            if math.hypot(s[j][0] - s[i][0], s[j][1] - s[i][1]) < MINS:
+                del s[j]; ch = True; break
+    a0 = S0.sum() / PX / PX; a1 = keep.sum() / PX / PX
+    res["seals"][u] = {"loop": [[round(p[0], 4), round(p[1], 4)] for p in s], "area_before_mm2": round(a0, 2), "area_after_mm2": round(a1, 2),
+                       "overlap_before_mm2": round((S0 & forbid).sum() / PX / PX, 3), "pieces_dropped": len(comps) - 1}
+io.open(a["out_json"], "w", encoding="utf-8").write(json.dumps(res, ensure_ascii=False, indent=1))
+if a.get("preview_png"):
+    import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+    plt.rcParams["font.family"] = "Segoe UI"
+    us = sorted(res["seals"], key=lambda x: int(x[1:]))
+    fig, axs = plt.subplots(1, len(us), figsize=(5.2 * len(us), 5.6))
+    axs = np.atleast_1d(axs)
+    ext = [X0, X1, Y0, Y1]
+    for ax, u in zip(axs, us):
+        img = np.full((H, W, 3), 255, np.uint8)
+        img[forbid] = (169, 184, 199); img[poly_mask([[[X0, -THK[u]], [X1, -THK[u]], [X1, 0], [X0, 0]]])] = (169, 220, 239)
+        S0 = poly_mask(seals[u]); img[S0 & forbid] = (230, 80, 40)
+        ax.imshow(img, extent=ext)
+        for l in seals[u]:
+            p = l + [l[0]]; ax.plot([q[0] for q in p], [q[1] for q in p], color="#6b7280", lw=0.8, ls="--")
+        l = res["seals"][u]["loop"]; p = l + [l[0]]
+        ax.fill([q[0] for q in p], [q[1] for q in p], color="#1d2229", alpha=0.85)
+        bb = np.array(seals[u][0]); ax.set_xlim(bb[:, 0].min() - 3, bb[:, 0].max() + 3); ax.set_ylim(bb[:, 1].min() - 3, bb[:, 1].max() + 3)
+        ax.set_aspect("equal"); ax.grid(lw=0.3)
+        r_ = res["seals"][u]
+        ax.set_title(u"%s: было %.1f мм² (в металле %.2f) → стало %.1f мм²" % (u, r_["area_before_mm2"], r_["overlap_before_mm2"], r_["area_after_mm2"]), fontsize=10, loc="left")
+    fig.suptitle(u"Уплотнитель под паз: серый — держатели всех стоек М2/М3, голубое — стекло, пунктир — было, чёрное — стало, красное — было в металле", fontsize=11, x=0.01, ha="left")
+    fig.savefig(a["preview_png"], dpi=120, bbox_inches="tight", facecolor="white")
+print(json.dumps({u: {k: v for k, v in r.items() if k != "loop"} for u, r in res["seals"].items()}, ensure_ascii=False), len(res["profiles_used"]))

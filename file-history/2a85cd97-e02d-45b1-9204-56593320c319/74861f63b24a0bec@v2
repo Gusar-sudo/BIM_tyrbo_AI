@@ -1,0 +1,132 @@
+# -*- coding: utf-8 -*-
+# Заливка «алюминий» по ЛИНИЯМ графики узла, правило чётности (как штриховка с островками):
+# снаружи — пусто, за первой линией — металл, за следующей (камера, паз) — снова пусто и т. д.
+# Каждая деталь (группа curves JSON, напр. FS.M2-01, FS.C-28) считается отдельно, потом объединяется:
+# паз стойки, куда входит нащельник, остаётся пустым, а сам нащельник заливается.
+# Растр: линии 3 px, области — заливкой PIL, соседство — через линию шириной <= gap_px; мелкие щели между
+# почти совпадающими линиями (< sliver_mm2) считаются линией. Без scipy/shapely.
+# py -P -E fill_parity.py <args.json>: curves_json, out_json, preview_png?, px_mm=20, gap_px=8, sliver_mm2=0.05, groups?[имена]
+import json, io, sys, math
+import numpy as np
+from PIL import Image, ImageDraw
+import contourpy
+sys.setrecursionlimit(10000)
+a = json.load(io.open(sys.argv[1], encoding="utf-8-sig"))
+C = json.load(io.open(a["curves_json"], encoding="utf-8"))
+PX = float(a.get("px_mm", 20)); GAP = int(a.get("gap_px", 8)); SLV = float(a.get("sliver_mm2", 0.05)) * PX * PX
+LW = int(a.get("line_w_px", 3)); KY = -1 if C.get("mirrored") and a.get("apply_mirror") else 1
+
+
+def arc3(p1, pm, p2, step=0.2):
+    ax, ay = p1; bx, by = pm; cx, cy = p2
+    d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+    if abs(d) < 1e-12: return [p1, p2]
+    ux = ((ax*ax + ay*ay) * (by - cy) + (bx*bx + by*by) * (cy - ay) + (cx*cx + cy*cy) * (ay - by)) / d
+    uy = ((ax*ax + ay*ay) * (cx - bx) + (bx*bx + by*by) * (ax - cx) + (cx*cx + cy*cy) * (bx - ax)) / d
+    r = math.hypot(ax - ux, ay - uy)
+    t0 = math.atan2(ay - uy, ax - ux); tm = math.atan2(by - uy, bx - ux); t1 = math.atan2(cy - uy, cx - ux)
+    nm = lambda t: (t - t0) % (2 * math.pi)
+    sw = nm(t1)
+    if nm(tm) > sw: sw -= 2 * math.pi
+    n = max(4, int(abs(sw) * r / step))
+    return [(ux + r * math.cos(t0 + sw * i / n), uy + r * math.sin(t0 + sw * i / n)) for i in range(n + 1)]
+
+
+def polylines(g):
+    out = []
+    for c in g["curves"]:
+        if c[0] == "L": out.append([(c[1], c[2]), (c[3], c[4])])
+        elif c[0] == "A": out.append(arc3((c[1], c[2]), (c[3], c[4]), (c[5], c[6])))
+    return out
+
+
+def group_mask(pls):
+    xs = [p[0] for l in pls for p in l]; ys = [p[1] for l in pls for p in l]
+    m = 1.0
+    X0, Y0 = min(xs) - m, min(ys) - m; W = int((max(xs) - X0 + m) * PX) + 1; H = int((max(ys) - Y0 + m) * PX) + 1
+    tp = lambda p: ((p[0] - X0) * PX, (H - 1) - (p[1] - Y0) * PX)
+    img = Image.new("I", (W, H), 0); dr = ImageDraw.Draw(img)
+    for l in pls:
+        dr.line([tp(p) for p in l], fill=-1, width=LW)
+        for p in (l[0], l[-1]):
+            q = tp(p); dr.ellipse([q[0] - LW / 2, q[1] - LW / 2, q[0] + LW / 2, q[1] + LW / 2], fill=-1)
+    lab = 1
+    arr = np.asarray(img)
+    while True:
+        z = np.flatnonzero(arr == 0)
+        if not len(z): break
+        y, x = divmod(int(z[0]), W)
+        ImageDraw.floodfill(img, (x, y), lab, thresh=0)
+        arr = np.asarray(img); lab += 1
+    L = arr.copy()
+    # мелкие щели -> линия
+    cnt = np.bincount(L[L > 0].ravel(), minlength=lab)
+    small = np.where((cnt < SLV) & (np.arange(lab) > 0))[0]
+    if len(small): L[np.isin(L, small)] = -1
+    # соседство через линию
+    edges = set()
+    for k in range(1, GAP + 1):
+        for A, B in ((L[:, :-k], L[:, k:]), (L[:-k, :], L[k:, :])):
+            s = (A > 0) & (B > 0) & (A != B)
+            if s.any():
+                for u, v in set(zip(A[s].tolist(), B[s].tolist())):
+                    edges.add((min(u, v), max(u, v)))
+    adj = {}
+    for u, v in edges:
+        adj.setdefault(u, set()).add(v); adj.setdefault(v, set()).add(u)
+    outside = int(L[0, 0]); par = {outside: 0}; q = [outside]
+    while q:
+        u = q.pop(0)
+        for v in adj.get(u, ()):
+            if v not in par: par[v] = par[u] + 1; q.append(v)
+    mat_labels = [l for l, p in par.items() if p % 2 == 1]
+    M = np.isin(L, mat_labels)
+    # линии на границе металла — тоже металл (расширение на ширину линии)
+    D = M.copy()
+    for _ in range(LW + 1):
+        E = D.copy()
+        E[1:, :] |= D[:-1, :]; E[:-1, :] |= D[1:, :]; E[:, 1:] |= D[:, :-1]; E[:, :-1] |= D[:, 1:]
+        D = E
+    M = M | (D & (L == -1))
+    return M, X0, Y0, H, {"regions": lab - 1, "metal": len(mat_labels), "unreached": lab - 1 - len(par) - len(small)}
+
+
+def to_regions(M, X0, Y0, H):
+    z = np.pad(M.astype(float), 1)
+    gen = contourpy.contour_generator(z=z, fill_type=contourpy.FillType.OuterOffset)
+    pts, offs = gen.filled(0.5, 1.5)
+    regs = []
+    for P, O in zip(pts, offs):
+        loops = [P[O[i]:O[i + 1]] for i in range(len(O) - 1)]
+        conv = lambda l: [[round(X0 + (c - 1) / PX, 4), round(Y0 + ((H - 1) - (r - 1)) / PX, 4)] for c, r in l]
+        lp = [conv(l) for l in loops]
+        regs.append({"outer": lp[0], "holes": lp[1:]})
+    return regs
+
+
+regions, info = [], {}
+for i, g in enumerate(C["groups"]):
+    if a.get("groups") and g["name"] not in a["groups"]: continue
+    pls = polylines(g)
+    if not pls: continue
+    M, X0, Y0, H, st = group_mask(pls)
+    regions += to_regions(M, X0, Y0, H)
+    info["%d %s" % (i, g["name"])] = st
+io.open(a["out_json"], "w", encoding="utf-8").write(json.dumps({"regions": regions, "info": info}, ensure_ascii=False))
+if a.get("preview_png"):
+    import matplotlib; matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.path import Path as MP
+    from matplotlib.patches import PathPatch
+    fig, ax = plt.subplots(figsize=(7, 7))
+    for r in regions:
+        v, c = [], []
+        for l in [r["outer"]] + r["holes"]:
+            v += [tuple(p) for p in l] + [tuple(l[0])]; c += [MP.MOVETO] + [MP.LINETO] * (len(l) - 1) + [MP.CLOSEPOLY]
+        ax.add_patch(PathPatch(MP(v, c), fc="#a9b8c7", ec="none"))
+    for g in C["groups"]:
+        for l in polylines(g):
+            xs, ys = zip(*l); ax.plot(xs, ys, color="#24394d", lw=0.5)
+    ax.set_aspect("equal"); ax.autoscale_view(); ax.axis("off")
+    fig.savefig(a["preview_png"], dpi=200, bbox_inches="tight", facecolor="white")
+print(json.dumps(info, ensure_ascii=False))

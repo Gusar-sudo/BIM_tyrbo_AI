@@ -1,0 +1,1246 @@
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Get-ChildItem : Cannot find path 'C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_pages' because it does not 
+exist.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:11 char:10
++     $f = Get-ChildItem $d -Filter "p$pg *.png" | Select-Object -First ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\user\D...ew\tetrad_pages:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+Exception calling "FromFile" with "1" argument(s): "The path is not of a legal form."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:12 char:5
++     $im = [System.Drawing.Image]::FromFile($f.FullName)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+Exception calling "DrawImage" with "4" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:16 char:5
++     $g.DrawImage($im, (New-Object System.Drawing.Rectangle 0, 0, $w,  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:5
++     $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose( ...
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:17 char:58
++ ...    $b.Save("$o\$name.png"); $g.Dispose(); $b.Dispose(); $im.Dispose()
++                                                             ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.01.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.02.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.03.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.04.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.06.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.07.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:33 char:28
++     $bmp.Save("$o\_check_$($s/6).png"); $g.Dispose(); $bmp.Dispose()
++                            ~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.08.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.10.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.11.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.12.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\1.1
+.15.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.1
+.02.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:33 char:28
++     $bmp.Save("$o\_check_$($s/6).png"); $g.Dispose(); $bmp.Dispose()
++                            ~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.1
+.03.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.1
+.04.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.2
+.01.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.2
+.02.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.2
+.03.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "FromFile" with "1" argument(s): "C:\Users\user\Desktop\Р¤СЂРёСЃС‚Р°Р№Р»\_bim\review\tetrad_crops\2.4
+.01.png"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:25 char:54
++ ...     $im = [System.Drawing.Image]::FromFile("$o\$($names[$s+$i]).png")
++                                                      ~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+Attempted to divide by zero.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:27 char:9
++         $sc = [math]::Min(890 / $im.Width, 520 / $im.Height)
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], RuntimeException
+    + FullyQualifiedErrorId : RuntimeException
+ 
+Exception calling "DrawImage" with "5" argument(s): "Value cannot be null.
+Parameter name: image"
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:28 char:9
++         $g.DrawImage($im, $x, $y + 25, [int]($im.Width * $sc), [int]( ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentNullException
+ 
+You cannot call a method on a null-valued expression.
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:31 char:9
++         $im.Dispose()
++         ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+Exception calling "Save" with "1" argument(s): "A generic error occurred in GDI+."
+At C:\Users\user\Desktop\Фристайл\_bim\batches\M2_C\crop_tetrad.ps1:33 char:28
++     $bmp.Save("$o\_check_$($s/6).png"); $g.Dispose(); $bmp.Dispose()
++                            ~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ExternalException
+ 
+РІС‹СЂРµР·РѕРє: 18

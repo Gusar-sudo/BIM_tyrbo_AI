@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+# Только чтение: семейства панелей витража — параметры, формулы; закрытие без сохранения.
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+fams = {}
+for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels):
+    fams.setdefault(s.Family.Id, s.Family)
+out = {"families": sorted(f.Name for f in fams.values())}
+for f in fams.values():
+    if args.get("only") and args["only"] not in f.Name:
+        continue
+    fd = doc.EditFamily(f)
+    try:
+        fm = fd.FamilyManager
+        out[f.Name] = [[p.Definition.Name, p.IsInstance, p.Formula] for p in fm.GetParameters() if p.Formula or "Стекло" in p.Definition.Name or "Выступ" in p.Definition.Name]
+    finally:
+        fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"только чтение", "r": out}

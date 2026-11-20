@@ -1,0 +1,516 @@
+# -*- coding: utf-8 -*-
+# Зазор 3 мм у центральных столбов М2/М3 (FSC17, FSC18, FSC22, FSC04): стекло в 3 мм от точки, где паз меняет форму.
+# 1) загрузка rfa из rfa_dir (панели с заходом слева/справа; профили FSC17/FSC04 с расширенным вырезом 3D-тела);
+# 2) у каждой панели BIMLIB (кроме М1): сторона у центрального столба -> FT_Стекло_Поправка_Слева/_Справа = заход − Выступ сбоку
+#    (панель справа от столба по направлению стены стоит на его стороне +X, слева — на −X);
+#    стороны у прочих столбов (FSC08, угловые, боковые …) — как раньше: FT_Стекло_Поправка_Ширина += альбом − выступ;
+# 3) проверка по геометрии: торец стекла у центрального столба от его оси = ожидаемому (±0,1 мм).
+# Аргументы: rfa_dir, dry_run (по умолчанию true — всё откатывается).
+import json, io, os, re, clr
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+if args.get("args_file"):
+    a2 = json.loads(io.open(args["args_file"], encoding="utf-8-sig").read()); a2.update(dict((k, v) for k, v in args.items() if k != "args_file")); args = a2
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+DRY = bool(args.get("dry_run", True))
+ALBUM = {u"М2": {u"FSC17": 16.0, u"FSC18": 12.5, u"FSC22": 14.5}, u"М3": {u"FSC08": 14.5, u"FSC04": 14.25}}
+# заход за край подрезки (мм) у центральных: край − (точка отсчёта + 3); minus — сторона −X профиля, plus — +X
+ENTRY = {u"FSC17": (15.70, 15.70), u"FSC18": (12.35, 11.388), u"FSC22": (13.396, 13.396), u"FSC04": (16.594, 16.594),
+         u"FSC08": (16.6, 16.6)}   # FSC08 угловой: грань 58,07, дно паза 38,47 — стены A и B одинаково
+EXPECT = {u"FSC17": (20.9, 20.9), u"FSC18": (36.424, 38.05), u"FSC22": (3.704, 3.704), u"FSC04": (27.706, 27.706),
+          u"FSC08": (41.47, 41.47)}   # у FSC08 — от оси столба вдоль своей стены (для B — от точки P)
+KIND = {u"FSC08": u"^Угловой(Двух|Одно)слойный(Левый|Правый)$"}
+res = {"dry_run": DRY, "loaded": [], "panels": 0, "central_sides": 0, "other_post_sides": 0, "check": {"ok": 0, "bad": []}, "problems": []}
+# ПРОЧИЕ СТОЛБЫ (others_dump — контуры профилей из probe_pocket.py, others_codes — коды): точка отсчёта считается по контуру
+# на месте — сторона профиля, к которой подходит стекло, и полоса стекла берутся из модели; FSC05 — от начала изгиба паза.
+OTH = json.loads(io.open(args["others_dump"], encoding="utf-8-sig").read()) if args.get("others_dump") else {}
+OTH_CODES = set(args.get("others_codes", []))
+BEND_CODES = set(args.get("bend_codes", [u"FSC05"]))
+SIDEMAP = {"-X": lambda x, y: (x, y), "+X": lambda x, y: (-x, y), "-Y": lambda x, y: (y, x), "+Y": lambda x, y: (-y, x)}
+res["others"] = []
+_fit = {}
+
+
+def _segd(px, py, s):
+    ax_, ay, bx, by = s; dx, dy = bx - ax_, by - ay; L = dx * dx + dy * dy
+    t = 0.0 if L == 0 else max(0.0, min(1.0, ((px - ax_) * dx + (py - ay) * dy) / L))
+    return ((px - ax_ - t * dx) ** 2 + (py - ay - t * dy) ** 2) ** 0.5
+
+
+def fit_profile(k):
+    # 2D-положение профиля в мире: одна из 8 ориентаций в осях стены-хозяина (направление e1, нормаль e2), начало — ось импоста
+    if k["id"] in _fit:
+        return _fit[k["id"]]
+    m = doc.GetElement(ElementId(k["id"])); own = OTH[k["tname"]]["own"]
+    w = m.Host; e1 = w.Location.Curve.Direction; e1 = XYZ(e1.X, e1.Y, 0).Normalize(); e2 = XYZ(-e1.Y, e1.X, 0)
+    p0 = k["c"].GetEndPoint(0); pts = []
+    def walk(ge):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9:
+                for e in g.Edges:
+                    for q in e.Tessellate():
+                        v = q - p0; pts.append((v.DotProduct(e1) * FT, v.DotProduct(e2) * FT))
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetInstanceGeometry())
+    o = Options(); o.DetailLevel = ViewDetailLevel.Fine; walk(m.get_Geometry(o))
+    pts = pts[::max(1, len(pts) // 150)]
+    ox0 = min(min(s[0], s[2]) for s in own); ox1 = max(max(s[0], s[2]) for s in own)
+    oy0 = min(min(s[1], s[3]) for s in own); oy1 = max(max(s[1], s[3]) for s in own)
+    best = None
+    # x профиля = направление стены (Revit кладёт вертикальный импост без зеркала по x) — перебор только знака y;
+    # перебор зеркал давал ложное совпадение (точки почти все на наружном контуре), урок 14.11
+    for sw in (False,):
+        for sx in (1.0,):
+            for sy in (1.0, -1.0):
+                rot = (lambda a, b, sw=sw, sx=sx, sy=sy: (b * sy, a * sx) if sw else (a * sx, b * sy))
+                q = [rot(a, b) for a, b in pts]
+                # сдвиг: у концевых импостов профиль смещён от линии импоста — совмещаем рамки
+                shx = (ox0 + ox1) / 2 - (min(x for x, y in q) + max(x for x, y in q)) / 2
+                shy = (oy0 + oy1) / 2 - (min(y for x, y in q) + max(y for x, y in q)) / 2
+                for hx, hy in ((0.0, 0.0), (shx, shy)):
+                    sc = sum(min(_segd(x + hx, y + hy, s) for s in own) for x, y in q) / max(1, len(q))
+                    if best is None or sc < best[0] - 1e-6:
+                        best = (sc, sw, sx, sy, hx, hy)
+    sc, sw, sx, sy, shx, shy = best
+
+    def inv(a, b):   # мир (a,b) от линии импоста -> профиль (x,y)
+        x, y = (b * sy, a * sx) if sw else (a * sx, b * sy)
+        return (x + shx, y + shy)
+
+    def fwd(x, y):   # профиль -> мир (a,b) от линии импоста
+        x, y = x - shx, y - shy
+        return (y * sx, x * sy) if sw else (x * sx, y * sy)
+    def dinv(a, b):   # направление мир -> профиль (без сдвига!)
+        return (b * sy, a * sx) if sw else (a * sx, b * sy)
+
+    def dfwd(x, y):   # направление профиль -> мир (без сдвига!)
+        return (y * sx, x * sy) if sw else (x * sx, y * sy)
+    oa, ob = fwd(0.0, 0.0)
+    org = p0 + e1 * (oa / FT) + e2 * (ob / FT)   # начало профиля в мире
+    _fit[k["id"]] = {"score": sc, "inv": inv, "fwd": fwd, "dinv": dinv, "dfwd": dfwd, "e1": e1, "e2": e2, "p0": p0, "org": org, "shift": (round(shx, 2), round(shy, 2))}
+    return _fit[k["id"]]
+
+
+def _hit(segs, lat):
+    best = None
+    for s in segs:
+        if (s[1] - lat) * (s[3] - lat) > 0 or s[1] == s[3]:
+            continue
+        v = s[0] + (lat - s[1]) / (s[3] - s[1]) * (s[2] - s[0])
+        if v < 0 and (best is None or v < best):
+            best = v
+    return best
+
+
+def side_ref(k, side, bands):
+    # bands — полосы стекол [(lo, hi)] в поперечной координате стороны; вернуть (точка отсчёта, способ)
+    f = SIDEMAP[side]; r = OTH[k["tname"]]
+    nest = [f(s[0], s[1]) + f(s[2], s[3]) for s in r["nested"]]
+    own = [f(s[0], s[1]) + f(s[2], s[3]) for s in r["own"]]
+    outer = -min(min(s[0], s[2]) for s in own)
+    hit = None
+    for lo, hi in bands:
+        lat = lo + 0.3
+        while lat <= hi - 0.3 + 1e-9:
+            v = _hit(nest, lat)
+            if v is not None and -v <= outer - 1.0 and (hit is None or -v > hit):
+                hit = -v
+            lat += 0.25
+    if hit is None:
+        return None, u"паз не найден"
+    if k["code"] in BEND_CODES:
+        bend = None
+        for s in nest:
+            for x, y in ((s[0], s[1]), (s[2], s[3])):
+                dep = -x
+                if not (hit < dep <= hit + 7.0):
+                    continue
+                for lo, hi in bands:
+                    dd = (lo - y) if y < lo else ((y - hi) if y > hi else -1)
+                    if 2.5 <= dd <= 5.5 and (bend is None or dep > bend):
+                        bend = dep
+        if bend is not None:
+            return bend, u"от начала изгиба"
+        return hit, u"изгиб не найден — по первому касанию"
+    return hit, u"дно паза"
+
+
+def glass_bands(pn, k, side):
+    ft = fit_profile(k); p0 = ft["p0"]; bands = []
+    def walk(ge):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9 and g.Faces.Size:
+                mt_ = doc.GetElement(g.Faces.get_Item(0).MaterialElementId)
+                if mt_ is not None and u"Стекло" in mt_.Name:
+                    ls = []
+                    for e in g.Edges:
+                        for q in e.Tessellate():
+                            v = q - p0; x, y = ft["inv"](v.DotProduct(ft["e1"]) * FT, v.DotProduct(ft["e2"]) * FT)
+                            ls.append(y if side in ("-X", "+X") else x)
+                    bands.append((min(ls), max(ls)))
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetInstanceGeometry())
+    o = Options(); o.DetailLevel = ViewDetailLevel.Fine; walk(pn.get_Geometry(o))
+    return bands
+
+
+class LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True; return True
+
+    def OnSharedFamilyFound(self, s, a, src, b):
+        src.Value = FamilySource.Family; b.Value = True; return True
+
+
+def glass_u(pn, d_):
+    us = []
+    def walk(ge):
+        for g in ge:
+            if isinstance(g, Solid) and g.Volume > 1e-9 and g.Faces.Size:
+                m = doc.GetElement(g.Faces.get_Item(0).MaterialElementId)
+                if m is not None and u"Стекло" in m.Name:
+                    for e in g.Edges:
+                        for q in e.Tessellate():
+                            us.append(q.X * d_.X + q.Y * d_.Y)
+            elif isinstance(g, GeometryInstance):
+                walk(g.GetInstanceGeometry())
+    o = Options(); o.DetailLevel = ViewDetailLevel.Fine
+    walk(pn.get_Geometry(o))
+    return (min(us), max(us)) if us else None
+
+
+tg = TransactionGroup(doc, u"FT: зазор 3 мм у столбов"); tg.Start()
+OPEN = []
+try:
+    t = Transaction(doc, u"FT: зазор 3 мм у столбов — загрузка"); OPEN.append(t); t.Start()
+    for f in ([] if args.get("skip_load") else sorted(os.listdir(args["rfa_dir"]))):
+        if f.lower().endswith(".rfa") and not re.search(r"\.\d{4}\.rfa$", f.lower()):
+            ok = doc.LoadFamily(os.path.join(args["rfa_dir"], f), LO(), clr.Reference[Family]())
+            res["loaded"].append([f, bool(ok)])
+    t.Commit()
+    if args.get("selftest") and DRY:
+        # временные стены со столбом посередине (только в пробе, откатятся): [{wall, panel, joint_mullion}]
+        t = Transaction(doc, u"самопроверка: стены"); OPEN.append(t); t.Start()
+        lvl = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+        wts = dict((x.Name, x) for x in FilteredElementCollector(doc).OfClass(WallType))
+        mts = dict((Element.Name.GetValue(x), x) for x in FilteredElementCollector(doc).OfClass(MullionType))
+        pans = list(FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels))
+        for i, it in enumerate(args["selftest"]):
+            ox = 90000 / FT; oy = (-90000 - i * 3000) / FT; L = 1600 / FT
+            rev = bool(it.get("reverse"))
+            a, b = XYZ(ox, oy, lvl.Elevation), XYZ(ox + L, oy, lvl.Elevation)
+            w = Wall.Create(doc, Line.CreateBound(b, a) if rev else Line.CreateBound(a, b), wts[it["wall"]].Id, lvl.Id, 2700 / FT, 0, False, False)
+            doc.Regenerate()
+            w.CurtainGrid.AddGridLine(False, XYZ(ox + L / 2, oy, lvl.Elevation + 1), False); doc.Regenerate()
+            ps = [s for s in pans if s.Name == it["panel"]][0]
+            for pid in w.CurtainGrid.GetPanelIds():
+                doc.GetElement(pid).ChangeTypeId(ps.Id)
+            for mid in w.CurtainGrid.GetMullionIds():
+                mu = doc.GetElement(mid); cc = mu.LocationCurve
+                if cc is not None and abs(cc.GetEndPoint(0).X - (ox + L / 2)) < 0.01 and abs((cc.GetEndPoint(1) - cc.GetEndPoint(0)).Normalize().Z) > 0.9:
+                    mu.Pinned = False; mu.ChangeTypeId(mts[it["joint_mullion"]].Id)
+            doc.Regenerate()
+        t.Commit()
+    if args.get("corner_selftest") and DRY:
+        # угол 90°: стена A по +X до точки P, столб — её крайний импост; стена B от грани столба на +Y, ось B в 41,7 мм от P
+        # (как corner_schemes.py, b_axis_x_mm ±41,7); «правый» — A начинается в P и идёт по +X, B развёрнута. [{wall, column_type, right}]
+        t = Transaction(doc, u"самопроверка: углы"); OPEN.append(t); t.Start()
+        lvl = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+        wts = dict((x.Name, x) for x in FilteredElementCollector(doc).OfClass(WallType))
+        mts = dict((Element.Name.GetValue(x), x) for x in FilteredElementCollector(doc).OfClass(MullionType))
+        res["corners"] = []
+        for i, it in enumerate(args["corner_selftest"]):
+            ox = (110000 + i * 4000) / FT; oy = -90000 / FT; L = 1500 / FT; P = XYZ(ox, oy, lvl.Elevation)
+            right = bool(it.get("right"))
+            a0, a1 = (P, XYZ(ox + L, oy, P.Z)) if right else (XYZ(ox - L, oy, P.Z), P)
+            wa = Wall.Create(doc, Line.CreateBound(a0, a1), wts[it["wall"]].Id, lvl.Id, 2700 / FT, 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(wa, 0); WallUtils.DisallowWallJoinAtEnd(wa, 1); doc.Regenerate()
+            best = None
+            for mid in wa.CurtainGrid.GetMullionIds():
+                mu = doc.GetElement(mid); bb = mu.get_BoundingBox(None)
+                if bb is None or (bb.Max.Z - bb.Min.Z) < 1.0:
+                    continue
+                dd = abs((bb.Min.X + bb.Max.X) / 2 - ox)
+                if best is None or dd < best[0]:
+                    best = (dd, mu)
+            best[1].Pinned = False; best[1].ChangeTypeId(mts[it["column_type"]].Id); doc.Regenerate()
+            ytop = best[1].get_BoundingBox(None).Max.Y
+            b0 = XYZ(ox + (41.7 if right else -41.7) / FT, ytop, P.Z)
+            wb = Wall.Create(doc, Line.CreateBound(b0, b0 + XYZ(0, L, 0)), wts[it["wall"]].Id, lvl.Id, 2700 / FT, 0, False, False)
+            if right:
+                wb.Flip()
+            WallUtils.DisallowWallJoinAtEnd(wb, 0); WallUtils.DisallowWallJoinAtEnd(wb, 1); doc.Regenerate()
+            for mid in wb.CurtainGrid.GetMullionIds():
+                mu = doc.GetElement(mid); bb = mu.get_BoundingBox(None)
+                if bb is not None and (bb.Max.Z - bb.Min.Z) > 1.0 and abs((bb.Min.Y + bb.Max.Y) / 2 - ytop) < 50 / FT:
+                    mu.Pinned = False; doc.Delete(mu.Id); break
+            doc.Regenerate()
+            res["corners"].append([it["column_type"], round((ytop - oy) * FT, 2), int(wa.Id.Value), int(wb.Id.Value)])
+        t.Commit()
+    if args.get("others_selftest") and DRY:
+        # временные стены с прочими столбами (только в пробе): at = mid | end | start; perp = стена от боковой грани
+        # (большей по выносу из ±Y профиля), ось перпендикулярной стены — через начало профиля. [{wall, column_type, at, perp}]
+        t = Transaction(doc, u"самопроверка: прочие столбы"); OPEN.append(t); t.Start()
+        lvl = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+        wts = dict((x.Name, x) for x in FilteredElementCollector(doc).OfClass(WallType))
+        mts = dict((Element.Name.GetValue(x), x) for x in FilteredElementCollector(doc).OfClass(MullionType))
+        res["others_built"] = []
+        for i, it in enumerate(args["others_selftest"]):
+            ox = (130000 + (i % 8) * 4000) / FT; oy = (-95000 - (i // 8) * 4000) / FT; L = 1500 / FT; Z = lvl.Elevation
+            at = it.get("at", "mid")
+            a0, a1 = (XYZ(ox - L, oy, Z), XYZ(ox + L, oy, Z)) if at == "mid" else ((XYZ(ox - L, oy, Z), XYZ(ox, oy, Z)) if at == "end" else (XYZ(ox, oy, Z), XYZ(ox + L, oy, Z)))
+            wa = Wall.Create(doc, Line.CreateBound(a0, a1), wts[it["wall"]].Id, lvl.Id, 2700 / FT, 0, False, False)
+            WallUtils.DisallowWallJoinAtEnd(wa, 0); WallUtils.DisallowWallJoinAtEnd(wa, 1); doc.Regenerate()
+            if at == "mid":
+                wa.CurtainGrid.AddGridLine(False, XYZ(ox, oy, Z + 1), False); doc.Regenerate()
+            best = None
+            for mid in wa.CurtainGrid.GetMullionIds():
+                mu = doc.GetElement(mid); bb = mu.get_BoundingBox(None)
+                if bb is None or (bb.Max.Z - bb.Min.Z) < 1.0:
+                    continue
+                dd = abs((bb.Min.X + bb.Max.X) / 2 - ox)
+                if best is None or dd < best[0]:
+                    best = (dd, mu)
+            mu = best[1]; mu.Pinned = False; mu.ChangeTypeId(mts[it["column_type"]].Id); doc.Regenerate()
+            row = [it["column_type"], at, int(wa.Id.Value), None, round(ox * FT), round(oy * FT)]
+            if it.get("perp"):
+                kk = {"id": mu.Id.Value, "tname": it["column_type"], "c": mu.LocationCurve}
+                ft = fit_profile(kk); own = OTH[it["column_type"]]["own"]
+                ymin = min(min(s[1], s[3]) for s in own); ymax = max(max(s[1], s[3]) for s in own)
+                sgn = -1.0 if -ymin > ymax else 1.0; ext = -ymin if sgn < 0 else ymax
+                fa, fb = ft["fwd"](0.0, sgn * ext); da, db = ft["dfwd"](0.0, sgn)
+                p0 = ft["p0"]; s0 = XYZ(p0.X, p0.Y, Z) + ft["e1"] * (fa / FT) + ft["e2"] * (fb / FT)
+                dv = (ft["e1"] * da + ft["e2"] * db).Normalize()
+                wb = Wall.Create(doc, Line.CreateBound(s0, s0 + dv * L), wts[it["wall"]].Id, lvl.Id, 2700 / FT, 0, False, False)
+                WallUtils.DisallowWallJoinAtEnd(wb, 0); WallUtils.DisallowWallJoinAtEnd(wb, 1); doc.Regenerate()
+                for mid in wb.CurtainGrid.GetMullionIds():
+                    m2 = doc.GetElement(mid); c2 = m2.LocationCurve
+                    if c2 is not None and abs((c2.GetEndPoint(1) - c2.GetEndPoint(0)).Normalize().Z) > 0.9 and XYZ(c2.GetEndPoint(0).X, c2.GetEndPoint(0).Y, Z).DistanceTo(s0) < 60 / FT:
+                        m2.Pinned = False; doc.Delete(m2.Id); break
+                doc.Regenerate(); row[3] = int(wb.Id.Value); row.append(round(ft["score"], 3))
+            if it.get("panel"):
+                ps = [s for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels) if s.Name == it["panel"]]
+                for ww in [wa] + ([doc.GetElement(ElementId(row[3]))] if row[3] else []):
+                    for pid in ww.CurtainGrid.GetPanelIds():
+                        doc.GetElement(pid).ChangeTypeId(ps[0].Id)
+                doc.Regenerate()
+            if row[3] and it.get("panel"):
+                # однослойная: стекло перпендикулярной стены должно попасть в паз — иначе развернуть стену
+                wb_ = doc.GetElement(ElementId(row[3])); kk2 = {"id": mu.Id.Value, "tname": it["column_type"], "c": mu.LocationCurve,
+                                                               "code": re.search(u"FSC\\d+", it["column_type"]).group(0)}
+                ftb = fit_profile(kk2); px_, py_ = ftb["dinv"](dv.DotProduct(ftb["e1"]), dv.DotProduct(ftb["e2"]))
+                sdb = ("+X" if px_ > 0 else "-X") if abs(px_) > abs(py_) else ("+Y" if py_ > 0 else "-Y")
+                pnb = doc.GetElement(list(wb_.CurtainGrid.GetPanelIds())[0])
+                if side_ref(kk2, sdb, glass_bands(pnb, kk2, sdb))[0] is None:
+                    wb_.Flip(); doc.Regenerate(); row.append(u"стена B развёрнута")
+            res["others_built"].append(row)
+        t.Commit()
+    t = Transaction(doc, u"FT: зазор 3 мм у столбов — заход стекла"); OPEN.append(t); t.Start()
+    mulls = []
+    for m in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType():
+        try:
+            c = m.LocationCurve
+        except Exception:
+            c = None
+        if c is None:
+            continue
+        mt = doc.GetElement(m.GetTypeId()); sym = doc.GetElement(mt.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId()) if mt else None
+        fn = sym.FamilyName if sym else u""
+        mm = re.search(u"Профиль_(М\\d)_(FSC\\d+К?)_(\\w+?)_Фристайл", fn)
+        d0 = (c.GetEndPoint(1) - c.GetEndPoint(0)).Normalize()
+        central = bool(mm and mm.group(2) in ENTRY and re.match(KIND.get(mm.group(2), u"^Центральный(Двух|Одно)слойный$"), mm.group(3)))
+        tname = Element.Name.GetValue(mt) if mt else u""
+        other = bool(not central and mm and mm.group(2) in OTH_CODES and tname in OTH)
+        mulls.append({"c": c, "vert": abs(d0.Z) > 0.9, "sys": mm.group(1) if mm else None, "code": mm.group(2) if mm else None, "central": central, "id": m.Id.Value,
+                      "tname": tname, "other": other})
+
+    res["debug_mulls"] = {"all": len(mulls), "vert": sum(1 for k in mulls if k["vert"]), "with_code": sum(1 for k in mulls if k["code"]),
+                          "central": sum(1 for k in mulls if k["central"]), "codes": sorted(set(u"%s %s" % (k["sys"], k["code"]) for k in mulls if k["code"]))[:40]}
+
+    def near(P, vert, tol=150 / FT):
+        best, bd = None, tol
+        for k in mulls:
+            if k["vert"] != vert:
+                continue
+            r = k["c"].Project(P)
+            if r is not None and r.Distance < bd:
+                best, bd = k, r.Distance
+        return best
+    todo = []; todo_other = []
+    for pn in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+        st = doc.GetElement(pn.GetTypeId())
+        if not isinstance(st, FamilySymbol) or not st.Family.Name.startswith(u"BIMLIB_ПанельВитража") or u"М1" in st.Name:
+            continue
+        qw = pn.LookupParameter(u"FT_Стекло_Поправка_Ширина"); qh = pn.LookupParameter(u"FT_Стекло_Поправка_Высота")
+        ql = pn.LookupParameter(u"FT_Стекло_Поправка_Слева"); qr = pn.LookupParameter(u"FT_Стекло_Поправка_Справа")
+        if qw is None or qh is None:
+            continue
+        bb = pn.get_BoundingBox(None); w = pn.Host
+        if bb is None or w is None or not isinstance(w.Location, LocationCurve):
+            continue
+        res["panels"] += 1
+        d_ = w.Location.Curve.Direction; c = (bb.Min + bb.Max) * 0.5
+        # рамка панели раздута поперёк стены — центр берём на оси стены
+        pr = w.Location.Curve.Project(XYZ(c.X, c.Y, w.Location.Curve.GetEndPoint(0).Z))
+        if pr is not None:
+            c = XYZ(pr.XYZPoint.X, pr.XYZPoint.Y, c.Z)
+        hw = abs((bb.Max - bb.Min).DotProduct(d_)) / 2.0
+        es = st.LookupParameter(u"Выступ сбоку").AsDouble() * FT; et = st.LookupParameter(u"Выступ сверху").AsDouble() * FT; eb = st.LookupParameter(u"Выступ снизу").AsDouble() * FT
+        cw = 0.0; ch = 0.0; sl = 0.0; sr = 0.0
+        for side, P in ((u"L", c - d_ * hw), (u"R", c + d_ * hw)):
+            k = near(P, True)
+            if args.get("selftest") and c.Y * FT < -85000 and len(res.setdefault("debug_near", [])) < 6:
+                res["debug_near"].append([int(pn.Id.Value), side, k["code"] if k else None, k["central"] if k else None, k["sys"] if k else None])
+            if k is None or k["sys"] not in ALBUM:
+                continue
+            if k["central"]:
+                if ql is None or qr is None:
+                    res["problems"].append([int(pn.Id.Value), u"в панели нет поправок слева/справа"]); continue
+                mn, pl = ENTRY[k["code"]]
+                if side == u"L":
+                    sl = pl - es   # панель справа от столба -> его сторона +X
+                else:
+                    sr = mn - es
+                res["central_sides"] += 1
+                todo.append((pn.Id, side, k, d_))
+            elif k["other"]:
+                if ql is None or qr is None:
+                    res["problems"].append([int(pn.Id.Value), u"в панели нет поправок слева/справа"]); continue
+                ft = fit_profile(k)
+                tp = d_ * (1.0 if side == u"L" else -1.0)   # от столба к панели
+                px_, py_ = ft["dinv"](tp.DotProduct(ft["e1"]), tp.DotProduct(ft["e2"]))
+                sd = ("+X" if px_ > 0 else "-X") if abs(px_) > abs(py_) else ("+Y" if py_ > 0 else "-Y")
+                bands = glass_bands(pn, k, sd)
+                ref, how = side_ref(k, sd, bands)
+                org = ft["org"]; g0 = glass_u(pn, d_); au0 = org.X * d_.X + org.Y * d_.Y
+                before = None if g0 is None else round(((g0[0] - au0) if side == u"L" else (au0 - g0[1])) * FT, 2)
+                info = {"before": before, "panel": int(pn.Id.Value), "post": k["tname"], "side": sd, "fit_mm": round(ft["score"], 3), "shift": ft["shift"],
+                        "bands": [[round(a, 2), round(b, 2)] for a, b in bands], "ref": None if ref is None else round(ref, 2), "how": how}
+                res["others"].append(info)
+                if ref is None or ft["score"] > 0.5:
+                    res["problems"].append([int(pn.Id.Value), k["tname"], sd, u"нет точки отсчёта или профиль не совпал (%.2f мм)" % ft["score"]]); continue
+                # поправка стороны подбирается замером после записи остального (ниже), здесь — 0
+                info["target"] = round(ref + 3.0, 2)
+                res["other_post_sides"] += 1
+                todo_other.append((pn.Id, side, k, d_, ref + 3.0))
+                todo.append((pn.Id, side, k, d_, ref + 3.0))
+            elif k["code"] in ALBUM[k["sys"]]:
+                cw += ALBUM[k["sys"]][k["code"]] - es; res["other_post_sides"] += 1
+        for P, e in ((XYZ(c.X, c.Y, bb.Min.Z), eb), (XYZ(c.X, c.Y, bb.Max.Z), et)):
+            k = near(P, False)
+            if k and k["sys"] in ALBUM and k["code"] in ALBUM[k["sys"]]:
+                ch += ALBUM[k["sys"]][k["code"]] - e
+        qw.Set(cw / FT); qh.Set(ch / FT)
+        if ql is not None and qr is not None:
+            ql.Set(sl / FT); qr.Set(sr / FT)
+    if todo_other:
+        # прочие столбы: замер торца после записи и доводка поправки стороны (+ удлиняет стекло к столбу)
+        doc.Regenerate()
+        for pid, side, k, d_, target in todo_other:
+            pn = doc.GetElement(pid); g = glass_u(pn, d_); org = _fit[k["id"]]["org"]; au = org.X * d_.X + org.Y * d_.Y
+            if g is None:
+                continue
+            cur = ((g[0] - au) if side == u"L" else (au - g[1])) * FT
+            q = pn.LookupParameter(u"FT_Стекло_Поправка_Слева" if side == u"L" else u"FT_Стекло_Поправка_Справа")
+            v0 = q.AsDouble() * FT; okset = q.Set((v0 + cur - target) / FT)
+            v1 = v0 + cur - target   # читать значение сразу после Set нельзя: до Regenerate Revit отдаёт старое (урок 14.11)
+            if not okset:
+                res["problems"].append([int(pid.Value), k["tname"], u"поправка не записалась"])
+            for o_ in res["others"]:
+                if o_["panel"] == int(pid.Value) and o_.get("target") is not None and abs(o_["target"] - target) < 0.006:
+                    o_["param"] = [q.Definition.Name[-6:], round(v0, 2), round(v1, 2), round(cur, 2)]
+    t.Commit()
+    # проверка по геометрии
+    for td in todo:
+        pid, side, k, d_ = td[:4]
+        pn = doc.GetElement(pid); g = glass_u(pn, d_)
+        p0 = _fit[k["id"]]["org"] if len(td) > 4 else k["c"].GetEndPoint(0)
+        au = p0.X * d_.X + p0.Y * d_.Y
+        if g is None:
+            res["check"]["bad"].append([int(pid.Value), side, k["code"], u"нет стекла"]); continue
+        got = ((g[0] - au) if side == u"L" else (au - g[1])) * FT
+        if len(td) > 4:
+            for o_ in res["others"]:
+                if o_["panel"] == int(pid.Value) and o_.get("target") is not None and abs(o_["target"] - td[4]) < 1e-6 and "got" not in o_:
+                    o_["got"] = round(got, 2); break
+            # ширина стекла в панели округляется вниз до 1 мм: торец может уйти от столба до 1 мм (зазор больше), но не глубже
+            if td[4] - 0.1 <= got <= td[4] + 1.05:
+                res["check"]["ok"] += 1
+            else:
+                res["check"]["bad"].append([int(pid.Value), side, k["tname"], round(got, 2), round(td[4], 2)])
+            continue
+        exp = EXPECT[k["code"]][1 if side == u"L" else 0]
+        # у FSC08 ось профиля смещена от линии импоста на 41,7 мм (стена A); для стены B отсчёт от точки P
+        alts = [exp, exp + 41.7] if k["code"] == u"FSC08" else [exp]
+        if any(abs(got - e) <= 0.1 for e in alts):
+            res["check"]["ok"] += 1
+        else:
+            res["check"]["bad"].append([int(pid.Value), side, k["code"], round(got, 2), exp])
+    res["check"]["bad"] = res["check"]["bad"][:40]
+    if args.get("corner_views_dir") and res.get("corners") and DRY:
+        # снимки углов после правки (план 1:2, Fine) — откатятся вместе со всем
+        from System.Collections.Generic import List
+        if not os.path.isdir(args["corner_views_dir"]):
+            os.makedirs(args["corner_views_dir"])
+        t = Transaction(doc, u"самопроверка: виды углов"); OPEN.append(t); t.Start()
+        vft = [x for x in FilteredElementCollector(doc).OfClass(ViewFamilyType) if x.ViewFamily == ViewFamily.FloorPlan][0]
+        lvl = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+        vs = []
+        for i, c in enumerate(res["corners"]):
+            ox = (110000 + i * 4000) / FT; oy = -90000 / FT; H = 120 / FT
+            v = ViewPlan.Create(doc, vft.Id, lvl.Id); v.Name = u"Угол 3мм " + c[0]
+            v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+            vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, 500 / FT); v.SetViewRange(vr)
+            bx = BoundingBoxXYZ(); bx.Min = XYZ(ox - H, oy - H, -1000); bx.Max = XYZ(ox + H, oy + H, 1000)
+            v.CropBox = bx; v.CropBoxActive = True; v.CropBoxVisible = False
+            vs.append((v, c[0]))
+        t.Commit()
+        for v, nm in vs:
+            e = ImageExportOptions(); e.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(v.Id); e.SetViewsAndSheets(ids)
+            e.ZoomType = ZoomFitType.FitToPage; e.PixelSize = int(args.get("px", 1600))
+            e.ImageResolution = ImageResolution.DPI_300; e.HLRandWFViewsFileType = ImageFileType.PNG
+            e.FilePath = os.path.join(args["corner_views_dir"], u"c_" + nm)
+            doc.ExportImage(e)
+    if args.get("others_views_dir") and res.get("others_built") and DRY:
+        # снимки сборок с прочими столбами после правки (план 1:2, Fine) — откатятся вместе со всем
+        from System.Collections.Generic import List
+        if not os.path.isdir(args["others_views_dir"]):
+            os.makedirs(args["others_views_dir"])
+        t = Transaction(doc, u"самопроверка: виды прочих столбов"); OPEN.append(t); t.Start()
+        vft = [x for x in FilteredElementCollector(doc).OfClass(ViewFamilyType) if x.ViewFamily == ViewFamily.FloorPlan][0]
+        lvl = sorted(FilteredElementCollector(doc).OfClass(Level), key=lambda l: abs(l.Elevation))[0]
+        vs = []
+        for i, c in enumerate(res["others_built"]):
+            ox = c[4] / FT; oy = c[5] / FT; H = 130 / FT
+            v = ViewPlan.Create(doc, vft.Id, lvl.Id); v.Name = u"Столб 3мм %02d %s" % (i, c[0])
+            v.Scale = 2; v.DetailLevel = ViewDetailLevel.Fine
+            vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, 500 / FT); v.SetViewRange(vr)
+            bx = BoundingBoxXYZ(); bx.Min = XYZ(ox - H, oy - H, -1000); bx.Max = XYZ(ox + H, oy + H, 1000)
+            v.CropBox = bx; v.CropBoxActive = True; v.CropBoxVisible = False
+            vs.append((v, u"%02d_%s" % (i, c[0])))
+        t.Commit()
+        for v, nm in vs:
+            e = ImageExportOptions(); e.ExportRange = ExportRange.SetOfViews
+            ids = List[ElementId](); ids.Add(v.Id); e.SetViewsAndSheets(ids)
+            e.ZoomType = ZoomFitType.FitToPage; e.PixelSize = int(args.get("px", 1200))
+            e.ImageResolution = ImageResolution.DPI_300; e.HLRandWFViewsFileType = ImageFileType.PNG
+            e.FilePath = os.path.join(args["others_views_dir"], nm)
+            doc.ExportImage(e)
+    res["warnings"] = len(doc.GetWarnings())
+    if DRY:
+        tg.RollBack()
+    else:
+        tg.Assimilate()
+except Exception:
+    import traceback
+    res["error"] = traceback.format_exc()[-900:]
+    for x in reversed(OPEN):
+        if x.HasStarted() and not x.HasEnded():
+            x.RollBack()
+    if tg.HasStarted() and not tg.HasEnded():
+        tg.RollBack()
+st_ = "failed" if res.get("error") else ("partial" if (res["problems"] or res["check"]["bad"]) else "completed_unverified")
+__output__ = {"status": st_, "summary": (u"ПРОБА (откат): " if DRY else u"ПРИМЕНЕНО: ") + u"загружено %d, панелей %d, сторон у центральных столбов %d (проверка торца: верно %d, не так %d), у прочих столбов %d, предупреждений %s, проблем %d" % (
+    len(res["loaded"]), res["panels"], res["central_sides"], res["check"]["ok"], len(res["check"]["bad"]), res["other_post_sides"], res.get("warnings"), len(res["problems"])), "r": res}

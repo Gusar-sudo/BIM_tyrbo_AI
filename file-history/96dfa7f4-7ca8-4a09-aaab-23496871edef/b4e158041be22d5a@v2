@@ -1,0 +1,98 @@
+# -*- coding: utf-8 -*-
+# Отзеркалить силуэт семейства профиля импоста поперёк стены (y -> -y, плоскость y=0 профиля).
+# Левый/правый при этом НЕ меняются (в отличие от поворота на 180°).
+# Нужно для однослойных столбов, у которых столб выступает за линию стекла (стекло — со стороны главного фасада).
+# Заодно (strip_seal=true) удаляет нарисованный уплотнитель U5 во вложенных 2D (сплошные заливки <= max_mm) —
+# уплотнитель рисует панель по толщине стекла.
+# EditFamily -> [вложенные: удалить заливки -> загрузить обратно] -> MirrorElements -> SaveAs в out_dir. Проект НЕ меняется.
+# Аргументы: symbol_ids, out_dir, strip_seal (bool), max_mm, args_out
+import json
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MAX = float(args.get("max_mm", 12.0))
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+
+def bbox(fdoc):
+    xs, ys = [], []
+    for ce in FilteredElementCollector(fdoc).OfClass(CurveElement):
+        c = ce.GeometryCurve
+        for p in (c.GetEndPoint(0), c.GetEndPoint(1)):
+            xs.append(p.X * FT); ys.append(p.Y * FT)
+    return [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)] if xs else None
+
+
+results, items = [], []
+for sid in args["symbol_ids"]:
+    sym = doc.GetElement(ElementId(int(sid)))
+    fam = sym.Family
+    r = {"symbol_id": int(sid), "family": fam.Name, "ok": False, "seal_removed": 0}
+    pdoc = doc.EditFamily(fam)
+    try:
+        if args.get("strip_seal", True):
+            for fi in list(FilteredElementCollector(pdoc).OfClass(FamilyInstance)):
+                ndoc = pdoc.EditFamily(fi.Symbol.Family)
+                try:
+                    dele = List[ElementId]()
+                    for fr in FilteredElementCollector(ndoc).OfClass(FilledRegion):
+                        ft = ndoc.GetElement(fr.GetTypeId())
+                        fp = ndoc.GetElement(ft.ForegroundPatternId) if ft else None
+                        if fp is None or not fp.GetFillPattern().IsSolidFill:
+                            continue
+                        xs, ys = [], []
+                        for loop in fr.GetBoundaries():
+                            for c in loop:
+                                for pt in (c.GetEndPoint(0), c.GetEndPoint(1)):
+                                    xs.append(pt.X * FT); ys.append(pt.Y * FT)
+                        if max(xs) - min(xs) <= MAX and max(ys) - min(ys) <= MAX:
+                            dele.Add(fr.Id)
+                    if dele.Count > 0:
+                        t = Transaction(ndoc, u"Убрать нарисованный уплотнитель"); t.Start(); ndoc.Delete(dele); t.Commit()
+                        ndoc.LoadFamily(pdoc, LoadOpt())
+                        r["seal_removed"] += dele.Count
+                finally:
+                    ndoc.Close(False)
+        ids = List[ElementId]()
+        for ce in FilteredElementCollector(pdoc).OfClass(CurveElement):
+            ids.Add(ce.Id)
+        for fr in FilteredElementCollector(pdoc).OfClass(FilledRegion):
+            ids.Add(fr.Id)
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            ids.Add(fi.Id)
+        r["bbox_before"] = bbox(pdoc)
+        t = Transaction(pdoc, u"Профиль: зеркало поперёк стены"); t.Start()
+        ElementTransformUtils.MirrorElements(pdoc, ids, Plane.CreateByNormalAndOrigin(XYZ.BasisY, XYZ.Zero), False)
+        pdoc.Regenerate()
+        t.Commit()
+        r["bbox_after"] = bbox(pdoc)
+        r["nested_after"] = [[fi.Symbol.Family.Name, fi.Mirrored] for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance)]
+        opts = SaveAsOptions(); opts.OverwriteExistingFile = True
+        r["out_rfa"] = args["out_dir"] + u"\\" + fam.Name + u".rfa"
+        pdoc.SaveAs(r["out_rfa"], opts)
+        r["ok"] = True
+        items.append({"symbol_id": int(sid), "rfa": r["out_rfa"]})
+    except Exception as ex:
+        r["error"] = str(ex)
+    finally:
+        pdoc.Close(False)
+    results.append(r)
+if args.get("args_out"):
+    with open(args["args_out"], "w", encoding="utf-8") as f:
+        json.dump({"items": items}, f, ensure_ascii=False)
+ok = sum(1 for r in results if r["ok"])
+__output__ = {"status": "completed_unverified" if ok == len(results) else "partial",
+              "summary": u"Профилей отзеркалено и сохранено: %d из %d; проект не изменён." % (ok, len(results)), "results": results}

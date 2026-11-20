@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+# Чтение: открыть rfa профиля (без сохранения), показать цепочки собственных линий и контуры вложенных семейств.
+# Аргументы: rfa (путь), xmin_of_interest (мм; показать только цепочки, заходящие левее/правее |x|>=порог)
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+FT = 304.8
+TH = float(args.get("abs_x_min", 12.0))
+
+
+def chains(d, T):
+    segs = []
+    for ce in FilteredElementCollector(d).OfClass(CurveElement):
+        c = ce.GeometryCurve
+        if c is None or not c.IsBound:
+            continue
+        segs.append([(round(T.OfPoint(q).X * FT, 2), round(T.OfPoint(q).Y * FT, 2)) for q in c.Tessellate()])
+    parent = {}
+
+    def find(a):
+        while parent.setdefault(a, a) != a:
+            parent[a] = parent[parent[a]]; a = parent[a]
+        return a
+    for s in segs:
+        ra, rb = find(s[0]), find(s[-1])
+        if ra != rb:
+            parent[ra] = rb
+    g = {}
+    for s in segs:
+        g.setdefault(find(s[0]), []).append(s)
+    out = []
+    for ss in g.values():
+        deg = {}
+        for s in ss:
+            deg[s[0]] = deg.get(s[0], 0) + 1; deg[s[-1]] = deg.get(s[-1], 0) + 1
+        xs = [p[0] for s in ss for p in s]; ys = [p[1] for s in ss for p in s]
+        if max(abs(min(xs)), abs(max(xs))) < TH:
+            continue
+        out.append({"n": len(ss), "closed": all(v % 2 == 0 for v in deg.values()), "open_ends": [k for k, v in deg.items() if v % 2][:4],
+                    "x": [round(min(xs), 2), round(max(xs), 2)], "y": [round(min(ys), 2), round(max(ys), 2)]})
+    return out
+
+
+d = app.OpenDocumentFile(args["rfa"])
+try:
+    res = {"own": chains(d, Transform.Identity), "nested": []}
+    for fi in FilteredElementCollector(d).OfClass(FamilyInstance):
+        nd = d.EditFamily(fi.Symbol.Family)
+        try:
+            res["nested"].append({"family": fi.Symbol.Family.Name, "chains": chains(nd, fi.GetTotalTransform()),
+                                  "fills": FilteredElementCollector(nd).OfClass(FilledRegion).GetElementCount()})
+        finally:
+            nd.Close(False)
+finally:
+    d.Close(False)
+__output__ = {"status": "completed_unverified", "summary": "own %d, nested %d" % (len(res["own"]), len(res["nested"])), "result": res}

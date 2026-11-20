@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+# Чтение: id типов-образцов (одинарное заполнение) и панелей ГКЛ; параметры панели по умолчанию у типа стены
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+walls = {}
+for w in FilteredElementCollector(doc).OfClass(WallType):
+    if w.Kind == WallKind.Curtain and (u"Одинарное заполнение" in w.Name or u"Глух" in w.Name):
+        p = w.get_Parameter(BuiltInParameter.AUTO_PANEL_WALL)
+        walls[w.Name] = {"id": w.Id.Value, "panel_id": p.AsElementId().Value if p else None,
+                         "panel": doc.GetElement(p.AsElementId()).Name if p and doc.GetElement(p.AsElementId()) else None,
+                         "adsk_name": (w.LookupParameter(u"ADSK_Наименование").AsString() if w.LookupParameter(u"ADSK_Наименование") else None)}
+gkl = {}
+for s in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsElementType():
+    if u"ГКЛ" in s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString():
+        gkl[s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()] = s.Id.Value
+__output__ = {"status": "completed_unverified", "summary": u"стен %d, панелей ГКЛ %d" % (len(walls), len(gkl)), "walls": walls, "gkl": gkl, "doc": doc.Title}

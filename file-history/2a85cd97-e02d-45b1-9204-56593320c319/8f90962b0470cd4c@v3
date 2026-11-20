@@ -1,0 +1,50 @@
+import json, io, sys
+p = sys.argv[1]
+R = None; F = []
+for l in io.open(p, encoding="utf-8"):
+    if not l.strip():
+        continue
+    x = json.loads(l)
+    def find(o):
+        if isinstance(o, str) and o.startswith("{") and '"others"' in o:
+            try:
+                o = json.loads(o)
+            except Exception:
+                return None
+        if isinstance(o, dict):
+            if "others" in o and "check" in o:
+                return o
+            for v in o.values():
+                f = find(v)
+                if f is not None:
+                    return f
+        elif isinstance(o, list):
+            for v in o:
+                f = find(v)
+                if f is not None:
+                    return f
+        return None
+    f = find(x)
+    if f is not None:
+        R = f
+    def fails(o):
+        if isinstance(o, dict):
+            if "failures" in o and isinstance(o["failures"], list):
+                return o["failures"]
+            for v in o.values():
+                r = fails(v)
+                if r: return r
+        return None
+    ff = fails(x)
+    if ff: F = ff
+if R is None:
+    print("no result yet"); sys.exit()
+print("check ok", R["check"]["ok"], "bad", len(R["check"]["bad"]), "problems", len(R["problems"]), "warn", R.get("warnings"), "err", (R.get("error") or "")[:600])
+for o in R["others"]:
+    print(o["post"][3:], o["side"], "fit", o["fit_mm"], o.get("shift"), "ref", o["ref"], o["how"][:14], "before", o["before"], "target", o.get("target"), "got", o.get("got"), "param", o.get("param"))
+print("bad", R["check"]["bad"])
+print("problems", R["problems"][:20])
+print("built", [b[0][3:] + " " + str(b[1:]) for b in R.get("others_built", [])])
+print("revit errors", len([f for f in F if f.get("kind") == "error"]), [f["elements"] for f in F if f.get("kind") == "error"][:12])
+if len(sys.argv) > 2:
+    io.open(sys.argv[2], "w", encoding="utf-8").write(json.dumps(R, ensure_ascii=False, indent=1))

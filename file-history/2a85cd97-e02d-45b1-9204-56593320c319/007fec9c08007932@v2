@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+# Только чтение: все типы панелей семейств BIMLIB_ПанельВитража_* — толщина стекла, выступы, добавка, экземпляры;
+# панели по умолчанию в типах стен М2/М3.
+from Autodesk.Revit.DB import *
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+cnt = {}
+for p in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+    cnt[p.GetTypeId().Value] = cnt.get(p.GetTypeId().Value, 0) + 1
+g = lambda s, n: (round(s.LookupParameter(n).AsDouble() * FT, 2) if s.LookupParameter(n) is not None and s.LookupParameter(n).StorageType == StorageType.Double else None)
+rows = []
+for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels):
+    if not s.Family.Name.startswith(u"BIMLIB_ПанельВитража"):
+        continue
+    rows.append([s.Family.Name.replace(u"BIMLIB_ПанельВитража_", u"").replace(u"_ФристайлТехнолоджи", u""), s.Name, g(s, u"Толщина стекла"), g(s, u"Выступ сбоку"), g(s, u"Выступ сверху"), g(s, u"Выступ снизу"), g(s, u"FT_Стекло_Добавка"), cnt.get(s.Id.Value, 0)])
+walls = []
+for w in FilteredElementCollector(doc).OfClass(WallType):
+    if w.Kind == WallKind.Curtain and (u"Система М2" in w.Name or u"Система М3" in w.Name):
+        pe = doc.GetElement(w.get_Parameter(BuiltInParameter.AUTO_PANEL_WALL).AsElementId())
+        walls.append([w.Name.replace(u"BIMLIB_Витраж_Без разрезки_", u""), Element.Name.GetValue(pe) if pe else None])
+__output__ = {"status": "completed_unverified", "summary": u"типов панелей %d (только чтение)" % len(rows), "panels": sorted(rows), "walls": walls}

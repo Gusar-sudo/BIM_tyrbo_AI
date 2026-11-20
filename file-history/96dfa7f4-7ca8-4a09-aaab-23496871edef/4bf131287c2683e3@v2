@@ -1,0 +1,15 @@
+﻿# Конвертация и разбор всех DWG проекта (fst-dwg-reader). Только локально.
+$ErrorActionPreference = "Continue"
+$env:PYTHONUTF8 = 1
+$root = "C:\Users\user\Desktop\Фристайл"
+$out  = Join-Path $root "_bim\dxf"
+$s    = "C:\Users\user\.claude\skills\fst-dwg-reader\scripts"
+$conv = "C:\Users\user\Tools\libredwg-0.14.8608\bin\dwg2dxf.exe"
+$files = Get-ChildItem -LiteralPath $root -Recurse -Filter *.dwg | Where-Object { $_.FullName -notlike "*\_bim\*" -and $_.BaseName -ne "Методичка по полотнам" }
+foreach ($f in $files) {
+  "=== $($f.Name) ($([math]::Round($f.Length/1MB,1)) МБ)"
+  py -P -E (Join-Path $s "dwg_to_dxf.py") $f.FullName $out --converter $conv --timeout 1800
+  $dxf = Join-Path $out ($f.BaseName + ".dxf")
+  if (Test-Path -LiteralPath $dxf) { py -P -E (Join-Path $s "dxf_extract.py") $dxf $out }
+}
+"DONE"

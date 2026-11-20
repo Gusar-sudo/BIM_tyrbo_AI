@@ -1,0 +1,104 @@
+# Пакет визуальной проверки М2: PDF (A3 альбомный, 200 dpi) из листов узлов и схем углов/Т.
+import glob, os, sys
+from PIL import Image, ImageDraw, ImageFont
+base = r"C:\Users\user\Desktop\Фристайл\_bim\test\2026-10-28_M2M3_seals"
+out_pdf = os.path.join(base, "M2_review", "М2_визуальная_проверка_2026-10-30.pdf")
+W, H = 3307, 2339   # A3 landscape @200 dpi
+F = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arial.ttf", s)
+FB = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arialbd.ttf", s)
+pages = []
+
+
+def new_page(title, sub=None):
+    p = Image.new("RGB", (W, H), "white"); d = ImageDraw.Draw(p)
+    d.text((80, 50), title, fill="black", font=FB(54))
+    if sub:
+        d.text((80, 125), sub, fill=(90, 90, 90), font=F(32))
+    d.line([(80, 180), (W - 80, 180)], fill=(160, 160, 160), width=3)
+    d.text((W - 620, H - 70), "Фристайл · М2 · test_M2M3_seals · 30.10.2026", fill=(150, 150, 150), font=F(26))
+    d.text((80, H - 70), "стр. %d" % (len(pages) + 1), fill=(150, 150, 150), font=F(26))
+    return p, d
+
+
+def crop_content(im, pad=40):
+    g = im.convert("L").point(lambda v: 255 if v < 245 else 0)
+    bb = g.getbbox()
+    if not bb:
+        return im
+    return im.crop((max(0, bb[0] - pad), max(0, bb[1] - pad), min(im.width, bb[2] + pad), min(im.height, bb[3] + pad)))
+
+
+def fit(im, w, h):
+    im = im.copy(); im.thumbnail((w, h), Image.LANCZOS); return im
+
+
+# 1. титул и легенда
+p, d = new_page("Перегородки М2 — схемы узлов для визуальной проверки",
+                "Тестовый файл test_M2M3_seals, Revit 2026, детализация «Высокая», горизонтальные сечения (планы)")
+y = 260
+lines = [
+    ("Как читать", True),
+    ("• Горизонтальная стена на всех схемах: ФАСАД (сторона стекла) — снизу, столбы выступают вверх (от фасада).", False),
+    ("• Чёрное в сечении — уплотнитель (рисует панель стекла, точный контур по «Уплотнители в перегородку.dwg»).", False),
+    ("• Уплотнитель зависит от толщины стекла:  5 мм → FS.C-U5,  6 мм → U6,  8 мм → U8,  10 мм → U10.", False),
+    ("", False),
+    ("Состав пакета", True),
+    ("стр. 2–3  Прямые узлы: стойка FSC21 — край левый / центр / край правый; однослойное и двухслойное остекление.", False),
+    ("стр. 4–5  Прямые узлы со столбом FSC17 (три грани) в середине.", False),
+    ("           На листах узлов верхний ряд — сечение на высоте 500 мм (стекло 5 | 6), нижний — 1500 мм (стекло 8 | 10).", False),
+    ("стр. 6    Углы 90° и 135°, однослойные: FSC17 (90°), FSC18 универсальный (90°, 135°).", False),
+    ("стр. 7    Двухслойные: углы FSC17 / FSC18 (90°, 135°) и Т-узлы FSC17 / FSC18.", False),
+    ("", False),
+    ("Что проверить глазами", True),
+    ("1. Стекло везде со стороны фасада, столбы и стойки заподлицо со стеклом с этой стороны.", False),
+    ("2. Уплотнитель стоит у кромки стекла в пазу профиля и разный для 5 / 6 / 8 / 10 мм.", False),
+    ("3. На углах и Т-узлах вторая стена входит в паз / держатель столба, без зазоров и наложений.", False),
+    ("4. Угол 135°: держатель стены A на месте, «ножки» и рамка стены B повернуты на 45°.", False),
+    ("", False),
+    ("Ограничения", True),
+    ("• Схемы углов и Т-узлов показаны со стеклом 5 мм (U5); другие толщины — на прямых узлах.", False),
+    ("• Для 135° сделаны только «левые» варианты (вторая стена поворачивает влево).", False),
+    ("• Формы U6/U8/U10 в DWG даны в свободном состоянии; язычок U10 заходит на стекло ~1,6 мм.", False),
+]
+for t, bold in lines:
+    d.text((100, y), t, fill="black" if bold else (40, 40, 40), font=FB(40) if bold else F(34))
+    y += 62 if t else 30
+pages.append(p)
+
+# 2–5. листы прямых узлов
+sheets = [("01_М2_1сл_FSC21.png", "Прямые узлы · М2 однослойное · стойка FSC21"),
+          ("02_М2_2сл_FSC21.png", "Прямые узлы · М2 двухслойное · стойка FSC21"),
+          ("05_М2_1сл_FSC21_FSC17.png", "Прямые узлы · М2 однослойное · столб FSC17 в середине"),
+          ("06_М2_2сл_FSC21_FSC17.png", "Прямые узлы · М2 двухслойное · столб FSC17 в середине")]
+for fn, title in sheets:
+    p, d = new_page(title, "Верхний ряд — сечение 500 мм (стекло 5 | 6 мм, U5 | U6); нижний — 1500 мм (стекло 8 | 10 мм, U8 | U10). Фасад — снизу.")
+    im = Image.open(os.path.join(base, "sheets", fn)).convert("RGB")
+    im = im.crop((0, 70, im.width, im.height))          # без собственного заголовка листа
+    im = fit(im, W - 160, H - 300)
+    p.paste(im, ((W - im.width) // 2, 210))
+    pages.append(p)
+
+# 6–7. углы и Т-узлы
+sch = sorted(glob.glob(os.path.join(base, "M2_review", "v*.png")))
+def find(code):
+    return [f for f in sch if ("Схема " + code + " ") in f][0]
+groups = [("Углы · М2 однослойное", ["01", "02", "03"]),
+          ("Углы и Т-узлы · М2 двухслойное", ["04", "06", "07", "05", "08"])]
+for title, codes in groups:
+    p, d = new_page(title, "Стена A — слева (горизонтальная, фасад снизу), стена B уходит вверх / под 45°. Стекло 5 мм, уплотнитель U5.")
+    n = len(codes); cols = 3; rows = (n + cols - 1) // cols
+    cw = (W - 160 - (cols - 1) * 40) // cols; ch = (H - 300 - (rows - 1) * 40) // rows
+    for i, c in enumerate(codes):
+        f = find(c)
+        name = os.path.basename(f).split(" - ")[-1][:-4].replace("Схема ", "")
+        im = fit(crop_content(Image.open(f).convert("RGB"), 60), cw - 20, ch - 70)
+        x = 80 + (i % cols) * (cw + 40); yy = 210 + (i // cols) * (ch + 40)
+        d.rectangle([x, yy, x + cw, yy + ch], outline=(180, 180, 180), width=2)
+        d.text((x + 15, yy + 12), name, fill=(170, 0, 0), font=FB(34))
+        p.paste(im, (x + (cw - im.width) // 2, yy + 60 + (ch - 70 - im.height) // 2))
+    pages.append(p)
+
+pages[0].save(out_pdf, save_all=True, append_images=pages[1:], resolution=200)
+for i, pg in enumerate(pages):
+    pg.resize((W // 2, H // 2)).save(os.path.join(base, "M2_review", "page_%02d.png" % (i + 1)))
+print(out_pdf, len(pages))

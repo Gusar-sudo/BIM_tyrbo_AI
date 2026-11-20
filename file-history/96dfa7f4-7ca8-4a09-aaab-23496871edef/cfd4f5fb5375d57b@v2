@@ -1,0 +1,81 @@
+# -*- coding: utf-8 -*-
+# Только чтение: в каждом профиле импоста найти нарисованные уплотнители-контуры во вложенном 2D
+# (замкнутые цепочки линий/дуг с габаритом <= max_mm) и их центры в координатах профиля. Плюс габарит силуэта.
+# Пишет out_json: {профиль: {"loops": [[cx, cy, w, h, n_curves]], "silh": [xmin, ymin, xmax, ymax]}}
+import json
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+MAX = float(args.get("max_mm", 12.0))
+pref = args.get("prefix", u"BIMLIB_Профиль_")
+
+
+def key(p):
+    return (round(p.X * FT, 2), round(p.Y * FT, 2))
+
+
+sids = set()
+for mt in FilteredElementCollector(doc).OfClass(MullionType):
+    p = mt.get_Parameter(BuiltInParameter.MULLION_PROFILE)
+    if p and p.AsElementId() != ElementId.InvalidElementId:
+        s = doc.GetElement(p.AsElementId())
+        if s is not None and s.Family.Name.startswith(pref):
+            sids.add(int(p.AsElementId().Value))
+sids = sorted(sids)
+out = {}
+for k, sid in enumerate(sids):
+    fam = doc.GetElement(ElementId(sid)).Family
+    checkpoint(fam.Name[:60], k, len(sids))
+    pdoc = doc.EditFamily(fam)
+    r = {"loops": [], "silh": None}
+    try:
+        xs, ys = [], []
+        for ce in FilteredElementCollector(pdoc).OfClass(CurveElement):
+            for p in ce.GeometryCurve.Tessellate():
+                xs.append(p.X * FT); ys.append(p.Y * FT)
+        if xs:
+            r["silh"] = [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)]
+        for fi in FilteredElementCollector(pdoc).OfClass(FamilyInstance):
+            T = fi.GetTotalTransform()
+            nd = pdoc.EditFamily(fi.Symbol.Family)
+            try:
+                curves = []
+                for ce in FilteredElementCollector(nd).OfClass(CurveElement):
+                    c = ce.GeometryCurve
+                    if not c.IsBound:
+                        continue
+                    curves.append((key(c.GetEndPoint(0)), key(c.GetEndPoint(1)), [T.OfPoint(p) for p in c.Tessellate()]))
+                # связность по общим концам (union-find)
+                parent = {}
+
+                def find(a):
+                    while parent.setdefault(a, a) != a:
+                        parent[a] = parent[parent[a]]; a = parent[a]
+                    return a
+                for a, b, _ in curves:
+                    ra, rb = find(a), find(b)
+                    if ra != rb:
+                        parent[ra] = rb
+                groups = {}
+                for a, b, pts in curves:
+                    groups.setdefault(find(a), []).append((a, b, pts))
+                for g in groups.values():
+                    deg = {}
+                    for a, b, _ in g:
+                        deg[a] = deg.get(a, 0) + 1; deg[b] = deg.get(b, 0) + 1
+                    if any(v % 2 for v in deg.values()) or len(g) < 3:
+                        continue          # не замкнутый контур
+                    pts = [p for _, _, pp in g for p in pp]
+                    gx = [p.X * FT for p in pts]; gy = [p.Y * FT for p in pts]
+                    w = max(gx) - min(gx); h = max(gy) - min(gy)
+                    if w <= MAX and h <= MAX and w > 2 and h > 2:
+                        r["loops"].append([round((min(gx) + max(gx)) / 2, 2), round((min(gy) + max(gy)) / 2, 2), round(w, 1), round(h, 1), len(g)])
+            finally:
+                nd.Close(False)
+    finally:
+        pdoc.Close(False)
+    out[fam.Name[15:]] = r
+with open(args["out_json"], "w", encoding="utf-8") as f:
+    json.dump(out, f, ensure_ascii=False)
+__output__ = {"status": "completed_unverified", "summary": u"профилей %d, с контурами %d" % (len(out), sum(1 for v in out.values() if v["loops"]))}

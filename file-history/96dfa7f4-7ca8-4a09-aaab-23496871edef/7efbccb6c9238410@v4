@@ -1,0 +1,124 @@
+# -*- coding: utf-8 -*-
+# Вариант A, шаг B/C: загрузить семейства панелей из .rfa (одна транзакция), замерить панели; commit=false -> откат.
+# Аргументы: rfas: [...], sample_ids: [...], commit
+import json, clr
+from Autodesk.Revit.DB import *
+
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+commit = bool(args.get("commit", False))
+OFF_MARK = args.get("off_wall_marker")  # например "Система М1"; ожидаемое стекло 0
+
+
+class LoadOpt(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = True
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = FamilySource.Family
+        overwriteParameterValues.Value = True
+        return True
+
+
+def pv(e, name, length=False):
+    p = e.LookupParameter(name)
+    if p is None:
+        return u"нет"
+    if p.StorageType == StorageType.String:
+        return p.AsString()
+    v = p.AsDouble()
+    return round(v * FT, 1) if length else round(v, 3)
+
+
+def sample():
+    rows = []
+    for i in args["sample_ids"]:
+        e = doc.GetElement(ElementId(int(i)))
+        if e is None:
+            rows.append({"id": i, "missing": True}); continue
+        t = doc.GetElement(e.GetTypeId())
+        rows.append({"id": int(i), "type": t.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString(),
+                     "W": round(e.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH).AsDouble() * FT, 1),
+                     "H": round(e.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_HEIGHT).AsDouble() * FT, 1),
+                     "ADSK_W": pv(e, u"ADSK_Размер_Ширина", True), "ADSK_H": pv(e, u"ADSK_Размер_Высота", True),
+                     "art": pv(t, u"FT_Стекло_Уплотнитель_Артикул"), "lines": pv(t, u"FT_Стекло_Уплотнитель_Линий"),
+                     "seal_len_mm": pv(e, u"FT_Стекло_Уплотнитель_Длина", True),
+                     "glass_W": pv(e, u"FT_Стекло_Ширина", True), "glass_H": pv(e, u"FT_Стекло_Высота", True)})
+    return rows
+
+
+def glass_check():
+    # Все стеклянные панели BIMLIB_: стекло == floor(панель - 5 мм), по системам (тип стены-хоста)
+    import math
+    out = {"total": 0, "ok": 0, "bad": [], "no_param": 0, "by_wall_type": {}}
+    for e in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+        t = doc.GetElement(e.GetTypeId())
+        if t is None or not t.FamilyName.startswith(u"BIMLIB_ПанельВитража_"):
+            continue
+        out["total"] += 1
+        wt = doc.GetElement(e.Host.GetTypeId()).get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() if e.Host else u"?"
+        out["by_wall_type"][wt] = out["by_wall_type"].get(wt, 0) + 1
+        gw = e.LookupParameter(u"FT_Стекло_Ширина"); gh = e.LookupParameter(u"FT_Стекло_Высота")
+        if gw is None or gh is None:
+            out["no_param"] += 1; continue
+        W = e.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH).AsDouble() * FT
+        H = e.get_Parameter(BuiltInParameter.CURTAIN_WALL_PANELS_HEIGHT).AsDouble() * FT
+        off = OFF_MARK is not None and OFF_MARK in wt
+        ew, eh = (0, 0) if off else (math.floor(W - 5 + 1e-6), math.floor(H - 5 + 1e-6))
+        aw, ah = gw.AsDouble() * FT, gh.AsDouble() * FT
+        if abs(aw - ew) < 0.01 and abs(ah - eh) < 0.01:
+            out["ok"] += 1
+        else:
+            out["bad"].append({"id": int(e.Id.Value), "W": round(W, 2), "H": round(H, 2), "glass": [round(aw, 2), round(ah, 2)], "expected": [ew, eh]})
+    out["bad"] = out["bad"][:20]
+    return out
+
+
+def panel_types():
+    out = {}
+    for s in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsElementType():
+        if s.FamilyName.startswith(u"BIMLIB_ПанельВитража_"):
+            out.setdefault(s.FamilyName, []).append(s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString())
+    return {k: len(v) for k, v in out.items()}
+
+
+res = {"status": "failed", "commit": commit, "before": sample(), "types_before": panel_types(), "warnings_before": len(doc.GetWarnings())}
+n_panels = len(list(FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType()))
+t = Transaction(doc, u"Панели: уплотнитель по толщине стекла, типы 5/6/8/10 мм")
+t.Start()
+try:
+    res["loaded"] = []
+    for f in args["rfas"]:
+        ref = clr.Reference[Family]()
+        res["loaded"].append(bool(doc.LoadFamily(f, LoadOpt(), ref)))
+    doc.Regenerate()
+    if OFF_MARK is not None:
+        # только для прогона: выключить FT_Стекло_Считать у панелей стен с OFF_MARK в имени типа
+        res["flag_off_ids"] = []
+        for e in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType():
+            if e.Host is None:
+                continue
+            wt = doc.GetElement(e.Host.GetTypeId()).get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
+            p = e.LookupParameter(u"FT_Стекло_Считать")
+            if OFF_MARK in wt and p is not None:
+                p.Set(0); res["flag_off_ids"].append(int(e.Id.Value))
+        doc.Regenerate()
+    res["after"] = sample()
+    res["glass_check"] = glass_check()
+    res["types_after"] = panel_types()
+    res["warnings_after"] = len(doc.GetWarnings())
+    res["panels_before_after"] = [n_panels, len(list(FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType()))]
+    if commit:
+        t.Commit(); res["transaction"] = "Committed"
+    else:
+        t.RollBack(); res["transaction"] = u"RolledBack (пробный прогон)"
+    res["status"] = "completed_unverified"
+except Exception as ex:
+    if t.HasStarted() and not t.HasEnded():
+        t.RollBack()
+    res["error"] = str(ex); res["transaction"] = u"RolledBack (ошибка)"
+res["after_end"] = sample()[:2]
+res["summary"] = res.get("transaction")
+__output__ = res

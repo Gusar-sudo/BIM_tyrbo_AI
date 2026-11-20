@@ -1,0 +1,36 @@
+import json, os, re, sys
+
+deck_dir, img_dir, out_html = sys.argv[1], sys.argv[2], sys.argv[3]
+blobs = {
+    "e5830ca5669b9e98c43b8c4435dbf99c": "logo.png",
+    "09451fa0273f2df86649227f5562e775": "qr_telegram.png",
+    "dd39694ac9441fdae7518a1b7be19bf3": "qr_photo.png",
+    "4ddd3e44bc4d7d12a5d8674095017ffa": "wc_blue.png",
+    "c826e6669c822ffa120b628a94fe4e16": "wc_orange.png",
+}
+deck = json.load(open(os.path.join(deck_dir, "project", "deck.json"), encoding="utf-8"))
+img_url = "file:///" + os.path.abspath(img_dir).replace("\\", "/")
+parts = []
+for sid in deck["order"]:
+    s = open(os.path.join(deck_dir, "project", "slides", sid + ".html"), encoding="utf-8").read()
+    s = re.sub(r"<aside>.*?</aside>", "", s, flags=re.S)
+    for bid, name in blobs.items():
+        s = s.replace("/_blob/" + bid, img_url + "/" + name)
+    s = re.sub(r'<x-shape kind="ellipse" style="', '<div style="border-radius:50%;flex:none;', s)
+    s = s.replace("</x-shape>", "</div>")
+    parts.append(s)
+
+html = """<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Презентация — Е. Беленинова</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,800&display=swap">
+<style>
+@page { size: 1920px 1080px; margin: 0; }
+* { margin: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html, body { width: 1920px; }
+section { position: relative; width: 1920px; height: 1080px; overflow: hidden; page-break-after: always; break-after: page; }
+h1, h2, h3 { font-weight: 600; }
+hr { border: 0; }
+ul { padding-left: 1.2em; }
+</style></head><body>
+""" + "\n".join(parts) + "\n</body></html>"
+open(out_html, "w", encoding="utf-8").write(html)
+print("slides:", len(parts))

@@ -1,0 +1,25 @@
+import json
+walls = [
+    ("М2 однослойный FSC21", "стойка-стойка", -1400, -1000),
+    ("М2 двухслойный FSC21", "стойка-стойка", -1400, -2000),
+    ("М3 однослойный FSC01К", "стойка-стойка", 1600, -1000),
+    ("М3 двухслойный FSC01К", "стойка-стойка", 1600, -2000),
+    ("М2 однослойный FSC21+FSC17", "стойка-столб", -1400, 19000),
+    ("М2 двухслойный FSC21+FSC17", "стойка-столб", -1400, 18000),
+    ("М3 однослойный FSC01К+FSC04", "стойка-столб", 1600, 19000),
+    ("М3 двухслойный FSC01К+FSC04", "стойка-столб", 1600, 18000),
+]
+cuts = [(500, "стекло 5 | 6"), (1500, "стекло 8 | 10")]
+acts = []
+n = 0
+for sysn, joint, x0, y in walls:
+    for cut, gl in cuts:
+        n += 1
+        k = "v%d" % n
+        acts.append({"operation": "create_floor_plan", "level_id": 1526, "view_scale": 5, "key": k,
+                     "name": "Сечение %s_%s_%s" % (sysn, joint, gl.replace(" | ", "-"))})
+        acts.append({"operation": "set_view_range", "view_key": k, "cut_level_id": 1526, "cut_offset": cut,
+                     "bottom_level_id": 1526, "bottom_offset": 0, "top_level_id": 1526, "top_offset": 2500,
+                     "view_depth_level_id": 1526, "view_depth_offset": 0})
+        acts.append({"operation": "set_crop", "view_key": k, "box": [x0 - 150, y - 400, x0 + 2150, y + 400]})
+print(json.dumps(acts, ensure_ascii=False))

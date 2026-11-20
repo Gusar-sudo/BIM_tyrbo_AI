@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+# Чёткий снимок одного узла (план на середине вертикального импоста), «стало» и «было», всё в откате.
+# Аргументы: mullion_id, half_mm, px, out_dir, name, fill_panel_type (пустые панели стены-хозяина -> этот тип),
+# before_params [{id, param, mm}] (значения «было»), scale.
+import json, os
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+H = float(args.get("half_mm", 45)) / FT
+m = doc.GetElement(ElementId(int(args["mullion_id"])))
+w = m.Host
+vft = [t for t in FilteredElementCollector(doc).OfClass(ViewFamilyType) if t.ViewFamily == ViewFamily.FloorPlan][0]
+HIDE = [BuiltInCategory.OST_Levels, BuiltInCategory.OST_Sections, BuiltInCategory.OST_Grids, BuiltInCategory.OST_Elev,
+        BuiltInCategory.OST_TextNotes, BuiltInCategory.OST_GenericAnnotation, BuiltInCategory.OST_CLines,
+        BuiltInCategory.OST_Lines, BuiltInCategory.OST_Dimensions, BuiltInCategory.OST_Viewers]
+if not os.path.isdir(args["out_dir"]):
+    os.makedirs(args["out_dir"])
+
+
+def export(v, tag):
+    o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+    ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+    o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 3000))
+    o.ImageResolution = ImageResolution.DPI_600; o.HLRandWFViewsFileType = ImageFileType.PNG
+    o.FilePath = os.path.join(args["out_dir"], tag)
+    doc.ExportImage(o)
+
+
+res = {"files": []}
+tg = TransactionGroup(doc, u"чёткий снимок узла (откат)"); tg.Start()
+try:
+    t = Transaction(doc, u"вид"); t.Start()
+    if args.get("fill_panel_type"):
+        st = [s for s in FilteredElementCollector(doc).OfClass(FamilySymbol).OfCategory(BuiltInCategory.OST_CurtainWallPanels)
+              if s.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() == args["fill_panel_type"]][0]
+        for pid in w.CurtainGrid.GetPanelIds():
+            p = doc.GetElement(pid)
+            tn = doc.GetElement(p.GetTypeId())
+            if tn is not None and tn.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() == u"Пусто":
+                p.Pinned = False
+                p.ChangeTypeId(st.Id)
+    bb = m.get_BoundingBox(None); c = (bb.Min + bb.Max) * 0.5
+    lvl = doc.GetElement(w.LevelId)
+    v = ViewPlan.Create(doc, vft.Id, w.LevelId)
+    vr = v.GetViewRange(); vr.SetOffset(PlanViewPlane.CutPlane, c.Z - lvl.Elevation); v.SetViewRange(vr)
+    box = BoundingBoxXYZ(); box.Min = XYZ(c.X - H, c.Y - H, -1000); box.Max = XYZ(c.X + H, c.Y + H, 1000)
+    v.CropBox = box; v.CropBoxActive = True; v.CropBoxVisible = False
+    v.Scale = int(args.get("scale", 1)); v.DetailLevel = ViewDetailLevel.Fine
+    for bic in HIDE:
+        try:
+            v.SetCategoryHidden(ElementId(bic), True)
+        except Exception:
+            pass
+    t.Commit()
+    export(v, args["name"] + u"_стало")
+    res["files"].append(args["name"] + u"_стало")
+    if args.get("before_params"):
+        t = Transaction(doc, u"было"); t.Start()
+        for it in args["before_params"]:
+            doc.GetElement(ElementId(int(it["id"]))).LookupParameter(it["param"]).Set(it["mm"] / FT)
+        t.Commit()
+        export(v, args["name"] + u"_было")
+        res["files"].append(args["name"] + u"_было")
+finally:
+    tg.RollBack()
+__output__ = {"status": "completed_unverified", "summary": u"снимков %d; всё откатано" % len(res["files"]), "files": res["files"]}

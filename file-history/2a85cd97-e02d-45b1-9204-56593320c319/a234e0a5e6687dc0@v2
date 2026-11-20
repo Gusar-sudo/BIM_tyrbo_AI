@@ -1,0 +1,81 @@
+# -*- coding: utf-8 -*-
+# Проба С ОТКАТОМ: загрузить копии .rfa профилей и сравнить «до / после» для импостов, которые их используют:
+# пересечения импоста с панелями (стекло, ГКЛ) по телам, импосты без геометрии, предупреждения Revit.
+# Аргументы: rfa_dir (все .rfa в ней) или rfas [], out_json
+import json, io, os, glob
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+rfas = args.get("rfas") or sorted(glob.glob(os.path.join(args["rfa_dir"], "*.rfa")))
+names = set(os.path.splitext(os.path.basename(p))[0] for p in rfas)
+
+
+class LO(IFamilyLoadOptions):
+    def OnFamilyFound(self, a, b):
+        b.Value = True; return True
+
+    def OnSharedFamilyFound(self, s, a, src, b):
+        src.Value = FamilySource.Family; b.Value = True; return True
+
+
+mts = []
+for m in FilteredElementCollector(doc).OfClass(MullionType):
+    s = doc.GetElement(m.get_Parameter(BuiltInParameter.MULLION_PROFILE).AsElementId())
+    if s is not None and s.Family.Name in names: mts.append(m.Id)
+mts = set(mts)
+muls = [m for m in FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallMullions).WhereElementIsNotElementType() if m.GetTypeId() in mts]
+panels = list(FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels).WhereElementIsNotElementType().ToElementIds())
+opt = Options()
+
+
+def snapshot():
+    clash = {}; nogeo = []
+    from System.Collections.Generic import List
+    pl = List[ElementId](panels)
+    for m in muls:
+        try:
+            g = m.get_Geometry(opt)
+            if g is None or not any(True for _ in g): nogeo.append(int(m.Id.Value)); continue
+            f = ElementIntersectsElementFilter(m)
+            hit = FilteredElementCollector(doc, pl).WherePasses(f).ToElementIds()
+            clash[int(m.Id.Value)] = sorted(int(x.Value) for x in hit)
+        except Exception:
+            nogeo.append(int(m.Id.Value))
+    return clash, nogeo
+
+
+res = {"rfas": len(rfas), "mullion_types": len(mts), "mullions": len(muls), "load_failed": []}
+w0 = len(doc.GetWarnings())
+c0, n0 = snapshot()
+tg = TransactionGroup(doc, u"проба загрузки профилей (откат)"); tg.Start()
+try:
+    # каждое семейство — своя транзакция: сбой одного (импост не строится) не отменяет остальные
+    for i, p in enumerate(rfas):
+        checkpoint(os.path.basename(p), i, len(rfas))
+        t = Transaction(doc, u"загрузка " + os.path.basename(p)); t.Start()
+        try:
+            doc.LoadFamily(p, LO())
+            st = t.Commit()
+            if st != TransactionStatus.Committed:
+                res["load_failed"].append([os.path.basename(p), str(st)])
+        except Exception as ex:
+            if t.HasStarted() and not t.HasEnded(): t.RollBack()
+            res["load_failed"].append([os.path.basename(p), str(ex)[:120]])
+    w1 = len(doc.GetWarnings())
+    c1, n1 = snapshot()
+    new = []
+    for k, v in c1.items():
+        add = sorted(set(v) - set(c0.get(k, [])))
+        if add:
+            m = doc.GetElement(ElementId(k))
+            new.append({"mullion": k, "type": m.Name, "new_panels": add[:5]})
+    res.update(warnings_before=w0, warnings_after=w1, clashes_before=sum(1 for v in c0.values() if v),
+               clashes_after=sum(1 for v in c1.values() if v), new_clashes=len(new),
+               new_clash_types=sorted(set(x["type"] for x in new)), nogeo_before=len(n0), nogeo_after=len(n1),
+               new_warnings=[w.GetDescriptionText()[:120] for w in doc.GetWarnings()][w0:w0 + 10])
+    res["new_clash_samples"] = new[:15]
+finally:
+    tg.RollBack(); res["rolled_back"] = True
+if args.get("out_json"):
+    io.open(args["out_json"], "w", encoding="utf-8").write(json.dumps(res, ensure_ascii=False, indent=1))
+__output__ = {"status": "completed_unverified", "summary": u"проба загрузки с откатом", "result": res}

@@ -1,0 +1,23 @@
+# -*- coding: utf-8 -*-
+# Только чтение: открыть .rfa профилей (копии в work\2026\families), выгрузить вид «Опорный уровень» в PNG, закрыть без сохранения.
+# Аргументы: rfas, out_dir, px
+import json, os
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+app = __revit__.Application
+files = []
+for rfa in args["rfas"]:
+    fd = app.OpenDocumentFile(rfa)
+    try:
+        v = [x for x in FilteredElementCollector(fd).OfClass(ViewPlan) if not x.IsTemplate][0]
+        o = ImageExportOptions(); o.ExportRange = ExportRange.SetOfViews
+        ids = List[ElementId](); ids.Add(v.Id); o.SetViewsAndSheets(ids)
+        o.ZoomType = ZoomFitType.FitToPage; o.PixelSize = int(args.get("px", 700))
+        o.ImageResolution = ImageResolution.DPI_300; o.HLRandWFViewsFileType = ImageFileType.PNG
+        o.FilePath = os.path.join(args["out_dir"], os.path.basename(rfa)[:-4].replace(u"BIMLIB_Профиль_", u"").replace(u"_ФристайлТехнолоджи", u""))
+        fd.ExportImage(o)
+        files.append(os.path.basename(rfa))
+    finally:
+        fd.Close(False)
+__output__ = {"status": "completed_unverified", "summary": u"%d картинок" % len(files), "files": files}

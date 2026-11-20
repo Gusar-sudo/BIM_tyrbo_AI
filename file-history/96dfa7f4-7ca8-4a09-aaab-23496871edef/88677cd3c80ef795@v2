@@ -1,0 +1,32 @@
+# Нарисовать силуэты профилей (линии) и места уплотнителей (красные прямоугольники) — сетка картинок.
+import json, sys, math
+from PIL import Image, ImageDraw, ImageFont
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+out = sys.argv[2]
+S = 4.0  # px/мм
+cells = []
+F = ImageFont.truetype(r"C:\Windows\Fonts\arial.ttf", 13)
+for name, r in data.items():
+    pts = [p for c in r["curves"] for p in c["p"]] + [[s[0], s[1]] for s in r["seals"]] + [[s[2], s[3]] for s in r["seals"]]
+    x0 = min(p[0] for p in pts) - 5; x1 = max(p[0] for p in pts) + 5
+    y0 = min(p[1] for p in pts) - 5; y1 = max(p[1] for p in pts) + 5
+    W = int((x1 - x0) * S); H = int((y1 - y0) * S) + 20
+    im = Image.new("RGB", (max(W, 300), H), "white"); d = ImageDraw.Draw(im)
+    tr = lambda p: ((p[0] - x0) * S, 20 + (y1 - p[1]) * S)
+    for gx in range(int(x0 // 10) * 10, int(x1) + 10, 10):
+        d.line([tr((gx, y0)), tr((gx, y1))], fill=(235, 235, 235) if gx else (180, 180, 255))
+    for gy in range(int(y0 // 10) * 10, int(y1) + 10, 10):
+        d.line([tr((x0, gy)), tr((x1, gy))], fill=(235, 235, 235) if gy else (180, 180, 255))
+    for c in r["curves"]:
+        d.line([tr(p) for p in c["p"]], fill="black", width=2)
+    for s in r["seals"]:
+        a = tr((s[0], s[3])); b = tr((s[2], s[1]))
+        d.rectangle([a, b], outline="red", width=2)
+    d.text((3, 2), name.replace("_ФристайлТехнолоджи", ""), fill=(0, 0, 160), font=F)
+    cells.append(im)
+cw = max(c.width for c in cells); ch = max(c.height for c in cells); n = 4
+sheet = Image.new("RGB", (n * cw, ((len(cells) + n - 1) // n) * ch), "white")
+for i, c in enumerate(cells):
+    sheet.paste(c, ((i % n) * cw, (i // n) * ch))
+sheet.save(out)
+print(sheet.size)

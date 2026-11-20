@@ -1,0 +1,31 @@
+{
+  "autoUpdatesChannel": "latest",
+  "env": {
+    "MCP_TIMEOUT": "60000",
+    "MAX_MCP_OUTPUT_TOKENS": "60000"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__horizun-revit__horizun_health",
+      "mcp__horizun-revit__get_document_info",
+      "mcp__horizun-revit__horizun_file_info",
+      "mcp__horizun-revit__horizun_job_status",
+      "mcp__horizun-revit__horizun_list_elements",
+      "mcp__horizun-revit__horizun_model_scan",
+      "mcp__horizun-revit__horizun_query_model",
+      "mcp__horizun-revit__horizun_query_structure",
+      "mcp__horizun-revit__horizun_query_planimetry",
+      "mcp__horizun-revit__horizun_query_dimensions",
+      "mcp__horizun-revit__horizun_query_detail_2d",
+      "mcp__horizun-revit__horizun_query_classification",
+      "mcp__horizun-revit__horizun_query_cad",
+      "mcp__horizun-revit__horizun_get_dimension_references",
+      "mcp__horizun-revit__horizun_list_schedules",
+      "mcp__horizun-revit__horizun_get_schedule_data",
+      "mcp__horizun-revit__horizun_read_schedule",
+      "mcp__horizun-revit__horizun_quantities",
+      "mcp__horizun-revit__horizun_audit_model"
+    ]
+  },
+  "enableWorkflows": true
+}

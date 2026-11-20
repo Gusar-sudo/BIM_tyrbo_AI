@@ -1,0 +1,54 @@
+"""Простой рендер окна модели DXF (LINE/LWPOLYLINE/POLYLINE/ARC/CIRCLE/SPLINE + развёрнутые блоки) в PNG.
+py -P -E win_render.py file.dxf out.png xmin,ymin,xmax,ymax [dpi]"""
+import sys, math, ezdxf
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+src, dst, win = sys.argv[1], sys.argv[2], [float(v) for v in sys.argv[3].split(",")]
+dpi = int(sys.argv[4]) if len(sys.argv) > 4 else 300
+x0, y0, x1, y1 = win
+doc = ezdxf.readfile(src)
+
+def flat(entities, depth=0):
+    for e in entities:
+        if e.dxftype() == "INSERT" and depth < 6:
+            try:
+                yield from flat(e.virtual_entities(), depth + 1)
+            except Exception:
+                pass
+        else:
+            yield e
+
+def inside(pts):
+    return any(x0 <= x <= x1 and y0 <= y <= y1 for x, y in pts)
+
+fig, ax = plt.subplots(figsize=((x1 - x0) / 25.4, (y1 - y0) / 25.4))
+n = 0
+for e in flat(doc.modelspace()):
+    t = e.dxftype()
+    pts = None
+    try:
+        if t == "LINE":
+            pts = [(e.dxf.start.x, e.dxf.start.y), (e.dxf.end.x, e.dxf.end.y)]
+        elif t == "LWPOLYLINE":
+            pts = [(p[0], p[1]) for p in e.get_points()] + ([tuple(e.get_points()[0][:2])] if e.closed else [])
+        elif t in ("POLYLINE", "SPLINE", "ARC", "CIRCLE", "ELLIPSE"):
+            pts = [(v.x, v.y) for v in e.flattening(0.05)] if hasattr(e, "flattening") else None
+            if t == "POLYLINE":
+                pts = [(v.dxf.location.x, v.dxf.location.y) for v in e.vertices]
+        elif t in ("TEXT", "MTEXT"):
+            p = e.dxf.insert
+            if x0 <= p.x <= x1 and y0 <= p.y <= y1:
+                txt = e.dxf.text if t == "TEXT" else e.plain_text()
+                ax.text(p.x, p.y, txt[:40], fontsize=3)
+            continue
+    except Exception:
+        continue
+    if pts and inside(pts):
+        xs, ys = zip(*pts)
+        ax.plot(xs, ys, color="black", linewidth=0.3)
+        n += 1
+ax.set_xlim(x0, x1); ax.set_ylim(y0, y1); ax.set_aspect("equal")
+ax.grid(True, linewidth=0.1)
+fig.savefig(dst, dpi=dpi, facecolor="white", bbox_inches="tight")
+print(n, "элементов", dst)

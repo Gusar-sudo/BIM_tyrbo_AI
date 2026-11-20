@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+# Только чтение: у всех семейств профилей с кодом из списка — линии 3D-тела с концами на |y| = узкий вырез (from) и широкий (to),
+# по каждой стороне стекла; семейства закрываются без сохранения. Аргументы: codes {код: [from, to]}
+import json, re
+from Autodesk.Revit.DB import *
+args = json.loads(HORIZUN_ARGS_JSON)
+doc = __revit__.ActiveUIDocument.Document
+FT = 304.8
+out = []
+for f in FilteredElementCollector(doc).OfClass(Family):
+    m = re.search(u"Профиль_(М\\d)_(FSC\\d+)_(\\w+?)_Фристайл", f.Name)
+    if not m or m.group(2) not in args["codes"]:
+        continue
+    y0, y1 = args["codes"][m.group(2)]
+    fd = doc.EditFamily(f)
+    try:
+        pts = []
+        for ce in FilteredElementCollector(fd).OfClass(CurveElement):
+            if ce.GetType().Name not in ("DetailLine", "DetailCurve", "DetailArc") or ce.GeometryCurve is None:
+                continue
+            for k in (0, 1):
+                p = ce.GeometryCurve.GetEndPoint(k); pts.append((round(p.X * FT, 2), round(p.Y * FT, 2)))
+        nar = sorted(set(p for p in pts if abs(abs(p[1]) - y0) < 0.15))
+        wid = sorted(set(p for p in pts if abs(abs(p[1]) - y1) < 0.15))
+        xs = [p[0] for p in pts]
+        out.append({"family": m.group(2) + " " + m.group(3), "narrow_pts": nar, "wide_pts": wid, "x_range": [min(xs), max(xs)] if xs else None,
+                    "types": len(f.GetFamilySymbolIds())})
+    finally:
+        fd.Close(False)
+out.sort(key=lambda r: r["family"])
+__output__ = {"status": "completed_unverified", "summary": u"только чтение, профилей %d, с узким вырезом %d" % (len(out), sum(1 for r in out if r["narrow_pts"])), "r": out}

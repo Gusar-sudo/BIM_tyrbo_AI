@@ -1,0 +1,158 @@
+# Пакет «М2/М3: все импосты и столбы» — титул с таблицей «альбом ↔ модель», затем по артикулу листы с узлами всех типов.
+import json, os, re, collections
+from PIL import Image, ImageDraw, ImageFont
+base = r"C:\Users\user\Desktop\Фристайл\_bim\test\2026-10-28_M2M3_seals"
+src = os.path.join(base, "types_review", "png3")
+alb2 = os.path.join(base, "album_M2"); alb3 = os.path.join(base, "album")
+out_pdf = os.path.join(base, "types_review", "М2_М3_импосты_и_столбы_2026-11-02.pdf")
+W, H = 3307, 2339
+F = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arial.ttf", s)
+FB = lambda s: ImageFont.truetype(r"C:\Windows\Fonts\arialbd.ttf", s)
+pages = []
+
+
+def new_page(title, sub=None):
+    p = Image.new("RGB", (W, H), "white"); d = ImageDraw.Draw(p)
+    d.text((80, 50), title, fill="black", font=FB(52))
+    if sub:
+        d.text((80, 122), sub, fill=(90, 90, 90), font=F(30))
+    d.line([(80, 175), (W - 80, 175)], fill=(160, 160, 160), width=3)
+    d.text((W - 700, H - 70), "Фристайл · М2/М3 · test_M2M3_seals · 02.11.2026", fill=(150, 150, 150), font=F(26))
+    d.text((80, H - 70), "стр. %d" % (len(pages) + 1), fill=(150, 150, 150), font=F(26))
+    return p, d
+
+
+def fit(im, w, h):
+    im = im.copy(); im.thumbnail((w, h), Image.LANCZOS); return im
+
+
+def center(im, k=0.55):
+    cw, ch = im.width * k, im.height * k
+    return im.crop((int((im.width - cw) / 2), int((im.height - ch) / 2), int((im.width + cw) / 2), int((im.height + ch) / 2)))
+
+
+idx = json.load(open(os.path.join(src, "index.json"), encoding="utf-8"))
+files = {}
+for f in os.listdir(src):
+    m = re.match(r"(\d{3}) ", f)
+    if m and f.endswith(".png"):
+        files[int(m.group(1))] = os.path.join(src, f)
+groups = collections.OrderedDict()
+for r in idx:
+    m = re.match(r"(М[23]) (FSC\S+) (.*)", r["type"])
+    groups.setdefault((m.group(1), m.group(2)), []).append((m.group(3), r))
+
+ART = {  # название по альбому и ссылка на рисунок альбома
+    ("М2", "FSC17"): ("Столб три грани М2 FS.C-17", os.path.join(alb2, "36_гориз_сечение.png")),
+    ("М2", "FSC18"): ("Столб универсальный М2 FS.C-18 + держатель FS.C-19", os.path.join(alb2, "36_гориз_сечение.png")),
+    ("М2", "FSC21"): ("Стойка основная М2 FS.C-21", os.path.join(alb2, "32_33_секции_гл_одн.png")),
+    ("М2", "FSC22"): ("Стойка усиленная М2 FS.C-22", None),
+    ("М2", "FSC139"): ("Стойка широкая М2 FS.C-139", None),
+    ("М2", "FSC144"): ("Ригель М2 FS.C-144", None),
+    ("М3", "FSC01"): ("Стойка стандартная М3 FS.C-01", os.path.join(alb3, "M3_columns_list.png")),
+    ("М3", "FSC01К"): ("FSC01К — в альбоме М3 такого артикула нет", None),
+    ("М3", "FSC04"): ("Столб три грани М3 FS.C-04", os.path.join(alb3, "M3_catalog.png")),
+    ("М3", "FSC05"): ("Столб универсальный М3 FS.C-05 + держатель FS.C-06", os.path.join(alb3, "M3_FSC05.png")),
+    ("М3", "FSC08"): ("Угловой столб дуга М3 FS.C-08", os.path.join(alb3, "M3_FSC08.png")),
+    ("М3", "FSC09"): ("Стойка узкая М3 — в модели FSC09, в альбоме FS.C-115", None),
+    ("М3", "FSC111"): ("Стойка основная М3 FS.C-111", None),
+}
+
+# 1. титул: таблица альбом ↔ модель
+p, d = new_page("М2 и М3: все импосты и столбы — сверка с альбомами и узлы для проверки",
+                "Пробный прогон в test_M2M3_seals: по каждому типу импоста — узел в той стене, где он стоит (план или разрез, 1:2). Модель не менялась.")
+rows = [
+    ("М2", "FS.C-17 столб три грани", "2–3 секции 90/180°, завершающий", "угловой 1сл/2сл Л/П, Т 2сл, центр 1сл/2сл, к стене/полу/потолку 2сл, отдельный, необлиц.", "нет Т-узла 1сл и примыканий 1сл"),
+    ("М2", "FS.C-18 + FS.C-19", "угол 90–180 (270)°, до 4 секций; держатель — к колонне", "угловой 90° 1сл/2сл Л/П, 135° левый 1сл/2сл, Т 2сл, необлиц.", "нет: 135° правый, др. углов, 4 секций, 180°, держателя к колонне"),
+    ("М2", "FS.C-21 стойка основная", "каркас", "25 типов: пол/потолок/стена/дверь/не доходит/центр, 1сл/2сл/цс", "—"),
+    ("М2", "FS.C-22 усиленная", "каркас", "20 типов как FS.C-21 без цс", "—"),
+    ("М2", "FS.C-139 широкая", "каркас", "20 типов", "—"),
+    ("М2", "FS.C-144 ригель", "горизонтальная разбивка", "центр 1сл/2сл, над дверью 1сл/2сл", "—"),
+    ("М2", "FS.C-166 соединитель", "соединение стоек", "нет", "не моделируется (деталь сборки)"),
+    ("М3", "FS.C-04 столб три грани", "2–3 секции 90/180°, завершающий", "угловой, Т сверху/снизу, центр, не доходит, отдельный, необлиц.", "—"),
+    ("М3", "FS.C-08 дуга", "2 секции 90°", "угловой 1сл/2сл Л/П, необлиц. Л/П", "—"),
+    ("М3", "FS.C-05 + FS.C-06", "угол 90–180 (270)°, до 4 секций; держатель — к колонне", "угловой 90° Л/П, 135° левый, Т, центр, необлиц.", "как у FS.C-18"),
+    ("М3", "FS.C-07 малый столб", "2–3 секции под углом, завершающий, старт от стены под углом", "НЕТ В МОДЕЛИ", "нет ни одного типа"),
+    ("М3", "FS.C-01 стандартная", "каркас", "20 типов", "—"),
+    ("М3", "FS.C-111 основная", "каркас", "20 типов", "—"),
+    ("М3", "FS.C-115 узкая", "каркас", "в модели как FSC09 (20 типов)", "артикул: FS.C-09 или FS.C-115? (вопрос производству)"),
+    ("М3", "FSC01К", "в альбоме нет", "20 типов", "что это за профиль? (вопрос)"),
+]
+cols = [80, 200, 760, 1500, 2600]
+y = 230
+for i, h in enumerate(("Сист.", "Профиль (альбом)", "Назначение по альбому", "Что есть в модели (типы импостов)", "Расхождение")):
+    d.text((cols[i], y), h, fill="black", font=FB(30))
+y += 50
+for r in rows:
+    col = (180, 0, 0) if r[4] not in ("—",) else (40, 40, 40)
+    for i, t in enumerate(r):
+        d.text((cols[i], y), t[:62] if i < 4 else t[:40], fill=col if i == 4 else (40, 40, 40), font=F(26))
+    y += 46
+y += 30
+for t in ("Как читать листы: подпись — тип импоста; [план] — вертикальный импост, сечение на середине высоты; [разрез] — горизонтальный (пол, потолок, ригель).",
+          "Что смотреть: стекло входит в паз, уплотнитель один и у кромки, вторая стена (угол, Т) входит в держатель, нет зазоров и наложений профилей.",
+          "Уплотнитель нарисован в 4 профилях (FSC05 135° ×2, FSC21 цс нижний, FSC21 однослойный правый закрытый) — там он может быть двойным.",
+          "Ситуационные стены теста (М2/М3 Однослойный/Двухслойный) в модели с пустыми панелями — для прогона в них временно поставлено стекло 5 мм (откатано).",
+          "У угловых и Т-столбов в этих стенах вторая стена только нарисована в профиле, «правые» угловые стоят в прямых стенах — сопряжение смотреть на листах схем в конце.",
+          "Стр. 2–12 — М2 по артикулам, 13–26 — М3, 27–29 — схемы углов и Т-узлов (две стены)."):
+    d.text((80, y), t, fill=(40, 40, 40), font=F(28)); y += 44
+pages.append(p)
+
+# 2. листы по артикулам
+for (sysn, art), items in groups.items():
+    title, alb = ART.get((sysn, art), (art, None))
+    per = 12 if not alb else 9
+    chunks = [items[i:i + per] for i in range(0, len(items), per)]
+    for ci, ch in enumerate(chunks):
+        p, d = new_page(u"%s · %s%s" % (sysn, title, "" if len(chunks) == 1 else u" (%d/%d)" % (ci + 1, len(chunks))),
+                        u"Типов в модели: %d. Узлы в стенах теста, 1:2, «Высокая»." % len(items))
+        top, bot = 200, H - 100
+        x0 = 80
+        if alb and ci == 0 and os.path.exists(alb):
+            aw = 900
+            im = fit(Image.open(alb).convert("RGB"), aw - 20, bot - top - 60)
+            d.rectangle([80, top, 80 + aw, bot], outline=(190, 190, 190), width=2)
+            d.text((95, top + 10), u"Альбом", fill=(0, 0, 150), font=FB(28))
+            p.paste(im, (80 + (aw - im.width) // 2, top + 50))
+            x0 = 80 + aw + 30
+        ncol = 4 if x0 == 80 else 3
+        nrow = (len(ch) + ncol - 1) // ncol if len(ch) > 0 else 1
+        nrow = max(nrow, 3)
+        cw = (W - 80 - x0 - (ncol - 1) * 20) // ncol; chh = (bot - top - (nrow - 1) * 20) // nrow
+        for i, (rest, r) in enumerate(ch):
+            x = x0 + (i % ncol) * (cw + 20); yy = top + (i // ncol) * (chh + 20)
+            d.rectangle([x, yy, x + cw, yy + chh], outline=(190, 190, 190), width=2)
+            lab = rest.replace(u"с двухслойным остеклением", u"2сл").replace(u"с однослойным остеклением", u"1сл").replace(u"однослойным остеклением", u"1сл")
+            lab = lab.replace(u"с двухслойным цельностеклянным остеклением", u"цс").replace(u"примыкание к ", u"к ")
+            d.text((x + 10, yy + 8), (u"[план] " if r["vertical"] else u"[разрез] ") + lab, fill=(170, 0, 0), font=FB(24))
+            f = files.get(r["k"])
+            if f:
+                im = fit(center(Image.open(f).convert("RGB")), cw - 16, chh - 50)
+                p.paste(im, (x + (cw - im.width) // 2, yy + 42 + (chh - 46 - im.height) // 2))
+        pages.append(p)
+
+# 3. углы и Т-узлы с двумя настоящими стенами (схемы)
+sch_dir = os.path.join(base, "types_review", "schemes")
+sch = sorted([f for f in os.listdir(sch_dir) if f.startswith("a_before_") and f.endswith(".png")],
+             key=lambda f: f.split(" - ")[-1])
+for sysn in (u"М2", u"М3"):
+    lst = [f for f in sch if (u" %s " % sysn) in f]
+    for ci in range(0, len(lst), 8):
+        ch = lst[ci:ci + 8]
+        p, d = new_page(u"%s · углы и Т-узлы: две настоящие стены, общий столб" % sysn,
+                        u"Здесь проверять сопряжение второй стены со столбом (в ситуационных стенах теста вторая стена у угловых/Т-столбов только нарисована в профиле).")
+        ncol, nrow = 4, 2
+        top, bot = 200, H - 100
+        cw = (W - 160 - (ncol - 1) * 20) // ncol; chh = (bot - top - (nrow - 1) * 20) // nrow
+        for i, f in enumerate(ch):
+            x = 80 + (i % ncol) * (cw + 20); yy = top + (i // ncol) * (chh + 20)
+            d.rectangle([x, yy, x + cw, yy + chh], outline=(190, 190, 190), width=2)
+            d.text((x + 10, yy + 8), f.split(" - ")[-1][:-4].replace(u"Схема ", u""), fill=(170, 0, 0), font=FB(26))
+            im = fit(center(Image.open(os.path.join(sch_dir, f)).convert("RGB"), 0.6), cw - 16, chh - 50)
+            p.paste(im, (x + (cw - im.width) // 2, yy + 42 + (chh - 46 - im.height) // 2))
+        pages.append(p)
+
+pages[0].save(out_pdf, save_all=True, append_images=pages[1:], resolution=200)
+for i, pg in enumerate(pages):
+    pg.resize((W // 2, H // 2)).save(os.path.join(base, "types_review", "page_%02d.png" % (i + 1)))
+print(out_pdf, len(pages))
